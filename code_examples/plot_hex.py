@@ -225,7 +225,7 @@ def plot_hex_files(files):
         test_bigram_plot(f,name)
     
 
-path = "/home/rafael/Pictures/hex_files/"
+path = "/var/tmp/"
 h = return_files_in_dir(path)
 plot_hex_files(h[0:1])
     
