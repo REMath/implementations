@@ -18,7 +18,7 @@
 * http://code.google.com/p/idaocaml/
 * http://doar-e.github.io/blog/2013/09/16/breaking-kryptonites-obfuscation-with-symbolic-execution/
 * https://github.com/tosanjay/BOPFunctionRecognition
-
+* https://github.com/codelion/pathgrind
 
 ## Abstract Interpretation
 * http://arxiv.org/abs/0810.2179 (code: http://hal.inria.fr/docs/00/33/23/39/ANNEX/absint.v ) 
