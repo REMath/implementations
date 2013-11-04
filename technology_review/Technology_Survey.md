@@ -17,6 +17,17 @@
 * http://esec-lab.sogeti.com/pages/Fuzzgrind
 * http://code.google.com/p/idaocaml/
 * http://doar-e.github.io/blog/2013/09/16/breaking-kryptonites-obfuscation-with-symbolic-execution/
+* https://github.com/tosanjay/BOPFunctionRecognition
+
+
+## Abstract Interpretation
+* http://arxiv.org/abs/0810.2179 (code: http://hal.inria.fr/docs/00/33/23/39/ANNEX/absint.v ) 
+* http://pop-art.inrialpes.fr/interproc/interprocweb.cgi (code: http://pop-art.inrialpes.fr/people/bjeannet/bjeannet-forge/interproc/index.html ) 
+* http://www.cs.indiana.edu/l/www/classes/b621/abiall.pdf 
+* http://web.mit.edu/afs/athena.mit.edu/course/16/16.399/www/ 
+* http://www.hexblog.com/?p=42 
+* https://www.openrce.org/repositories/users/RolfRolles/BitwiseAI.ml
+
 
 ## General Solvers
 * http://z3.codeplex.com/ 
@@ -37,14 +48,14 @@
 * https://code.google.com/p/tanalysis/
 * http://frama-c.com/
 * http://goto.ucsd.edu/~rjhala/papers/liquid_types.html
-* http://www.cs.umd.edu/~jfoster/cqual/﻿
+* http://www.cs.umd.edu/~jfoster/cqual/
 * http://sourceforge.net/projects/cil/
-* http://code.google.com/p/c-semantics/﻿
+* http://code.google.com/p/c-semantics/
 * http://sixgill.org/
 * https://bitbucket.org/khooyp/otter 
 * http://boogie.codeplex.com/
 
-## Other
+## Probabilistic State Transitions
 * http://www.prismmodelchecker.org/
 
 # Acknowledgements
