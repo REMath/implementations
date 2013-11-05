@@ -51,7 +51,7 @@
 * http://code.google.com/p/pescrambler/
 
 # Decompilers 
-* http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
+* http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf <- This is really where you should start. I include the others for the sake of prosperity.  
 * http://code.google.com/p/arm-thumb-decompiler-plugin/
 * https://github.com/EiNSTeiN-/ida-decompiler
 * http://boomerang.sourceforge.net/ 
