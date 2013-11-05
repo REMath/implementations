@@ -6,8 +6,7 @@
 * https://github.com/neuromancer/SEA
 * http://security.ece.cmu.edu/aeg/index.html
 * http://bitblaze.cs.berkeley.edu/
-* http://code.google.com/p/avalanche/﻿
-* https://s2e.epfl.ch/
+* http://code.google.com/p/avalanche/
 * https://bincoa.labri.fr/trac
 * http://code.google.com/p/gdsl-toolkit/wiki/Overview 
 * http://www.jakstab.org/documentation
@@ -34,9 +33,21 @@
 * http://alt-ergo.ocamlpro.com/
 * http://yices.csl.sri.com/
 * http://cvc4.cs.nyu.edu/web/
+* http://minisat.se/
+* http://fmv.jku.at/boolector/
+* http://mathsat.fbk.eu/
 
-## Symbolic Virtual Machine
+## Datasets 
+* https://svn.sosy-lab.org/software/sv-benchmarks/tags/svcomp13/
+* http://samate.nist.gov/SRD/testsuite.php 
+* http://www.debian.org/distrib/packages
+
+## Symbolic Virtual Machines
 * http://klee.llvm.org/
+* https://s2e.epfl.ch/
+
+## Model Checkers 
+* http://nusmv.fbk.eu/ 
 
 ## Debugger
 * https://bitbucket.org/khooyp/expositor 
@@ -50,12 +61,38 @@
 * http://goto.ucsd.edu/~rjhala/papers/liquid_types.html
 * http://www.cs.umd.edu/~jfoster/cqual/
 * http://sourceforge.net/projects/cil/
-* http://code.google.com/p/c-semantics/
-* http://sixgill.org/
+* https://github.com/kframework/c-semantics
+* http://sixgill.org
 * https://bitbucket.org/khooyp/otter 
 * http://boogie.codeplex.com/
 
-## Probabilistic State Transitions
+## Quantitative Analysis
 * http://www.prismmodelchecker.org/
+* http://software.imdea.org/projects/cacheaudit/
+* http://www-verimag.imag.fr/~tripakis/openkronos.html
+
+
+# To be categorized 
+## Assisted Exploit Generation on binary programs
+* https://github.com/wirepair/IDAPinLogger
+* https://github.com/pakt/ropc
+* https://github.com/aaronportnoy/toolbag
+* https://github.com/neuroo/runtime-tracer
+* https://github.com/0vercl0k/rp
+* https://github.com/mrmee/heaper
+* https://github.com/JonathanSalwan/ROPgadget
+* https://github.com/pdasilva/vtrace_scripts
+* https://github.com/rapid7/metasploit-framework/tree/master/external/source/byakugan
+* https://github.com/trailofbits/bisc
+* http://redmine.corelan.be/projects/mona
+* https://code.google.com/p/narly/
+* https://code.google.com/p/viscope/
+* https://github.com/jirislaby/stanse
+* https://github.com/dsw/oink-stack/
+* http://code.google.com/p/tanalysis/
+* https://github.com/CTSRD-SOAAP/taintgrind
+* https://minemu.org/mediawiki/index.php
+* https://github.com/isislab/Catfish
+
 
 # Acknowledgements
