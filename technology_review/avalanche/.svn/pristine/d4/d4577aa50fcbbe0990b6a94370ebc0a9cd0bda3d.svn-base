@@ -1,0 +1,75 @@
+How to cross-compile for Android.
+
+This is known to work for Android 3.1 running on a 
+ASUS Eee Pad Transformer TF101. We were also able to
+run Avalanche on Android emulator (included in official
+Android SDK) with a system.img extracted from ASUS device
+and kernel image compatible with qemu emulating cortex-a8 CPU.
+
+android-ndk-r6 native development kit is used to build Avalanche. 
+I can be installed from (http://developer.android.com/sdk/ndk/index.html).
+
+Please, use revision 6 -- we have reports of Avalanche version of valgrind
+not working with newer versions and we are unable to remove the error.
+
+We also use tools provided by Android SDK
+(http://developer.android.com/sdk/index.html) to move files to
+Android device or interact with emulator.
+
+
+To build Avalanche the following steps should be taken:
+
+# Modify this with correct path.
+#
+export NDKROOT=/path/to/android-ndk-r6
+
+# And then (unmodified)
+#
+export AR=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ar
+export CPP=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-cpp
+export LD=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-ld
+export CXX=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-g++
+export CC=$NDKROOT/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-gcc
+
+# cd to Avalanche root tree directory
+cd /path/to/avalanche
+
+# Perform build configuration
+
+./autogen.sh
+
+CPPFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm \
+          -I$NDKROOT/sources/cxx-stl/gnu-libstdc++/include/ \
+          -I$NDKROOT/sources/cxx-stl/gnu-libstdc++/libs/armeabi/include \
+          -I$NDKROOT/sources/cxx-stl/gnu-libstdc++/include/backward" \
+   CFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm" \
+   CXXFLAGS="--sysroot=$NDKROOT/platforms/android-3/arch-arm \
+             -I$NDKROOT/sources/cxx-stl/gnu-libstdc++/include/ \
+             -I$NDKROOT/sources/cxx-stl/gnu-libstdc++/libs/armeabi/include \
+              -I$NDKROOT/sources/cxx-stl/gnu-libstdc++/include/backward" \
+   LDFLAGS="-L$NDKROOT/sources/cxx-stl/gnu-libstdc++/libs/armeabi/ -lstdc++" \
+   ./configure --prefix=/data/local/Inst \
+   --host=armv7-unknown-linux --target=armv7-unknown-linux \
+   --with-tmpdir=/data/local/tmp
+
+
+# Build, and install in `pwd`/Inst
+#
+make
+make install DESTDIR=`pwd`/Inst
+
+In order to configure device connection or emulator refer
+to Android SDK documentation.
+
+# To get the install tree onto the device:
+#
+/path/to/android-sdk/platforms-tools/adb push Inst /
+
+# To run (on the device)
+/data/local/Inst/bin/avalanche ...
+
+
+If you plan to run Avalanche in split-mode, check out
+instructions in README.arm. If you use Android emulator or connect
+real device and use adb, you will need to use 'adb forward'
+command and run in split-mode with server on target device.

@@ -1,0 +1,10 @@
+TEST_FILE_SYMBOL := test.c
+TEST_FILE_CALL := test_call.c
+TEST_FILE_DOM := test.c
+
+install: build
+	sudo make -f Makefile install
+
+build:
+	make -f Makefile
+	

@@ -1,0 +1,30 @@
+-= CVE-2006-6332 =-
+
+Vulnerable versions: MadWifi < 0.9.2.1
+File(s): net80211/ieee80211_wireless.c
+Download from: http://madwifi.org/wiki/UserDocs/GettingMadwifi
+
+Domain: Device Driver
+
+_ Vulnerable Functions and Buffers _
+
+The overflows are due to lack of bounds checking. buf in encode_ie()
+can be overflowed by a call to sprintf(), and buf in giwscan_cb() can
+by overflowed by a call to memcpy().
+
+_ Notes _
+
+The buffer overflows in this example are simple; however, there are
+technical issues in the original implementation which would make
+analysis difficult. First, in the original program, the overflow in
+encode_ie() is due to a write by sprintf(). Second, giwscan_cb() is
+called via a function pointer stored in a struct in the original.
+
+_ Decomposed Programs _
+
+encode_ie/
+  no_sprintf_bad.c
+  interproc_bad.c
+
+giwscan_cb/
+  giwscan_cb.c

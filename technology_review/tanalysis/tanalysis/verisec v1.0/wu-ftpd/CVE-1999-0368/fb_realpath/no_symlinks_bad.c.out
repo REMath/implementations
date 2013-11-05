@@ -1,0 +1,10 @@
+Parsing
+[preprocessing] running gcc -C -E -I.   fb_realpath/no_symlinks_bad.c
+[preprocessing] running gcc -C -E -I.   stubs.c
+Cleaning unused parts
+Symbolic link
+Starting semantical analysis
+Analyzing results for function main
+[ERROR] Cannot find lvalue: istrrchr
+[fb_realpath/no_symlinks_bad.c:44] Vulnerability: Function constraint doesn't hold for function 'strcpy'
+[fb_realpath/no_symlinks_bad.c:62] Vulnerability: Function constraint doesn't hold for function 'r_strcat'

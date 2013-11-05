@@ -1,0 +1,28 @@
+-= CVE-2007-0406 =-
+
+Vulnerable versions: gxine <= 0.5.9
+File(s): src/server.c, src/client.c
+Download from:
+   http://prdownloads.sourceforge.net/xine/gxine-0.5.9.tar.bz2?download
+
+Domain: GUI (Media Player)
+
+_ Vulnerable Functions and Buffers _
+
+Functions main() in client.c and functions server_setup() and
+server_client_connect() in server.c are vulnerable. All three
+functions use snprintf() to copy the $HOME environment variable into a
+fixed-size buffer (safe); however, the contents of this buffer are
+later copied into a smaller buffer using strcpy().
+
+Algorithmically, this overflow is very simple, and isn't
+string-content-based. The difficult parts are the technical bits --
+modelling snprintf, structures, and unions.
+
+_ Decomposed Programs _
+
+constants.h
+
+main/
+  simp_bad.c
+  nonsimp_bad.c

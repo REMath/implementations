@@ -1,0 +1,8 @@
+Parsing
+[preprocessing] running gcc -C -E -I.   main/simp_bad.c
+[preprocessing] running gcc -C -E -I.   stubs.c
+Cleaning unused parts
+Symbolic link
+Starting semantical analysis
+Analyzing results for function main
+[main/simp_bad.c:16] Vulnerability: Function constraint doesn't hold for function 'r_strcpy'

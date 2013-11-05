@@ -1,0 +1,17 @@
+Parsing
+[preprocessing] running gcc -C -E -I.   realpath-namebuf/iter_ints_bad.c
+[preprocessing] running gcc -C -E -I.   stubs.c
+Cleaning unused parts
+Symbolic link
+Starting semantical analysis
+[ERROR] Cannot find lvalue: delay_signaling
+[ERROR] Cannot find lvalue: seteuid
+[ERROR] Cannot find lvalue: seteuid
+[ERROR] Cannot find lvalue: enable_signaling
+[ERROR] Cannot find lvalue: seteuid
+[ERROR] Cannot find lvalue: enable_signaling
+Analyzing results for function main
+[realpath-namebuf/iter_ints_bad.c:62] Vulnerability: Buffer write with tainted index for buffer 'workpath'
+[realpath-namebuf/iter_ints_bad.c:69] Vulnerability: Buffer write with tainted index for buffer 'curpath'
+[realpath-namebuf/iter_ints_bad.c:71] Vulnerability: Function constraint doesn't hold for function 'strcpy'
+[realpath-namebuf/iter_ints_bad.c:79] Vulnerability: Function constraint doesn't hold for function 'r_strcat'

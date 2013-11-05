@@ -1,0 +1,8 @@
+Parsing
+[preprocessing] running gcc -C -E -I.   ftpls/strchr_bad.c
+[preprocessing] running gcc -C -E -I.   stubs.c
+Cleaning unused parts
+Symbolic link
+Starting semantical analysis
+Analyzing results for function main
+[ftpls/strchr_bad.c:24] Vulnerability: Function constraint doesn't hold for function 'r_strcpy'

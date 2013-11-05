@@ -1,0 +1,27 @@
+-= CVE-2007-0453 =-
+
+Vulnerable versions: Samba 3.0.21 through 3.0.23d
+File(s): source/nsswitch/winbind_nss_solaris.c
+Download from:
+   http://us4.samba.org/samba/ftp/old-versions/samba-3.0.23d.tar.gz
+
+Domain: SMB (Server Message Block) Suite
+
+_ Vulnerable Functions and Buffers _
+
+The library functions _nss_winbind_ipnodes_getbyname() and
+_nss_winbind_hosts_getbyname() are both vulnerable. Each function copies
+data into request.data.winsreq, passing an incorrect bound to strncpy().
+
+Algorithmically, this overflow is very simple, and isn't
+string-content-based. The difficult parts are the technical bits --
+modelling structures, unions, and typecasting.
+
+_ Decomposed Programs _
+
+constants.h
+structs.h
+
+_nss_winbind_ipnodes_getbyname/
+  simp_bad.c
+  nonsimp_bad.c

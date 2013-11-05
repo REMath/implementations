@@ -1,0 +1,16 @@
+Analysis results for 'edbrowse':
+
+- no_strcmp_bad.c:
+    After analyzing this file with STAC, the r_strcpy call is marked as BAD because
+    a tainted buffer is copied into an untainted buffer. Also the assignment 
+    'out[out_l] = (char )c;' is marked as unsafe because a tainted value is used for 
+    indexing the buffer when writing into it.
+
+- strchr_bad.c:
+    After analyzing this file with STAC, the r_strcpy call is marked as BAD because
+    a tainted buffer is copied into an untainted buffer.
+    
+- strcmp_bad.c:
+    In this case STAC doesn't issue any warning because, even if there could be a 
+    buffer overflow in the 'ftpls' function, __the parameter passed to the function is 
+    never user dependent__.

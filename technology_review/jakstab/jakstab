@@ -1,0 +1,15 @@
+#!/bin/bash
+JS_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+JSCLASSPATH=${JS_HOME}/lib/antlr.jar:${JS_HOME}/lib/google-collect-1.0.jar:lib/javabdd-1.0b2.jar:${JS_HOME}/bin
+case `uname` in
+    CYGWIN*)
+        JSCLASSPATH=`cygpath -p -w -m -s "$JSCLASSPATH"`
+	JS_HOME=`cygpath -p -w -m -s "$JS_HOME"`
+        ;;
+    *)
+esac
+
+# Adapt this to your needs
+JMEM_OPTS="-Xms1g -Xmx3g"
+
+java ${JMEM_OPTS} -ea -cp "${JSCLASSPATH}" org.jakstab.Main $*

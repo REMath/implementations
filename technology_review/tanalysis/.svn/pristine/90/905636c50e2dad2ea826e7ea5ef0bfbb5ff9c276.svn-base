@@ -1,0 +1,30 @@
+1               //function_count
+++++++++++
+taint           //fname
+ptr             //return_type="float|int|ptr|void"
+T               //return_taint="U|T|G"
+0               //return_deps_count=2
+0               //param_count
+
+
+
+######################################3
+
+
+function_count
+++++++++++
+fname
+return_type="float|int|ptr|void"
+return_taint="U|T|G"
+return_deps_count=2
+return_dep_name1
+return_dep_name2
+param_count
+==========
+param_name
+param_type
+param_taint
+param_dep_count
+param_dep1
+param_dep2
+==========

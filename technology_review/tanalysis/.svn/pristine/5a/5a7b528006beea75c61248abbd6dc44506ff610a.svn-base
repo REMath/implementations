@@ -1,0 +1,13 @@
+This directory is not part of upstream source, but it contains files
+which are needed to compile current CVS snapshots of mailx.
+
+Files strlcat.c and strlcmp.c were taken from OpenBSD CVS repository
+module src/lib/libc/string.
+File vis.c was taken from module src/lib/libc/gen, and vis.h from
+module src/include.
+
+File bsd_utils.h was written by me.
+
+ChangeLog was generated using `cvs2cl --no-wrap --gmt -S' command.
+
+-- Robert Luberda <robert@debian.org>  Thu, 22 May 2003 21:01:53 +0200

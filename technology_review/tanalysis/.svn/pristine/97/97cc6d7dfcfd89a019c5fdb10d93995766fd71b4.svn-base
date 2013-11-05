@@ -1,0 +1,34 @@
+Analysis results for 'OpenSER/CVE-2006-6749/fetchsms':
+======================================================
+
+- full_bad.c:
+    After analyzing this file with STAC, two statements are marked as BAD:
+     - the call to 'r_strcpy' because a tainted buffer will be written into another
+       buffer without bound checking
+     - the statement 'answer[end] = (char)0;' because when writing to the 'answer' 
+       array, the used index is tainted.
+
+- istrstr2_loops_bad.c:
+    After analyzing this file with STAC, two statements are marked as BAD:
+     - the call to 'r_strcpy' because a tainted buffer will be written into another
+       buffer without untainted bounds
+     - the statement 'answer[end] = (char)0;' because when writing to the 'answer' 
+       array, the used index is tainted.
+
+- istrstr_bad.c:
+    After analyzing this file, the call to 'r_strcpy' is marked as BAD by STAC because 
+    a tainted buffer will be written into another buffer without untainted bounds
+
+- istrstr_loops_bad.c:
+    After analyzing this file with STAC, two statements are marked as BAD:
+     - the call to 'r_strcpy' because a tainted buffer will be written into another
+       buffer without untainted bounds
+     - the statement 'answer[end] = (char)0;' because when writing to the 'answer' 
+       array, the used index is tainted.
+
+- loops_bad.c:
+    After analyzing this file with STAC, two statements are marked as BAD:
+     - the call to 'r_strcpy' because a tainted buffer will be written into another
+       buffer without untainted bounds
+     - the statement 'answer[end] = (char)0;' because when writing to the 'answer' 
+       array, the used index is tainted.

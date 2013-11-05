@@ -1,0 +1,9 @@
+Parsing
+[preprocessing] running gcc -C -E -I.   parse_expression/guard_strchr_bad.c
+[preprocessing] running gcc -C -E -I.   stubs.c
+Cleaning unused parts
+Symbolic link
+Starting semantical analysis
+Analyzing results for function main
+[parse_expression/guard_strchr_bad.c:10] Vulnerability: Function constraint doesn't hold for function 'strncpy'
+[parse_expression/guard_strchr_bad.c:14] Vulnerability: Function constraint doesn't hold for function 'r_strcpy'

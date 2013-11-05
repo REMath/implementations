@@ -1,0 +1,24 @@
+-= CVE-2003-0681 =-
+
+Vulnerable versions: Sendmail 8.6.12 to ?
+File: libsm/mbdb.c
+Download from: source not available anymore
+
+Domain: Server
+
+_ Vulnerable Functions and Buffers _
+
+Function buildfname (originally sm_pwfullname) takes a gecos and a login string as arguments and, for each occurence of the '&' character in the gecos string, blindly appends (strcpy) the login string to a fixed size buffer. The patched version uses strncpy with a safe bound instead of strcpy.
+
+_ Decomposed Programs _
+
+buildfname/
+  buildfname_arr_{one,two}_gecos_{bad,ok}.c
+
+Variant two_gecos allocates a gecos string of strlen two (so the login string can be copied into the dest buffer twice), whereas one_gecos only allocates a gecos string of strlen one.
+
+_ Notes _
+
+This is Zitser's sendmail/s2, simplified.
+
+BASE_SZ was originally 256.

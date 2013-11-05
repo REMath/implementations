@@ -1,0 +1,30 @@
+-= CVE-2006-6909 =-
+
+Vulnerable versions: Edbrowse 3.1.3
+File(s): {ebc,ebsmjs}/http.c
+Download from: http://sourceforge.net/projects/edbrowse/
+Domain: Text-based editor/browser/email
+
+_ Vulnerable Functions and Buffers _
+
+A call to sscanf() with no bounds checks allows a buffer user[] to be
+overflowed in ftpls(). The function which calls ftpls(), ftpConnect(),
+does some nifty looping to fill a buffer and see if ftpls() should be
+called.
+
+Note that there are technical issues in the original program which we 
+elide in our current decomposed probrams:
+  - ftpConnect() uses a custom string library which does reallocation of 
+    string buffers; we don't attempt to model this, and we use 
+    standard C strings instead
+  - ftpls() uses sscanf(); since we don't have anything close to a sscanf() 
+    stub, we change it to strcpy()
+
+_ Decomposed Programs _
+
+constants.h
+
+ftpls/
+  strchr_{bad,ok}.c     /* No calling context */
+  no_strcmp_{bad,ok}.c  /* Simplified ftpConnect() calls ftpls() */
+  strcmp_{bad,ok}.c     /* Less simplified ftpConnect() calls ftpls() */

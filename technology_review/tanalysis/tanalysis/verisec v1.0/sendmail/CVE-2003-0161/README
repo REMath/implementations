@@ -1,0 +1,28 @@
+-= CVE-2003-0161 =-
+
+Vulnerable versions: Sendmail to 8.12.9
+File: sendmail/parseaddr
+Download from: ftp://ftp.sendmail.org/pub/sendmail/past-releases/
+
+Domain: Server
+
+_ Vulnerable Functions and Buffers _
+
+Function prescan writes to a fixed size buffer, pvpbuf, while scanning a user string, addr. In the original code, it sets a temporary variable, int c, to the current character (char) in addr, but can also set c to (int) -1 to indicate that the current char should not be copied to pvpbuf. This causes the loop which scans addr to skip a bounds check on pvpbuf in the next iteration. Subsequently, if '\\' is the next char in addr, it is written into pvpbuf without a bounds check. The special value -1 is not supposed to be in the character set of addr, but due to sign extension from int to char, the (char) value '\377' is interpreted as (int) -1. Thus, a sufficiently long input of the pattern ('\\''\377')+ overflows pvpbuf. The patched version masks out the high bits of each input char to prevent sign extension.
+
+_ Decomposed Programs _
+
+prescan/
+  prescan_arr_{min,med}_test_{bad,ok}.c
+
+Variant min_test omits an input test which guards a dereference and increment of the dest pointer.
+
+_ Notes _
+
+This is Zitser's sendmail/s5, simplified.
+
+BASE_SZ was originally 50.
+
+LOGIN is originally unbounded, but passwd (1) probably limits it to something small.
+
+GECOS is shorter than BASE_SZ.

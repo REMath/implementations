@@ -93,7 +93,6 @@
 * https://code.google.com/p/viscope/
 * https://github.com/jirislaby/stanse
 * https://github.com/dsw/oink-stack/
-* http://code.google.com/p/tanalysis/
 * https://github.com/CTSRD-SOAAP/taintgrind
 * https://minemu.org/mediawiki/index.php
 * https://github.com/isislab/Catfish

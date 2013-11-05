@@ -1,0 +1,9 @@
+Parsing
+[preprocessing] running gcc -C -E -I.   fetchsms/istrstr2_loops_bad.c
+[preprocessing] running gcc -C -E -I.   stubs.c
+Cleaning unused parts
+Symbolic link
+Starting semantical analysis
+Analyzing results for function main
+[fetchsms/istrstr2_loops_bad.c:40] Vulnerability: Buffer write with tainted index for buffer 'answer'
+[fetchsms/istrstr2_loops_bad.c:43] Vulnerability: Function constraint doesn't hold for function 'r_strcpy'
