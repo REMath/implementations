@@ -48,6 +48,10 @@
 
 ## Model Checkers 
 * http://nusmv.fbk.eu/ 
+* http://www.cprover.org/cbmc/
+* http://mtc.epfl.ch/software-tools/blast/index-epfl.php
+* http://research.microsoft.com/en-us/projects/slam/
+* https://bitbucket.org/arieg/ufo/wiki/Home
 
 ## Debugger
 * https://bitbucket.org/khooyp/expositor 
