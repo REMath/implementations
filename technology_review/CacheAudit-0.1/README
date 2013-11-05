@@ -1,0 +1,173 @@
+
+CacheAudit 0.1
+======================================================================
+
+CacheAudit is a static analyzer of cache side-channels. CacheAudit takes as
+input a 32-bit x86 program binary and a cache configuration, and
+it derives formal, quantitative security guarantees for a
+comprehensive set of cache adversaries, namely those based on
+observing cache states, traces of hits and misses, and execution
+times.
+
+More information about CacheAudit is available on the [project
+website](http://software.imdea.org/cacheaudit).
+
+
+Requirements
+----------------------------------------------------------------------
+
+CacheAudit is written in [OCaml](http://ocaml.org) and needs the
+corresponding environment to compile.  We have tested CacheAudit with
+OCaml 4.00.0 on Ubuntu Linux and Mac OSX 10.8, with 32-bit target
+executables compiled using `gcc` on Ubuntu Linux. 
+
+
+
+Installation
+----------------------------------------------------------------------
+For compiling and installing CacheAudit, run `make` in the CacheAudit
+folder and copy the executable `cacheaudit` to a directory in your
+PATH. For creating the documentation of the interfaces, run `make doc`. 
+For more installation options, run `make help`.
+
+Using CacheAudit
+----------------------------------------------------------------------
+For analyzing an executable `target` using CacheAudit, use
+
+    cacheaudit target
+
+This will start parsing the executable at a user-specified entry point and
+run the analysis with a default cache configuration (16KB, 4-way set
+associative cache with a line width of 64, LRU replacement) and
+initial values of the CPU registers.
+
+The entry point and the initial values of the CPU registers of an
+executable `target` can be specified in a configuration file named
+`target.conf`. Examples of configuration files can be found in the
+`examples` folder.
+
+Below we describe the most important command line options of CacheAudit.
+Use `cacheaudit --help` for a full set of options.
+ 
+### Parser entry point ###
+
+For analyzing an executable using CacheAudit, the user needs to
+provide an starting point for the binary parser. Typically, this
+starting point will be the address of a function, such as `main` and
+can either be given in the configuration file ( e.g. `START 0x3b4`) or
+as a command-line parameter (`--start 0x3b4`).
+
+The starting point of the x86 parser on an Linux ELF executable is
+specified as an offset from the base address `0x08048000` of the `.text`
+section. I.e. if the address of `main` is `0x080483b4`, the starting
+point is '0x3b4'. This starting point can either be specified in the
+config file or as a command line parameter, as described above.
+
+The starting point of `main` can be e.g. identified by inspecting the symbol 
+table of an executable (which was not `strip`-ed), 
+e.g. using "`nm target`" or "`objdump --syms target`".
+A disassembler can be used to determine a non-trivial starting point.
+
+
+### Options for architecture and attacker model ###
+
+By default, CacheAudit performs a security analysis w.r.t.
+access-based adversaries and data caches. The analysis can be enhanced
+with the following different options.
+
+`--instruction-cache`   use a separate instruction cache.
+
+`--shared-cache`  	use a shared cache for data and instructions.
+		      	The instruction addresses are given relative to
+		      	the start of the executable. For correct
+		      	alignment of instructions with data, this base
+		      	can be adapted by changing `instruction_addr_base`
+		      	in `architectureAD.ml`
+
+`--traces`	      	perform trace-based and time-based analysis
+
+### Options for cache configuration ###
+
+By default, CacheAudit runs the analysis with a 16KB, 4-way set
+associative cache with a line size of 64B, and LRU replacement. The cache 
+parameters can be set in the .conf file 
+(e.g., `cache_s 4096`, `line_s 32`, `assoc 2`). Alternatively,
+they can be set from the command line using the options
+`--cache-size`, `--line-size`, `--assoc`. The replacement strategy can be
+changed to FIFO or PLRU using the options `--fifo` or `--plru`.
+
+
+The given configuration is used for both data and instruction caches.
+For an analysis using separate data and instruction caches, it is
+possible to override the settings for instruction cache by using the
+options `--inst-X`, where X is any of the data cache options described
+above (without the leading `--`). Similarly, in the .conf files the options
+`inst_X` can be used.
+
+### Options for the static analysis ###
+
+By default, CacheAudit a set-based abstract domain for tracking the
+ages of memory blocks. This can be changed using the following options:
+
+`--interval-cache`      use a less precise but more efficient interval
+			representation
+
+`--rset-cache` 	        use the relational set abstract domain.
+		      	Relational sets improve precision of the
+		      	analysis at the expense of increased execution
+		      	time. An example for which noticable improvements
+		      	can be observed is e.g. the Knapsack-algorithm in
+		      	`examples/Problems`.
+
+`--oct-cache` 	      	use the Octagon abstract domain for tracking
+			cache states (requires installation of
+			CacheAudit using the Octagon option). This
+			cache domain does not implement counting
+			itself; rather, it creates a file with suffix
+			`.latte` which can be used as input for the
+			[LattE](https://www.math.ucdavis.edu/~mkoeppe/latte/)
+			tool for lattice point enumeration.
+
+One can also change the number of times cycles in the CFG are unrolled using 
+the `--unroll` option. Default value is 100.
+
+### Setting the level of verbosity ###
+
+The overall verbosity of CacheAudit can be changed using the option 
+`--log [quiet|normal|debug]` . Default is `quiet`.
+
+
+
+Creating and parsing binaries
+----------------------------------------------------------------------
+
+### Supported subset of x86 instructions ###
+
+The current version of CacheAudit supports a limited subset of
+the 32-bit x86 instructions (see the `x86_frontend/x68Parse.ml` for a
+specification of the commands supported by the parser). It also supports
+only the CPU flags CF and ZF. Support of more x86 specifications are left
+to future versions.
+
+It can easily happen that the code produced by the compiler is not
+contained in the instruction set that is supported by CacheAudit. Here
+we collect hints that help with creating analyzable executables.
+
+In cases in which a signed integer variable is clearly always
+nonnegative (such as a loop counter ranging from 0 to n-1) we found it
+sometimes helpful to replace that variable's type by *unsigned*
+integer. The effect of this modification is that the guards then only
+test for the CF and ZF flags, i.e. the program falls into the scope of
+the current version of CacheAudit.
+
+
+### Compiling ###
+
+
+Compiling a C-program for analysis with CacheAudit can be done by
+
+    gcc program.c -m32 -fno-stack-protector -o target
+
+The `-m32` options forces the compiler to produce 32 bit code, and
+`-fno-stack-protector` disables stack canaries.
+

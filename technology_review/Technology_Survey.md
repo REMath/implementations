@@ -1,5 +1,6 @@
 # Introduction 
 
+
 ## Binary Analysis 
 * http://bap.ece.cmu.edu/
 * http://insight.labri.fr/trac
@@ -26,7 +27,7 @@
 * http://web.mit.edu/afs/athena.mit.edu/course/16/16.399/www/ 
 * http://www.hexblog.com/?p=42 
 * https://www.openrce.org/repositories/users/RolfRolles/BitwiseAI.ml
-
+* http://www.irisa.fr/celtique/teaching/PAS/
 
 ## General Solvers
 * http://z3.codeplex.com/ 
@@ -41,6 +42,14 @@
 * https://svn.sosy-lab.org/software/sv-benchmarks/tags/svcomp13/
 * http://samate.nist.gov/SRD/testsuite.php 
 * http://www.debian.org/distrib/packages
+
+## Obfuscators 
+* cansecwest.com/core03/shiva.ppt
+* http://diablo.elis.ugent.be/obf_deobfuscation_byhand
+* http://blog.yurichev.com/node/58
+* https://github.com/enferex/GOAT-Plugs﻿
+* https://github.com/0vercl0k/stuffz/blob/master/llvm-funz/kryptonite/llvm-functionpass-kryptonite-obfuscater.cpp
+* http://code.google.com/p/pescrambler/
 
 ## Symbolic Virtual Machines
 * http://klee.llvm.org/
@@ -76,15 +85,15 @@
 * http://www-verimag.imag.fr/~tripakis/openkronos.html
 
 
-# To be categorized 
+
 ## Assisted Exploit Engineering
-* https://github.com/wirepair/IDAPinLogger
+### Return-oriented Programming, really this should be under Abstract Interpretation :P 
+* https://github.com/programa-stic/ropc-llvm
 * https://github.com/pakt/ropc
-* https://github.com/aaronportnoy/toolbag
-* https://github.com/neuroo/runtime-tracer
-* https://github.com/0vercl0k/rp
-* https://github.com/mrmee/heaper
 * https://github.com/JonathanSalwan/ROPgadget
+* https://github.com/0vercl0k/rp
+
+### To be categorized 
 * https://github.com/pdasilva/vtrace_scripts
 * https://github.com/rapid7/metasploit-framework/tree/master/external/source/byakugan
 * https://github.com/trailofbits/bisc
@@ -96,6 +105,10 @@
 * https://github.com/CTSRD-SOAAP/taintgrind
 * https://minemu.org/mediawiki/index.php
 * https://github.com/isislab/Catfish
+* https://github.com/aaronportnoy/toolbag
+* https://github.com/neuroo/runtime-tracer
+* https://github.com/mrmee/heaper
+* https://github.com/wirepair/IDAPinLogger
 
 
 # Acknowledgements
