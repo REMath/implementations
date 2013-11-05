@@ -1,0 +1,24 @@
+// aSEb.gr
+// this grammar causes GLR to add a second sibling link to a node
+// after that node already has another node pointing to it (which
+// is potentially a problem for my mini-LR detection method)
+
+// S -> a S E | b
+// E -> /*epsilon*/
+
+terminals {
+  65 : a   ;
+  66 : b   ;
+}
+
+nonterm S {
+  -> a S E;
+  -> b;
+}
+
+nonterm E {
+  -> empty;
+}
+
+
+

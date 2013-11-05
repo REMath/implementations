@@ -1,0 +1,40 @@
+10: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+10: %%% progress: 2ms: parsing...
+10: %%% progress: 2ms: done parsing (0 ms) (491508 cycles)
+10: stack nodes: 3, max stack nodes: 32
+10: tree nodes: 0
+20: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+20: %%% progress: 2ms: parsing...
+20: %%% progress: 4ms: done parsing (2 ms) (2818079 cycles)
+20: stack nodes: 3, max stack nodes: 62
+20: tree nodes: 0
+50: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+50: %%% progress: 2ms: parsing...
+50: %%% progress: 69ms: done parsing (67 ms) (66833743 cycles)
+50: stack nodes: 3, max stack nodes: 152
+50: tree nodes: 0
+100: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+100: %%% progress: 1ms: parsing...
+100: %%% progress: 886ms: done parsing (885 ms) (883382594 cycles)
+100: stack nodes: 3, max stack nodes: 302
+100: tree nodes: 0
+200: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+200: %%% progress: 2ms: parsing...
+200: %%% progress: 21688ms: done parsing (21686 ms) (21650531698 cycles)
+200: stack nodes: 3, max stack nodes: 602
+200: tree nodes: 0
+300: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+300: %%% progress: 2ms: parsing...
+300: %%% progress: 119230ms: done parsing (119228 ms) (119033931268 cycles)
+300: stack nodes: 3, max stack nodes: 902
+300: tree nodes: 0
+400: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+400: %%% progress: 2ms: parsing...
+400: %%% progress: 377416ms: done parsing (377414 ms) (376800329856 cycles)
+400: stack nodes: 3, max stack nodes: 1202
+400: tree nodes: 0
+500: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+500: %%% progress: 2ms: parsing...
+500: %%% progress: 923513ms: done parsing (923511 ms) (922008238470 cycles)
+500: stack nodes: 3, max stack nodes: 1502
+500: tree nodes: 0

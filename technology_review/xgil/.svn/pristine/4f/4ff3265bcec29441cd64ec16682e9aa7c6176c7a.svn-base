@@ -1,0 +1,322 @@
+#!/usr/bin/perl -w
+# read in the output of a 'make' command, and use that to
+# drive the Elsa C/C++ parser
+
+# The intended usage is to run this script with stdout redirected to a
+# file (to save error messages, etc.) but stderr going to a console,
+# where there will be one character printed for each file that we
+# attempt to parse:
+#
+#   p    preprocessing (with gcc -E) failed
+#   e    parsing (with Elsa) failed
+#   .    success
+#
+# Finally, on stderr the sum of all failures will be printed.
+#                                              
+# Then, the saved log can be examined for lines that begin with
+# "failing" to find the details on what failed.
+
+use strict 'subs';
+
+$SIG{INT} = \&sigIntHandler;
+
+$dry = 0;
+$minCt = 0;
+$maxCt = 99999999;
+$diag = 0;
+
+$cwd = `pwd`;   # gets changed below
+chomp($cwd);
+$ccparse = "$cwd/ccparse";
+if (! -x $ccparse) {
+  die("cannot execute $cwd/ccparse");
+}
+
+while ($ARGV[0] && $ARGV[0] =~ m/^-/) {
+  my $op = $ARGV[0];
+  shift @ARGV;
+
+  if ($op eq "-dry") {
+    $dry = 1;
+  }
+
+  elsif ($op eq "-range") {
+    my ($n, $m) = ($ARGV[0] =~ m/^(\d*)-(\d*)/);
+    shift @ARGV;
+
+    if (!defined($m)) {
+      print("-range option must be followed by argument of form [n]-[m]\n");
+      exit(2);
+    }
+    if ($n) {
+      $minCt = $n;
+    }
+    if ($m) {
+      $maxCt = $m;
+    }
+    diagnostic("minCt=$minCt maxCt=$maxCt");
+  }
+
+  elsif ($op eq "-debug") {
+    $diag = 1;
+  }
+
+  else {
+    print("unknown option: $op\n");
+    exit(2);
+  }
+}
+
+if (@ARGV != 1) {
+  print(<<"EOF");
+usage: $0 [options] make.out
+  options
+    -dry          dry run; do not run any commands
+    -range n-m    do only runs 'n' through 'm'
+    -range n-     do only runs 'n' or higher
+    -range -m     do only up to 'm'
+    -debug        print debug mode diagnostics
+EOF
+  exit(0);
+}
+
+$buildlog = $ARGV[0];
+
+
+# counter for run commands
+$runCount = 0;
+
+# stack of directories; return to the topmost when we see
+# make say "Leaving directory ..."
+@dirstack = ();
+
+# initial directory: wherever $buildlog is
+($cwd) = ($buildlog =~ m|^(.*)/[^/]*$|);
+if (defined($cwd)) {
+  mychdir($cwd);
+}
+$cwd = `pwd`;
+chomp($cwd);
+
+# directory for last-printed 'run' command
+#$lastRunDir = "";
+
+# statistics
+%ppfail    = ('gcc' => 0, 'g++' => 0);     # preprocessing failures, per mode
+%parsefail = %ppfail;                      # parse failures
+%parseok   = %ppfail;                      # parse success
+
+
+sub timeStamp {
+  $curDate = `date`;
+  chomp($curDate);
+  print("time: $curDate\n");
+}           
+
+timeStamp();
+
+open(IN,"<$buildlog") or die("can't open $buildlog: $!\n");
+while (defined($line = <IN>)) {
+  chomp($line);
+  my $s;
+
+  # "Entering directory ..."
+  ($s) = ($line =~ m|^g?make.*: Entering directory \`(.*)\'$|);
+  if (defined($s)) {
+    pushdir($s);
+    next;
+  }
+
+  # "Leaving directory ..."
+  ($s) = ($line =~ m|^g?make.*: Leaving directory \`(.*)\'$|);
+  if (defined($s)) {
+    if ($s ne $cwd) {
+      warning("I think cwd is $cwd, but make thinks it is $s");
+    }
+    popdir();
+    next;
+  }
+
+  # gcc or g++
+  ($s) = ($line =~ m/^(cc|gcc|g\+\+) /);
+  if (defined($s)) {
+    # normalize cc vs gcc
+    if ($s eq "cc") {
+      $s = "gcc";
+    }
+
+    # splice lines if it ends in backslash
+    while (substr($line, -1, 1) eq "\\") {
+      diagnostic("continued line");
+      chop($line);             # throw away the backslash
+      my $next = <IN>;
+      if (!defined($next)) {
+        die("log ended with a backslash!\n");
+      }
+      chomp($next);
+      $line = $line . $next;
+    }
+
+    # modify command string to send output to tmp.i
+    if ($line !~ s/-o \S+/-o tmp.i/) {
+      # no -o option, add one
+      $line .= " -o tmp.i";
+    }
+
+    # modify command to preprocess instead of compile
+    if ($line !~ s/ -c/ -E/) {
+      # link command.. ignore it
+      next;
+    }
+
+    $runCount++;
+
+    if ($runCount > $maxCt) {
+      bail();
+      exit(0);
+    }
+    if ($runCount < $minCt) {
+      next;
+    }
+
+    # run the gcc/g++ command to preprocess the input
+    if (!run($line)) {
+      $ppfail{$s}++;
+      print STDERR ("g");      # gcc failed
+    }
+    else {
+      if (! -f "tmp.i") {
+        # the preprocessor did not report an error, and yet no tmp.i
+        # file was created; this happens under gcc-2 (at least) when
+        # the original command was simply intending to run the
+        # assembler; let's just assume that it's all good and skip it
+        print ("No tmp.i was generated; skipping.\n");
+        next;
+      }
+
+      # run Elsa to parse it
+      my $op = (($s eq "gcc")? "-tr gnu_kandr_c_lang " : "");
+      if (run("$ccparse ${op}tmp.i")) {
+        $parseok{$s}++;
+        print STDERR (".");
+      }
+      else {
+        $parsefail{$s}++;
+        print STDERR ("e");    # elsa failed
+      }
+    }
+
+    # remove tmp.i so as not to leave a bunch of them hanging
+    # around; in firefox, the accumulation of tmp.i files consumes
+    # more than 100MB of space
+    unlink("tmp.i");
+
+    next;
+  }
+
+  # skip other lines
+}
+close(IN);
+
+bail();
+exit(0);
+
+
+sub bail {
+  print("final statistics (stopped after $runCount):\n");
+  print("                 C   C++\n");
+  print("  ----------------------\n");
+  printf("  ppfail      %4d  %4d\n", $ppfail{'gcc'}, $ppfail{'g++'});
+  printf("  parsefail   %4d  %4d\n", $parsefail{'gcc'}, $parsefail{'g++'});
+  printf("  parseok     %4d  %4d\n", $parseok{'gcc'}, $parseok{'g++'});
+  print("  ----------------------\n");
+  printf("  total       %4d  %4d\n",
+         $ppfail{'gcc'}+$parsefail{'gcc'}+$parseok{'gcc'},
+         $ppfail{'g++'}+$parsefail{'g++'}+$parseok{'g++'});
+  timeStamp();
+
+  my $failures = $ppfail{'gcc'} + $ppfail{'g++'} +
+                 $parsefail{'gcc'} + $parsefail{'g++'};
+  print ("($failures failures)\n");
+  print STDERR ("($failures failures)\n");
+}
+
+sub sigIntHandler {
+  bail();
+  exit(130);
+}
+
+
+sub run {
+  my ($cmd) = @_;
+
+  #if ($cwd ne $lastRunDir) {
+  #  print("cd $cwd\n");
+  #  $lastRunDir = $cwd;
+  #}
+
+  print("cwd: $cwd\n");
+
+  print("$runCount: $cmd\n");
+  my $code = 0;
+  if ($dry) {
+    # don't run
+  }
+  else {
+    $code = system($cmd . " 2>&1");    # all output to stdout
+  }
+
+  if ($code != 0) {
+    my $expl;
+    if ($code >= 256) {    
+      # ordinary exit with nonzero status
+      $code = $code >> 8;
+      $expl = "code $code";              
+    }
+    else {
+      # terminated by signal
+      $expl = "signal $code";
+      if ($code == 2) {
+        # ctrl-c
+        sigIntHandler();
+      }
+    }
+    printf("failing command ($expl): $cmd\n");
+    return 0;
+  }
+  else {
+    return 1;
+  }
+}
+
+sub warning {
+  my ($msg) = @_;
+  print("warning: $msg\n");
+}
+
+sub diagnostic {
+  my ($msg) = @_;
+  if ($diag) {
+    print("diagnostic: $msg\n");
+  }
+}
+
+sub pushdir {
+  my ($d) = @_;
+  push @dirstack, ($cwd);
+  $cwd = $d;
+  mychdir($cwd);
+}
+
+sub popdir {
+  $cwd = pop @dirstack;
+  mychdir($cwd);
+}
+
+sub mychdir {
+  my ($d) = @_;
+  diagnostic("cd $d");
+  chdir($d) or die("can't chdir to $d: $!\n");
+}
+
+# EOF

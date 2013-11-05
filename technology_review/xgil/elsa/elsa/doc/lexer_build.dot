@@ -1,0 +1,54 @@
+// lexer_build.dot
+// information flow for building the Elsa lexer
+
+digraph "Elsa Lexer Build Process" {
+
+  // ------- left half: produce lexer.yy.cc -------
+
+  "cc.lex" [
+    URL = "cc.lex"
+  ];
+
+  "cc.lex" -> "merge_lexer_exts.pl";
+  "gnu.lex" -> "merge_lexer_exts.pl";
+
+  "merge_lexer_exts.pl" [
+    shape = rectangle
+  ];
+
+  "merge_lexer_exts.pl" -> "lexer.lex";
+  "lexer.lex" -> "flex";
+
+  "flex" [
+    shape = rectangle
+  ];
+
+  "flex" -> "lexer.yy.cc";
+
+
+  // ------- right half: produce cc_tokens.* -------
+
+  "cc_tokens.tok" -> "make-token-files";
+  "gnu_ext.tok" -> "make-token-files";
+
+  "make-token-files" [
+    shape = rectangle
+  ];
+
+  "make-token-files" -> "cc_tokens.h";
+  "make-token-files" -> "cc_tokens.cc";
+  "make-token-files" -> "cc_tokens.ids";
+
+
+  // ------- extra --------
+
+  "cc_tokens.h" -> "lexer.yy.cc" [
+    style = dashed
+    constraint = false
+  ];
+
+  "cc_tokens.ids" -> "cc.gr" [
+    style = dashed
+  ];
+
+}

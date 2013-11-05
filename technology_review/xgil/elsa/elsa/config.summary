@@ -1,0 +1,19 @@
+#!/bin/sh
+# config.summary
+
+echo "elsa configuration summary:"
+echo "  command:     ./configure "
+echo ""
+echo "Compile flags:"
+echo "  CC:          gcc"
+echo "  CXX:         g++"
+echo "  CCFLAGS:     -g -Wall -Wno-deprecated -D__UNIX__ -O2 -DNDEBUG -D__LINUX__"
+cat <<EOF
+  LDFLAGS:     -g -Wall
+  SMBASE:      ../smbase
+  AST:         ../ast
+  ELKHOUND:    ../elkhound
+  USE_GNU:     1
+  USE_KANDR:   1
+EOF
+echo ""

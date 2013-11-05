@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<!-- tweak to test a commit; again -->
+
+<HTML>
+
+<HEAD>
+  <TITLE>Trace Module</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+  <style type="text/css">
+    H1 { font-size: 125% }
+    H2 { font-size: 110% }
+    H3 { font-size: 100% }
+    P.title { font-size: 175% }
+  </style>
+</HEAD>
+
+<body>
+
+<center>
+<p class="title"><b>The Trace Module</b></p>
+</center>
+
+<h1>Introduction</h1>
+
+<p>
+The trace (<a href="trace.h">trace.h</a>, <a href="trace.cc">trace.cc</a>) 
+module is designed to support a refinement of printf-style 
+debugging.  While I do not use printf-style debugging exclusively,
+it is nevertheless an important and often effective technique.  
+
+<p>
+The main difficulty with traditional <tt>printf</tt> is that you
+can't easily turn the output on and off.  Hence, the central feature
+of the trace module is a set of <i>tracing flags</i>, set at run-time,
+that control tracing output.  There is also a compile-time flag,
+<TT>NDEBUG</TT>, to disable them completely.
+
+<h1>Basic Use</h1>
+
+<p>
+An example tracing directive is the following:
+<pre>
+  TRACE("weapons", "about to fire proton torpedo " << torpNum);
+</pre>
+If <TT>NDEBUG</TT> is #defined, this expands to nothing.  But if it
+is not, then this expands to something like:
+<pre>
+  if (tracingSys("weapons")) {
+    cout &lt;&lt; "%%% weapons: " &lt;&lt; "about to fire proton torpedo " &lt;&lt; torpNum &lt;&lt; endl;
+  }
+</pre>
+
+<p>
+Several things are noteworthy about the expansion:
+<ul>
+<li>The output is going to stdout.  I prefer it that way, but feel free to
+    add a global variable that sends it to stderr if you really want.
+<li>It is prefixed by "<tt>%%% weapons</tt>" (or whatever) so you can easily 
+    recognize it amongst other output, grep it in/out, etc.
+<li>Since it's using the C++ iostreams to do output, you can add extra
+    information, like <tt>torpNum</tt> above.  If you need <tt>printf</tt>-style
+    formatting, use the <tt>stringf</tt> function in the 
+    <a href="str.h">str</a> module.
+<li>Since it ends with <tt>endl</tt>, it prints the newline automatically,
+    <em>and</em> flushes the output stream.  That way you'll see the output
+    even if the program crashes on the next line.
+<li>The <tt>tracingSys</tt> function can be used to explicitly query whether
+    a given tracing flag is active.
+</ul>
+
+<p>
+Now, the above is a slight simplification.  In fact, the second argument
+to <TT>TRACE</TT> is actually evaluated <em>regardless</em> of whether
+the flag is turned on.  This is so that if the evaluation itself has a
+bug (e.g. it segfaults), it will be found quickly, rather than waiting 
+to bite someone who is trying to debug something else.
+
+<h1>Enabling Flags</h1>
+
+<p>
+There are several ways to turn on a tracing flag.
+<ul>
+<li>The <tt>traceAddSys</tt> function adds a flag explicitly.
+<li>The <TT>TRACE_ARGS</TT> macro will search for occurrences of
+    "<tt>-tr </tt><i>flag</i>" at the beginning of the command line
+    (argc, argv), and add the named flag.  You can specify more than
+    one flag if they are separated by commas (e.g "<tt>-tr a,b,c</tt>")
+    or with multiple <tt>-tr</tt> options.  Note that this is a
+    fairly clunky API, and should only be used in test programs.  A
+    real program should do its own command-line argument processing
+    and call <tt>traceAddSys</tt> directly.
+<li>The <tt>traceAddFromEnvVar</tt> function will grab a comma-separated
+    list of flags from the <tt>TRACE</tt> environment variable.
+    Note that <TT>TRACE_ARGS</TT> calls <tt>traceAddFromEnvVar</tt>.
+</ul>
+
+<h1>Trace Flag Naming Convention</h1>
+
+<p>
+In my projects, most of my tracing flags are given the name of the
+module they are in (e.g. <tt>TRACE("foo", ...)</tt> in <tt>foo.cc</tt>).
+Module-level tracing is to report events likely to be relevant to users
+and casual maintainers of the module.  For more detail, I typically
+add another word to name the task at hand, e.g. <tt>TRACE("fooInit").</tt>
+
+<h1>Debugging, Testing and the Trace Module</h1>
+
+<p>
+How should this module be used in the larger process context?  First,
+some terminology:
+<ul>
+<li><b>Testing</b> is the process of determining if software has defects,
+    and adequately characterizing those defects so they can be debugged,
+    ideally by producing a reproducible testcase.  The input to testing
+    is a program and a specification, and the output is a set of bug reports.
+<li><b>Debugging</b> is the process of finding out the cause of a defect.
+    The input is a bug report, and the output is
+    a detailed explanation of what is wrong with the program, which
+    characterizes the defect in sufficient detail to allow someone to fix
+    the code.
+</ul>
+
+<p>
+I advocate using the tracing module for <em>debugging</em> only.  Since
+the tracing activity (even when no output is produced) is typically 
+prohibitively expensive, one cannot ship to users an executable that
+has them in.  And, since it is a good idea to "ship what you test",
+testing should be done with <tt>NDEBUG</tt> turned on, and
+hence tracing disabled.  (See also the note about this in
+<a href="xassert.h">xassert.h</a>.)
+
+<p>
+Of course, there is nothing wrong with doing some testing with tracing
+enabled.  In fact, when I am the one developing the code, I do most of
+my testing with it enabled.  But the program <em>must</em> also be tested
+with tracing disabled if that's how users will use it, and to the 
+extent there is dedicated QA activities in your project I recommend
+they be performed on the <TT>NDEBUG</TT> build.
+
+<hr>
+<p>
+Back to <a href="index.html">smbase</a>.
+
+<p>
+  <a href="http://validator.w3.org/check/referer"><img border="0"
+      src="http://www.w3.org/Icons/valid-html401"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+
+
+</body>
+
+</html>

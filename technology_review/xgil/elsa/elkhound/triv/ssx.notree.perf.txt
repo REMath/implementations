@@ -1,0 +1,45 @@
+15: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+15: %%% progress: 15ms: parsing...
+15: %%% progress: 16ms: done parsing (1 ms) (405498 cycles)
+15: stack nodes: 3, max stack nodes: 24
+15: tree nodes: 0
+25: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+25: %%% progress: 2ms: parsing...
+25: %%% progress: 4ms: done parsing (2 ms) (1947487 cycles)
+25: stack nodes: 3, max stack nodes: 39
+25: tree nodes: 0
+35: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+35: %%% progress: 2ms: parsing...
+35: %%% progress: 8ms: done parsing (6 ms) (6396600 cycles)
+35: stack nodes: 3, max stack nodes: 54
+35: tree nodes: 0
+45: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+45: %%% progress: 2ms: parsing...
+45: %%% progress: 17ms: done parsing (15 ms) (15645672 cycles)
+45: stack nodes: 3, max stack nodes: 69
+45: tree nodes: 0
+55: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+55: %%% progress: 2ms: parsing...
+55: %%% progress: 34ms: done parsing (32 ms) (32606687 cycles)
+55: stack nodes: 3, max stack nodes: 84
+55: tree nodes: 0
+65: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+65: %%% progress: 2ms: parsing...
+65: %%% progress: 64ms: done parsing (62 ms) (61240877 cycles)
+65: stack nodes: 3, max stack nodes: 99
+65: tree nodes: 0
+75: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+75: %%% progress: 2ms: parsing...
+75: %%% progress: 117ms: done parsing (115 ms) (114760566 cycles)
+75: stack nodes: 3, max stack nodes: 114
+75: tree nodes: 0
+85: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+85: %%% progress: 2ms: parsing...
+85: %%% progress: 179ms: done parsing (177 ms) (176447263 cycles)
+85: stack nodes: 3, max stack nodes: 129
+85: tree nodes: 0
+99: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+99: %%% progress: 2ms: parsing...
+99: %%% progress: 325ms: done parsing (323 ms) (323189608 cycles)
+99: stack nodes: 3, max stack nodes: 150
+99: tree nodes: 0

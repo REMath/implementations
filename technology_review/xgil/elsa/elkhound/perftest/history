@@ -1,0 +1,496 @@
+------------ table generation ------------
+
+2002-03-22 22:43 -0700    scott
+got treeadd-merged to parse
+  modified: .gdbinit (1.84)
+  modified: cc_env.cc (1.57)
+  modified: tcheck.cc (1.52)
+  added:    vcgen/treeadd-merged.c (1.1)
+
+2002-03-23 00:57 -0700    scott
+fixed the "cannot reduce" errors in the sample inputs
+  modified: cc.gr (1.124)
+  modified: gramanl.cc (1.51)
+  modified: gramanl.h (1.24)
+
+2002-03-24 01:15 -0700    scott
+bison-compatible output now generates output that causes bison to
+agree with me, for cc.gr, on:
+  - unreachable nonterminals
+  - number of S/R and R/R conflicts
+  - number of states (except Bison is always 3 higher)
+  modified: .cvsignore (1.55)
+  modified: cc.gr (1.125)
+  modified: gramanl.cc (1.54)
+  modified: gramanl.h (1.26)
+  modified: grammar.cc (1.54)
+  modified: grammar.h (1.57)
+
+2002-03-24 01:58 -0700    scott
+modified dottedproduction comparison, resulting in speed improvement
+  modified: .gdbinit (1.85)
+  modified: Makefile.in (1.60)
+  modified: gramanl.cc (1.55)
+  modified: gramanl.h (1.27)
+
+2002-03-24 02:10 -0700    scott
+small improvement by adjusting the way moveDotNoClosure accesses items
+  modified: gramanl.cc (1.56)
+
+2002-03-24 02:18 -0700    scott
+small optimization of symbolAfterDot()
+  modified: gramanl.cc (1.57)
+  modified: gramanl.h (1.28)
+
+2002-03-24 02:41 -0700    scott
+substantial improvement by moving from quadratic to linear closure alg.
+  modified: .gdbinit (1.86)
+  modified: gramanl.cc (1.58)
+  modified: gramanl.h (1.29)
+
+2002-03-24 03:11 -0700    scott
+repaired a bug introduced in the last commit; performance is getting
+better
+  modified: .cvsignore (1.56)
+  modified: Makefile.in (1.61)
+  modified: gramanl.cc (1.59)
+  modified: gramanl.h (1.30)
+
+2002-03-24 05:21 -0700    scott
+coded an implementation of itemset closure which uses hashtables, but
+its performance isn't much better, so I've left it off by default with
+a #define (HASHCLOSURE) to switch to it
+  modified: gramanl.cc (1.60)
+  modified: gramanl.h (1.31)
+
+2002-03-24 20:57 -0700    scott
+implemented an outer hashtable, significant performance improvement
+  modified: Makefile.in (1.62)
+  modified: gramanl.cc (1.61)
+  modified: gramanl.h (1.32)
+  modified: grammar.cc (1.55)
+  modified: grammar.h (1.58)
+
+2002-03-24 21:44 -0700    scott
+abstracted TerminalSet from DottedProduction::lookahead
+  modified: gramanl.cc (1.62)
+  modified: gramanl.h (1.33)
+  modified: grammar.cc (1.56)
+  modified: grammar.h (1.59)
+
+2002-03-25 00:02 -0700    scott
+rewrote analysis algorithms to use TerminalSet
+  modified: .gdbinit (1.87)
+  modified: Makefile.in (1.63)
+  modified: gramanl.cc (1.63)
+  modified: gramanl.h (1.34)
+  modified: grammar.cc (1.57)
+  modified: grammar.h (1.60)
+
+2002-03-25 00:20 -0700    scott
+tweaks
+  modified: Makefile.in (1.64)
+  modified: gramanl.cc (1.64)
+
+2002-03-25 03:12 -0700    scott
+separated DottedProduction into DP and LRItem, a fairly substantial
+overhaul of the GrammarAnalysis module; resulted in significant
+performance improvement by itself, probably due to less overhead
+of speculatively creating LRItems
+  modified: .cvsignore (1.57)
+  modified: .gdbinit (1.88)
+  modified: Makefile.in (1.65)
+  modified: cexp3.gr (1.12)
+  modified: cexp3mrg.cc (1.5)
+  modified: gramanl.cc (1.65)
+  modified: gramanl.h (1.35)
+  modified: regrtest (1.23)
+
+2002-03-25 03:46 -0700    scott
+delayed construction of LRItems in singleItemClosure; small gain
+  modified: gramanl.cc (1.66)
+  modified: gramanl.h (1.36)
+
+2002-03-25 04:37 -0700    scott
+small tweak to allocation in singleItemClosure, 10% improvement
+  modified: Makefile.in (1.66)
+  modified: aenv.cc (1.34)
+  modified: gramanl.cc (1.67)
+  modified: grammar.cc (1.58)
+  modified: grammar.h (1.61)
+
+2002-03-26 02:42 -0700    scott
+some small tweaks before a major planned change
+  modified: .gdbinit (1.89)
+  modified: Makefile.in (1.67)
+  modified: gramanl.cc (1.68)
+
+2002-03-26 03:57 -0700    scott
+implemented delayed allocation of new states; cut analyis time in half
+  modified: .gdbinit (1.90)
+  modified: Makefile.in (1.68)
+  modified: gramanl.cc (1.69)
+  modified: gramanl.h (1.37)
+  modified: grammar.h (1.62)
+
+2002-03-26 04:03 -0700    scott
+removed the defunct list-based implementations of my inner loops
+  modified: gramanl.cc (1.70)
+  modified: gramanl.h (1.38)
+
+2002-03-26 04:05 -0700    scott
+bugfixes to the EXTRA_CHECKS sections
+  modified: Makefile.in (1.69)
+  modified: gramanl.cc (1.71)
+
+2002-03-26 05:12 -0700    scott
+removed allocation due to changedItem in inner loop
+  modified: Makefile.in (1.70)
+  modified: gramanl.cc (1.72)
+  modified: gramanl.h (1.39)
+
+2002-03-26 05:21 -0700    scott
+replaced 'getAllItems' with explicit kernel/nonkernel iteration
+in constructLRItemSets
+  modified: gramanl.cc (1.73)
+
+2002-03-26 05:50 -0700    scott
+added code to count the # of malloc calls in some code
+switched to array for 'pendingList' in constructLRItemSets
+  modified: gramanl.cc (1.74)
+
+2002-03-26 06:13 -0700    scott
+removed all unauthorized mallocs from constructLRItemSets
+  modified: .gdbinit (1.91)
+  modified: gramanl.cc (1.75)
+
+2002-03-26 06:32 -0700    scott
+a little NDEBUG tweaking
+  modified: Makefile.in (1.71)
+  modified: gramanl.cc (1.76)
+  modified: grampar.cc (1.53)
+
+2002-03-26 06:49 -0700    scott
+switched to ArrayStack
+  modified: gramanl.cc (1.77)
+
+2002-03-26 06:56 -0700    scott
+switched to key-type-safe hashes everywhere
+  modified: gramanl.cc (1.78)
+  modified: gramanl.h (1.40)
+
+2002-03-26 07:27 -0700    scott
+switched to OwnerKHashArray
+  modified: gramanl.cc (1.79)
+
+2002-03-26 07:37 -0700    scott
+further refined, abstracted the OwnerKHashArray interface
+  modified: gramanl.cc (1.80)
+  modified: gramanl.h (1.41)
+
+2002-03-26 07:50 -0700    scott
+pinned down allocation in itemSetClosure
+  modified: gramanl.cc (1.81)
+  modified: gramanl.h (1.42)
+
+2002-03-26 08:14 -0700    scott
+moved to precomputed dprod firsts
+  modified: .gdbinit (1.92)
+  modified: gramanl.cc (1.82)
+  modified: gramanl.h (1.43)
+  modified: grammar.h (1.63)
+
+2002-03-26 08:27 -0700    scott
+committing a version which exposes a compiler bug
+  modified: .gdbinit (1.93)
+  modified: Makefile.in (1.72)
+  modified: gramanl.cc (1.83)
+
+2002-03-26 08:58 -0700    scott
+replaced one hashtable with a backpointer; regrtest goes through if
+I remove '-tr conflict' from gramanl command line; I think I have a
+memory safety violation!
+  modified: .gdbinit (1.94)
+  modified: Makefile.in (1.73)
+  modified: gramanl.cc (1.84)
+  modified: gramanl.h (1.44)
+
+2002-03-26 11:27 -0700    scott
+found my evil hiesenbug, committing before removing instrumentation
+aparatus
+  modified: .gdbinit (1.95)
+  modified: Makefile.in (1.74)
+  modified: gramanl.cc (1.85)
+
+2002-03-26 11:38 -0700    scott
+final fixed code from the evil bug.  instrumentation stripped, allocation
+accounted for
+  modified: gramanl.cc (1.86)
+
+--------------- run-time parsing --------------
+
+2002-03-27 05:33 -0700    scott
+implemented a driver to parse C programs with the bison grammar of cc.gr
+  modified: .cvsignore (1.58)
+  modified: .gdbinit (1.96)
+  modified: Makefile.in (1.75)
+  added:    bccgr.cc (1.1)
+  added:    bccgr.h (1.1)
+  modified: grammar.cc (1.59)
+  [59000]
+  final time for 2002-03-27_05:34_-0700: 58879
+
+2002-03-27 05:40 -0700    scott
+added better error output (line/col info)
+  modified: bccgr.cc (1.2)
+  [59000]
+  final time for 2002-03-27_05:41_-0700: 60523
+
+2002-03-27 06:21 -0700    scott
+have things pretty well setup for bison comparisons
+  modified: .gdbinit (1.97)
+  added:    c.in4b (1.1)
+  added:    c.in4c (1.1)
+  added:    c.in4d (1.1)
+  modified: glr.cc (1.51)
+  modified: parssppt.cc (1.16)
+  modified: useract.cc (1.2)
+  modified: useract.h (1.11)
+  [59000]
+  final time for 2002-03-27_06:22_-0700: 54413
+
+2002-03-28 00:06 -0700    scott
+factor of 2 by avoiding constructing debug strings
+  modified: Makefile.in (1.76)
+  modified: glr.cc (1.52)
+  modified: glr.h (1.34)
+  [54409]
+  final time for 2002-03-28_00:07_-0700: 11748
+
+2002-03-28 06:28 -0700    scott
+implemented action/goto parse table generation; still need to switch
+the GLR parser over to using it
+  modified: .gdbinit (1.98)
+  modified: Makefile.in (1.77)
+  modified: asu419.gr (1.2)
+  added:    asu419.in (1.1)
+  modified: gramanl.cc (1.87)
+  modified: gramanl.h (1.45)
+  modified: grammar.h (1.64)
+  [11749]
+  final time for 2002-03-28_06:29_-0700: 11723
+
+2002-03-28 06:54 -0700    scott
+added code to simply compare my existing actions to the action/goto tables
+  modified: glr.cc (1.53)
+  [?]
+  final time for 2002-03-28_06:55_-0700: 12456
+
+2002-03-28 08:10 -0700    scott
+switched GLR to use action/goto; total opt. over some previous numbers
+is around 5x
+  modified: Makefile.in (1.78)
+  modified: cc_type.cc (1.26)
+  modified: glr.cc (1.54)
+  modified: glr.h (1.35)
+  modified: gramanl.cc (1.88)
+  modified: gramanl.h (1.46)
+  [?]
+  final time for 2002-03-28_08:11_-0700: 10691
+
+2002-03-29 11:37 -0700    scott
+rehabilitated cexp3b, fixed forgotten stateSymbol table
+  modified: .cvsignore (1.59)
+  modified: .gdbinit (1.99)
+  modified: Makefile.in (1.79)
+  modified: cexp3.gr (1.13)
+  modified: cexp3ast.ast (1.4)
+  modified: cexp3mrg.cc (1.6)
+  modified: glr.cc (1.55)
+  modified: gramanl.cc (1.89)
+  modified: gramanl.h (1.47)
+  modified: regrtest (1.24)
+  final time for 2002-03-29_11:38_-0700: 10537
+
+2002-03-29 11:41 -0700    scott
+cleaned up a few loose TODO ends
+  modified: gramanl.cc (1.90)
+  [?]
+  final time for 2002-03-29_11:42_-0700: 10538
+
+2002-04-05 22:57 -0700    scott
+documentation tweaks
+  modified: glr.cc (1.56)
+  [?]
+  final time for 2002-04-05_22:58_-0700: 10556
+
+2002-04-14 03:37 -0700    scott
+few tweaks; committing before switching to parsgen work
+  modified: regrtest (1.25)
+  [10338]
+  final time for 2002-04-14_03:38_-0700: 10317
+
+2002-04-14 04:05 -0700    scott
+migrated pendingShifts to ObjArrayStack
+  modified: glr.cc (1.57)
+  modified: glr.h (1.36)
+  [11204]
+  final time for 2002-04-14_04:06_-0700: 10247
+
+2002-04-14 04:35 -0700    scott
+activeParsers, parserWorklist -> ArrayStack
+  modified: glr.cc (1.58)
+  modified: glr.h (1.37)
+  [10688]
+  final time for 2002-04-14_04:36_-0700: 8419
+
+2002-04-14 04:42 -0700    scott
+PathCollectionState::paths -> ObjArrayStack
+  modified: glr.cc (1.59)
+  modified: glr.h (1.38)
+  [8419]
+  final time for 2002-04-14_04:43_-0700: 7977
+
+2002-04-14 05:11 -0700    scott
+pulled allocation of PathCollectionState out of all loops
+  modified: .gdbinit (1.103)
+  modified: glr.cc (1.60)
+  modified: glr.h (1.39)
+  modified: gramanl.h (1.48)
+  [8004]
+  final time for 2002-04-14_05:12_-0700: 6239
+
+2002-04-14 05:38 -0700    scott
+eliminated allocation of ReductionPath objects (not nearly as much
+improvement as I expected); also, noticed that the analysis of callfind
+is yielding lots of chatter from Simplify, and don't know how long that's
+been going on..
+  modified: glr.cc (1.61)
+  modified: glr.h (1.40)
+  [6214]
+  final time for 2002-04-14_05:39_-0700: 5808
+
+2002-04-14 05:49 -0700    scott
+switched to pushAlt, popAlt for PathCollectionState::paths
+  modified: glr.cc (1.62)
+  modified: glr.h (1.41)
+  [5826]
+  final time for 2002-04-14_05:50_-0700: 5832
+
+2002-04-14 05:56 -0700    scott
+eliminated allocation of PendingShift
+  modified: glr.cc (1.63)
+  modified: glr.h (1.42)
+  [5940]
+  final time for 2002-04-14_05:57_-0700: 5786
+
+2002-04-14 06:15 -0700    scott
+removed allocation of 'toPass' in collectReductionPaths
+  modified: glr.cc (1.64)
+  modified: glr.h (1.43)
+  modified: gramanl.cc (1.92)
+  modified: useract.cc (1.3)
+  modified: useract.h (1.12)
+  [6222]
+  final time for 2002-04-14_06:16_-0700: 5195
+
+2002-04-14 06:17 -0700    scott
+small bugfix: popAlt really wants deinit
+  modified: glr.cc (1.65)
+  [5216]
+  final time for 2002-04-14_06:18_-0700: 5201
+
+2002-04-14 06:51 -0700    scott
+I implemented a parser state index, and it actually made things slower!
+so I'm leaving it as a design decision, defaulting to off
+  modified: glr.cc (1.66)
+  modified: glr.h (1.44)
+  [5251]
+  final time for 2002-04-14_06:52_-0700: 5273
+
+2002-04-15 07:06 -0700    scott
+switched to an object pool for stack nodes.. no improvement in performance
+  modified: glr.cc (1.67)
+  modified: glr.h (1.45)
+  [5227]
+  final time for 2002-04-15_07:07_-0700: 4660
+
+2002-04-18 08:44 -0700    scott
+small tweaks to debugging output
+  modified: .gdbinit (1.104)
+  modified: glr.cc (1.68)
+  modified: gramanl.cc (1.93)
+  modified: grammar.cc (1.60)
+  [4698]
+  final time for 2002-04-18_08:45_-0700: 4779
+
+2002-04-18 11:30 -0700    scott
+added a mini-LR for the deterministic language portions, cut
+parsing time in half!
+  modified: .gdbinit (1.105)
+  modified: glr.cc (1.69)
+  modified: glr.h (1.46)
+  [4972] (but lots of "got here" output)
+  final time for 2002-04-18_11:31_-0700: 3038
+
+2002-04-18 12:18 -0700    scott
+embedded the first sibling link, got *another* factor of 2!
+  modified: glr.cc (1.70)
+  modified: glr.h (1.47)
+  [4882]
+  final time for 2002-04-18_12:19_-0700: 1064
+
+2002-04-18 12:54 -0700    scott
+created option to disable passing of SourceLocation information
+in the parser, which leads to maybe a 10% improvement in performance
+  modified: Makefile.in (1.81)
+  modified: glr.cc (1.71)
+  modified: glr.h (1.48)
+  added:    glrconfig.h (1.1)
+  modified: gramanl.cc (1.94)
+  modified: gramanl.h (1.49)
+  modified: useract.cc (1.4)
+  modified: useract.h (1.13)
+  [1092]
+  final time for 2002-04-18_12:55_-0700: 1041
+
+2002-04-18 12:59 -0700    scott
+dropped tokenColumn and stackNodeId, small improvement
+  modified: glr.cc (1.72)
+  modified: glr.h (1.49)
+  [?]
+  final time for 2002-04-18_13:00_-0700: 1057
+
+2002-04-18 14:50 -0700    scott
+more inlining and performance tuning
+  modified: Makefile.in (1.82)
+  modified: bccgr.cc (1.3)
+  modified: glr.cc (1.73)
+  modified: glr.h (1.50)
+  modified: rcptr.h (1.2)
+  [915]
+  final time for 2002-04-18_14:51_-0700: 515
+
+2002-04-18 15:23 -0700    scott
+tuning, inlining, branch prediction: I am at 1.07x --- simply amazing!
+  modified: Makefile.in (1.83)
+  modified: glr.cc (1.74)
+  [515]
+  final time for 2002-04-18_15:24_-0700: 427
+
+2002-04-18 16:00 -0700    scott
+reordered decode of reductions vs shifts in mini-LR because reductions
+are more common
+  modified: Makefile.in (1.84)
+  modified: glr.cc (1.75)
+  [316]
+  final time for 2002-04-18_16:01_-0700: 296
+
+2002-04-18 16:21 -0700    scott
+fixed YYDEBUG problem; eliminated an assignment in inner loop
+  modified: Makefile.in (1.85)
+  modified: bccgr.cc (1.4)
+  modified: glr.cc (1.76)
+  [295]
+  final time for 2002-04-18_16:22_-0700: 292
+

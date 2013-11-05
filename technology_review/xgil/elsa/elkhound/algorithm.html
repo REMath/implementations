@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>Elkhound Algorithm</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+  <style type="text/css">
+    H1 { font-size: 150% }
+    H2 { font-size: 125% }
+    H3 { font-size: 100% }
+  </style>
+</HEAD>
+
+<body>
+
+<center><h2>
+Elkhound Algorithm
+</h2></center>
+
+<p>
+This page describes some of the details of the variant of GLR that
+Elkhound uses, placing it in context with some of the other GLR
+variants that have been proposed.
+
+<h1>Goals</h1>
+
+<p>
+First, the primary goals of Elkhound:
+<ol>
+<li>It must have the capability to execute arbitrary user-provided
+    reduction actions.  Building a parse tree isn't good enough, it
+    takes too much time and space.
+<li>Reductions and merges should be performed bottom-up (unless the
+    grammar is cyclic).
+<li>It should be competitive with Bison for LALR (fragements of)
+    grammars, and degrade gracefully from there.  On the scale of
+    grammar nondeterminism, from none (LALR) to some to lots, "some" 
+    is the niche Elkhound is going after.
+</ol>
+
+<p>
+These goals are driven by Elkhound's primary application, the
+Elsa C++ Parser.  In essence, Elkhound came about because I wanted
+to apply automatic parsing technology to parsing C++, but found
+exiting systems inadequate.
+
+<h1>History</h1>
+
+<p>
+The approximate algorithm descendency sequence:
+<ul>
+<li>Bernard Lang is typically credited with the original GLR idea:
+    <blockquote>  
+      Deterministic Techniques for Efficient Non-deterministic Parsers.<br>
+      Bernard Lang.<br>
+      Automata, Languages and Programming, Springer, 1974.
+    </blockquote>
+<li>Later, Tomita published the algorithm with the intent of using it
+    for natural language processing.  He popularized the term
+    "Generalized LR Parsing", or GLR.
+    <blockquote>
+      Efficient Parsing for Natural Language.<br>
+      Masaru Tomita.<br>
+      Int. Series in Engineering and Computer Science, Kluwer, 1985.
+    </blockquote>
+<li>Tomita's algorithm fails for some grammars with epsilon rules.
+    Farshi proposed a fix involving doing a GSS search after some
+    reductions.
+    <blockquote>
+      GLR Parsing for epsilon-grammars.<br>
+      Rahman Nozohoor-Farshi.<br>
+      In Generalized LR Parsing, Kluwer, 1991.
+    </blockquote>
+<li>Rekers adapted Farshi's solution for use in
+    <a href="http://www.cwi.nl/htbin/sen1/twiki/bin/view/SEN1/MetaEnvironment">ASF+SDF</a>.
+    Rekers added
+    parse table construction to what was otherwise a recognizer.
+    His algorithm was what I based the original Elkhound 
+    implementation on.
+    <blockquote>
+      Parser Generation for Interactive Environments.<br>
+      Jan Rekers.<br>
+      PhD thesis, University of Amsterdam, 1992.
+    </blockquote>
+<li>When straightforwardly modified to execute user actions, the Rekers 
+    algorithm does not always do merges and reductions bottom-up, which makes
+    using it in a parser much harder.  Further,
+    it is slower than Bison (by about a factor of 10) even on LALR grammars.
+    George Necula and I remedied these deficiencies while building the Elkhound GLR parser
+    generator.
+    <blockquote>
+      <a href="http://www.cs.berkeley.edu/~smcpeak/papers/elkhound_cc04.ps">
+      Elkhound: A Fast, Practical GLR Parser Generator.</a><br>
+      Scott McPeak and George C. Necula.<br>
+      In Proceedings of Conference on Compiler Constructor (CC04), 2004.
+    </blockquote>
+</ul>
+
+<h1>Right Nulled GLR</h1>
+
+<p>
+At the CC04 conference I became acquainted with <a
+href="http://www.cs.rhul.ac.uk/people/staff/johnstone.html">Adrian
+Johnstone</a> and his work.  He and his coathors have not only more
+thoroughly documented the history of GLR, but also proposed a novel
+alternative solution to the problem Farshi originally addressed,
+which they call "Right Nulled GLR Parsing".
+
+<p>
+The basic idea of Right Nulled GLR is, rather than re-examining work
+already done to check for newly exposed reduction opportunities (as
+Farshi does), do those reductions that would be found by the search
+earlier in the parse, namely as soon as the rule in question only
+has nullable components remaining to recognize.
+
+<p>
+However, while this approach is certainly appealing, I still have
+questions about exactly how to adapt it to use user-defined reduction
+actions.  At some point I want to implement the right-nulled variant
+in Elkhound to experiment more with it, but haven't gotten around to it.
+
+<h1>Algorithm Features</h1>
+
+<p>
+The
+<a href="http://www.cs.berkeley.edu/~smcpeak/papers/elkhound_tr.ps">Technical Report</a>
+has most of the details, so I'll just point out some key distinguishing
+characteristics here.
+
+<ul>
+<li><strong>Hybrid LR/GLR.</strong>
+    The Elkhound Graph-Structured Stack carries
+    sufficient information (in the form of the "deterministic depth") to
+    tell when a given parse action (shift or reduce) can be performed
+    using the ordinary LR algorithm.  Essentially, if there isn't any
+    nondeterminism near the stack top, LR can be used.  LR actions are
+    much faster to execute, so this leads to a big performance win (a
+    factor of 5 to 10) when the input and grammar are mostly deterministic.
+    
+<li><strong>User-defined Actions.</strong>  In addition to the usual
+    reduction actions (such as with Bison), Elkhound exposes actions
+    to create and destroy semantic values (dup and del), and an action
+    to merge ambiguous regions (merge).  The user can then do whatever
+    is desired in these actions, typically building an abstract syntax
+    tree.  In contrast, most other GLR implementations build a parse 
+    tree, which is quite expensive.  (Parse trees tend to be at least
+    10 times larger than abstract syntax trees.)
+
+<li><strong>Reduction Worklist.</strong> As alluded to above, the
+    Rekers algorithm will sometimes mix up the order of reduces and
+    merges.  The problem is with the granularity of the GSS Node
+    worklist; it forces certain actions (all those associated with the
+    node) to happen together, even when something else should happen
+    in between.  Elkhound solves this by maintaining a finer-grained
+    worklist of reduction opportunties, and keeps this worklist sorted
+    in a specific order, such that a bottom-up reduction/merge order
+    will always be used when possible.  (With a cyclic grammar, there
+    may be a cycle in the reduction order, precluding bottom-up
+    execution.  Elkhound reports cyclic grammars to the user, but then
+    goes ahead and parses with them.)
+
+<li><strong>Reference-Counted GSS.</strong>  This is mostly a minor 
+    detail, but using reference counting in the GSS produces much
+    better locality than garbage collection alone (and manual
+    deallocation is impossible due to the nature of the algorithm).
+
+<li><strong>C++ and OCaml Interfaces.</strong> Though not a feature of
+    the parsing algorithm per se, a nice feature is the ability to let
+    the user write actions in either C++ or OCaml.  There are actually
+    two parser core impementations, a C++ implementation and an OCaml
+    implementation, and the user simply links Elkhound's output with
+    the appropriate parser core.
+</ul>
+
+</body>
+</html>

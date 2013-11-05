@@ -1,0 +1,305 @@
+// dependency graph automatically produced by
+//   ../smbase/scan-depends.pl -r -I../ast gramanl.cc
+
+digraph "Dependencies" {
+  "gramanl.cc" [
+  ]
+  "gramanl.h" [
+    color = white
+  ]
+  "gramanl.cc" -> "gramanl.h" [
+    weight = 10
+  ]
+  "flatutil.h" [
+    color = white
+  ]
+  "gramanl.cc" -> "flatutil.h" [
+  ]
+  "grampar.h" [
+    color = white
+  ]
+  "gramanl.cc" -> "grampar.h" [
+  ]
+  "emitcode.h" [
+    color = white
+  ]
+  "gramanl.cc" -> "emitcode.h" [
+  ]
+  "genml.h" [
+    color = white
+  ]
+  "gramanl.cc" -> "genml.h" [
+  ]
+  "parsetables.cc" [
+  ]
+  "gramanl.cc" -> "parsetables.cc" [
+    style = dashed
+  ]
+  "gramast.ast.gen.h" [
+    color = white
+  ]
+  "gramanl.cc" -> "gramast.ast.gen.h" [
+  ]
+  "gramanl.h" -> "gramanl.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "grammar.h" [
+    color = white
+  ]
+  "gramanl.h" -> "grammar.h" [
+  ]
+  "glrconfig.h" [
+    color = white
+  ]
+  "gramanl.h" -> "glrconfig.h" [
+  ]
+  "parsetables.h" [
+    color = white
+  ]
+  "gramanl.h" -> "parsetables.h" [
+  ]
+  "grampar.cc" [
+  ]
+  "grampar.h" -> "grampar.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "locstr.h" [
+    color = white
+  ]
+  "grampar.h" -> "locstr.h" [
+  ]
+  "grampar.tab.cc" [
+  ]
+  "grampar.h" -> "grampar.tab.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "emitcode.cc" [
+  ]
+  "emitcode.h" -> "emitcode.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "genml.cc" [
+  ]
+  "genml.h" -> "genml.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "parsetables.cc" -> "parsetables.h" [
+    weight = 10
+  ]
+  "parsetables.cc" -> "emitcode.h" [
+  ]
+  "gramast.ast.gen.cc" [
+  ]
+  "gramast.ast.gen.h" -> "gramast.ast.gen.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "asthelp.h" [
+    color = white
+  ]
+  "gramast.ast.gen.h" -> "asthelp.h" [
+  ]
+  "gramast.ast.gen.h" -> "locstr.h" [
+  ]
+  "asockind.h" [
+    color = white
+  ]
+  "gramast.ast.gen.h" -> "asockind.h" [
+  ]
+  "grammar.cc" [
+  ]
+  "grammar.h" -> "grammar.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "util.h" [
+    color = white
+  ]
+  "grammar.h" -> "util.h" [
+  ]
+  "grammar.h" -> "locstr.h" [
+  ]
+  "grammar.h" -> "asockind.h" [
+  ]
+  "parsetables.h" -> "parsetables.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "parsetables.h" -> "glrconfig.h" [
+  ]
+  "grampar.cc" -> "grampar.h" [
+    weight = 10
+  ]
+  "gramlex.h" [
+    color = white
+  ]
+  "grampar.cc" -> "gramlex.h" [
+  ]
+  "grampar.cc" -> "gramast.ast.gen.h" [
+  ]
+  "grampar.cc" -> "grammar.h" [
+  ]
+  "grampar.tab.h" [
+    color = white
+  ]
+  "grampar.cc" -> "grampar.tab.h" [
+    weight = 10
+  ]
+  "mlsstr.h" [
+    color = white
+  ]
+  "grampar.cc" -> "mlsstr.h" [
+  ]
+  "locstr.cc" [
+  ]
+  "locstr.h" -> "locstr.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "strtable.h" [
+    color = white
+  ]
+  "locstr.h" -> "strtable.h" [
+  ]
+  "grampar.tab.cc" -> "grampar.h" [
+    weight = 10
+  ]
+  "grampar.tab.cc" -> "gramast.ast.gen.h" [
+  ]
+  "grampar.tab.cc" -> "gramlex.h" [
+  ]
+  "emitcode.cc" -> "emitcode.h" [
+    weight = 10
+  ]
+  "genml.cc" -> "genml.h" [
+    weight = 10
+  ]
+  "genml.cc" -> "gramanl.h" [
+  ]
+  "genml.cc" -> "emitcode.h" [
+  ]
+  "genml.cc" -> "parsetables.h" [
+  ]
+  "gramast.ast.gen.cc" -> "gramast.ast.gen.h" [
+    weight = 10
+  ]
+  "asthelp.cc" [
+  ]
+  "asthelp.h" -> "asthelp.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "fakelist.h" [
+    color = white
+  ]
+  "asthelp.h" -> "fakelist.h" [
+  ]
+  "asthelp.h" -> "locstr.h" [
+  ]
+  "asockind.cc" [
+  ]
+  "asockind.h" -> "asockind.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "grammar.cc" -> "grammar.h" [
+    weight = 10
+  ]
+  "grammar.cc" -> "flatutil.h" [
+  ]
+  "gramlex.cc" [
+  ]
+  "gramlex.h" -> "gramlex.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "embedded.h" [
+    color = white
+  ]
+  "gramlex.h" -> "embedded.h" [
+  ]
+  "gramlex.h" -> "strtable.h" [
+  ]
+  "grampar.tab.h" -> "grampar.tab.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "mlsstr.cc" [
+  ]
+  "mlsstr.h" -> "mlsstr.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "mlsstr.h" -> "embedded.h" [
+  ]
+  "locstr.cc" -> "locstr.h" [
+    weight = 10
+  ]
+  "strtable.cc" [
+  ]
+  "strtable.h" -> "strtable.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "asthelp.cc" -> "asthelp.h" [
+    weight = 10
+  ]
+  "asockind.cc" -> "asockind.h" [
+    weight = 10
+  ]
+  "gramlex.cc" -> "gramlex.h" [
+    weight = 10
+  ]
+  "ccsstr.h" [
+    color = white
+  ]
+  "gramlex.cc" -> "ccsstr.h" [
+  ]
+  "embedded.cc" [
+  ]
+  "embedded.h" -> "embedded.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "reporterr.h" [
+    color = white
+  ]
+  "embedded.h" -> "reporterr.h" [
+  ]
+  "mlsstr.cc" -> "mlsstr.h" [
+    weight = 10
+  ]
+  "strtable.cc" -> "strtable.h" [
+    weight = 10
+  ]
+  "ccsstr.cc" [
+  ]
+  "ccsstr.h" -> "ccsstr.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "ccsstr.h" -> "embedded.h" [
+  ]
+  "embedded.cc" -> "embedded.h" [
+    weight = 10
+  ]
+  "reporterr.cc" [
+  ]
+  "reporterr.h" -> "reporterr.cc" [
+    style = dashed
+    weight = 10
+  ]
+  "ccsstr.cc" -> "ccsstr.h" [
+    weight = 10
+  ]
+  "ccsstr.cc" -> "reporterr.h" [
+  ]
+  "reporterr.cc" -> "reporterr.h" [
+    weight = 10
+  ]
+}

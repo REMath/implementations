@@ -73,7 +73,7 @@
 
 
 # To be categorized 
-## Assisted Exploit Generation on binary programs
+## Assisted Exploit Engineering
 * https://github.com/wirepair/IDAPinLogger
 * https://github.com/pakt/ropc
 * https://github.com/aaronportnoy/toolbag

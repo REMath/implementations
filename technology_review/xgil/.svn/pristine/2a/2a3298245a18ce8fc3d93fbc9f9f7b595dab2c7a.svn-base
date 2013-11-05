@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>ast</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+</HEAD>
+
+<body>
+
+<center><h2>
+ast: A system for creating Abstract Syntax Trees
+</h2></center>
+
+<p>
+The "ast" system takes as input a description of a heterogenous tree
+structure, and outputs C++ code to define a set of classes that
+implement the described tree.  Abstract Syntax Trees, used in language
+processors (like compilers), are the principal intended application,
+though of course the need for heterogenous trees arises in other
+situations as well.
+
+<p>
+As a short example, the following is a sample input to the "astgen"
+tool.  It's also in the file <a href="demo.ast">demo.ast</a>.
+<pre>
+  class Root(A a, B b);
+
+  class A {
+    -> A_one(string name);
+    -> A_two(B b);
+  }
+
+  class B(string name) {
+    public int x = 0;
+
+    -> B_one(int y);
+    -> B_two(char c);
+  }
+</pre>
+
+<p>
+From this description, astgen produces two files,
+<a href="gendoc/demo.h">demo.h</a> and
+<a href="gendoc/demo.cc">demo.cc</a>.  You can then write C++
+code that uses these tree classes.
+
+<p>
+The basic inspiration for the ast system is ML's disjoint union types,
+but I extended them in several ways:
+<ul>
+<li>You can have fields that are present in all variants; the 'name'
+    field of class B, above, is an example.
+<li>You can have fields that are not initialized by arguments to the 
+    constructor, but instead have a default value, and behave like mutable 
+    annotations.  The 'x' field of class B is an example.
+<li>The fields that <em>are</em> set in the constructor can have default
+    values, using C++'s usual mechanism, so it's possible to add a field
+    without having to rewrite every occurrence of a call to the
+    constructor.
+<li>ast classes are full C++ classes, and as such can have methods, etc.
+</ul>
+
+<p>
+For more information about the features of the ast system,
+consult the <a href="manual.html">AST Manual</a>.
+
+<p>
+The ast system requires the following external software:
+<ul>
+<li><a href="../smbase/index.html">smbase</a>, my utility library.
+<li><a href="http://www.gnu.org/software/flex/flex.html">Flex</a>,
+    a lexical analyzer generator.
+<li><a href="http://www.gnu.org/software/bison/bison.html">Bison</a>,
+    a parser generator.
+</ul>
+
+<p>
+Build instructions:
+<pre>
+  $ ./configure
+  $ make
+  $ make check
+</pre>
+<a href="configure"><tt>./configure</tt></a> understands
+<a href="gendoc/configure.txt">these options</a>.  You can also
+look at the <a href="Makefile.in">Makefile</a>.
+
+<p>
+Module List:
+<ul>
+
+<li><a href="agramlex.lex">agramlex.lex</a>:
+Lexical analyzer for .ast files.
+See also <a href="gramlex.h">gramlex.h</a>.
+
+<li><a href="agrampar.y">agrampar.y</a>,
+    <a href="agrampar.h">agrampar.h</a>,
+    <a href="agrampar.cc">agrampar.cc</a>:
+Parser for .ast files.
+
+<li><a href="ast.ast">ast.ast</a>,
+    <a href="ast.ast.h">ast.ast.h</a>,
+    <a href="ast.ast.cc">ast.ast.cc</a>:
+The AST of an .ast file.  The outputs of astgen are included for
+bootstrapping purposes.
+
+<li><a href="astgen.cc">astgen.cc</a>:
+The main program.  Translates .ast files into .h and .cc files.
+
+<li><a href="asthelp.h">asthelp.h</a>,
+    <a href="asthelp.cc">asthelp.cc</a>:
+This is a support module for astgen-generated code.
+
+<li><a href="ccsstr.h">ccsstr.h</a>:
+    <a href="ccsstr.cc">ccsstr.cc</a>:
+Implements the EmbeddedLang interface (<a href="embedded.h">embedded.h</a>)
+for C++.
+
+<li><a href="embedded.h">embedded.h</a>,
+    <a href="embedded.cc">embedded.cc</a>:
+Interface for skipping comments and balanced delimiters in a
+language embedded into another.
+
+<li><a href="example.ast">example.ast</a>,
+    <a href="exampletest.cc">exampletest.cc</a>:
+Testbed for new astgen features.  Not a particularly good pedagogical
+example.
+
+<li><a href="ext1.ast">ext1.ast</a>:
+Example extension module for <a href="example.ast">example.ast</a>.
+
+<li><a href="fakelist.h">fakelist.h</a>:
+FakeList, a linked-list wrapper module for lists of objects built
+out of internal 'next' pointers.  See <a href="fakelist.h">fakelist.h</a>
+for a more complete description and rationale.
+
+<li><a href="gramlex.h">gramlex.h</a>,
+    <a href="gramlex.cc">gramlex.cc</a>:
+Lexical analyzer support module.  Goes with
+<a href="agramlex.lex">agramlex.lex</a>.  This module is also used by
+<a href="../elkhound/gramlex.lex">elkhound/gramlex.lex</a> in the
+<a href="../elkhound/index.html">Elkhound</a> distribution.
+
+<li><a href="locstr.h">locstr.h</a>,
+    <a href="locstr.cc">locstr.cc</a>:
+Pair of a SourceLoc (<a href="../smbase/srcloc.h">smbase/srcloc.h</a>)
+and a StringRef (<a href="strtable.h">strtable.h</a>).
+
+<li><a href="reporterr.h">reporterr.h</a>,
+    <a href="reporterr.cc">reporterr.cc</a>:
+Interface for reporting errors and warnings.
+
+<li><a href="strtable.h">strtable.h</a>,
+    <a href="strtable.cc">strtable.cc</a>:
+StringTable, a global table of immutable strings.  Duplicate strings 
+are mapped to the same entry, allowing pointer comparisons to suffice
+for string equality tests.
+
+</ul>
+
+<p>
+  <a href="http://validator.w3.org/check/referer"><img border="0"
+      src="http://www.w3.org/Icons/valid-html401"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+
+</body>
+
+</HTML>

@@ -1,0 +1,70 @@
+../efa.in/0000500.in: cycles: 20082205
+../efa.in/0000500.in: cycles: 20397000
+../efa.in/0000500.in: cycles: 20265000
+../efa.in/0000500.in: cycles: 20049199
+../efa.in/0000500.in: cycles: 20009402
+../efa.in/0001000.in: cycles: 39390465
+../efa.in/0001000.in: cycles: 39024007
+../efa.in/0001000.in: cycles: 38781728
+../efa.in/0001000.in: cycles: 39001867
+../efa.in/0001000.in: cycles: 38756895
+../efa.in/0001500.in: cycles: 57667140
+../efa.in/0001500.in: cycles: 56580833
+../efa.in/0001500.in: cycles: 57166710
+../efa.in/0001500.in: cycles: 57145065
+../efa.in/0001500.in: cycles: 58233780
+../efa.in/0002000.in: cycles: 75206745
+../efa.in/0002000.in: cycles: 75557033
+../efa.in/0002000.in: cycles: 85096920
+../efa.in/0002000.in: cycles: 78950475
+../efa.in/0002000.in: cycles: 75778545
+../efa.in/0002500.in: cycles: 113005658
+../efa.in/0002500.in: cycles: 118383915
+../efa.in/0002500.in: cycles: 112738118
+../efa.in/0002500.in: cycles: 112515277
+../efa.in/0002500.in: cycles: 121288403
+../efa.in/0005000.in: cycles: 230798782
+../efa.in/0005000.in: cycles: 234235425
+../efa.in/0005000.in: cycles: 226620457
+../efa.in/0005000.in: cycles: 245898953
+../efa.in/0005000.in: cycles: 233611192
+../efa.in/0010000.in: cycles: 517186703
+../efa.in/0010000.in: cycles: 516489180
+../efa.in/0010000.in: cycles: 516013192
+../efa.in/0010000.in: cycles: 519726210
+../efa.in/0010000.in: cycles: 514849425
+../efa.in/0020000.in: cycles: 1092321030
+../efa.in/0020000.in: cycles: 1083544365
+../efa.in/0020000.in: cycles: 1095053317
+../efa.in/0020000.in: cycles: 1092971287
+../efa.in/0020000.in: cycles: 1086921510
+../efa.in/0050000.in: cycles: 2712677453
+failed
+../efa.in/0050000.in: cycles: 2686555065
+failed
+../efa.in/0050000.in: cycles: 2690419170
+failed
+../efa.in/0050000.in: cycles: 2693230185
+failed
+../efa.in/0050000.in: cycles: 2693112495
+failed
+../efa.in/0100000.in: failed
+../efa.in/0100000.in: failed
+../efa.in/0100000.in: failed
+../efa.in/0100000.in: failed
+../efa.in/0100000.in: failed
+../efa.in/0200000.in: failed
+../efa.in/0200000.in: failed
+../efa.in/0200000.in: failed
+../efa.in/0200000.in: failed
+../efa.in/0200000.in: failed
+../efa.in/0500000.in: failed
+../efa.in/0500000.in: failed
+../efa.in/0500000.in: failed
+../efa.in/0500000.in: failed
+../efa.in/0500000.in: failed
+../efa.in/1000000.in: failed
+../efa.in/1000000.in: failed
+../efa.in/1000000.in: failed
+../efa.in/1000000.in: failed
+../efa.in/1000000.in: failed

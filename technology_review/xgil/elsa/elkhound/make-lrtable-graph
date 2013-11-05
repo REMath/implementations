@@ -1,0 +1,102 @@
+#!/usr/bin/perl -w
+# given as input the .out from running Elkhound, containing
+# a description of the LR tables, create a Dot graph with
+# the LR table nicely displayed (www.research.att.com/sw/tools/graphviz/)
+
+if (-t <STDIN>) {
+  print("usage: $0 <grammar.out >grammar.dot\n");
+  exit(0);
+}
+
+# accumulated lines for the current state
+$stateLines = "";
+
+# current state number
+$stateNum = 0;
+
+# set of edges printed, indexed by strings e.g. "s1,s2"
+%EDGES = ();
+
+# dump accumulated lines
+sub dumpState {
+  if ($stateLines) {
+    print($stateLines, "\" ];\n");
+  }
+  $stateLines = "";
+}
+
+print("digraph g {\n");
+
+while (defined($line = <STDIN>)) {
+  chomp($line);
+
+  # de-uglify my synthesized name
+  $line =~ s/__EarlyStartSymbol/S\'/g;
+
+  # beginning of a state?
+  ($n) = ($line =~ m/^State (\d+), sample/);
+  if (defined($n)) {
+    dumpState();
+
+    $stateNum = $n;
+    $stateLines = "  \"s$stateNum\" [ shape = \"box\"\n" .
+                  "    label = \"State $stateNum";
+
+    next;
+  }
+
+  # edge?  $item2 gets the symbol to right of dot
+  ($item1, $item2, $item3, $dest) =
+    ($line =~ m/^  (.+)\. ([^ ,]+)(.+\S)\s+--> (\d+)$/);
+  if (defined($dest)) {
+    $item = "$item1. $item2$item3";    # rebuild full item text
+
+    # edge index
+    $edgeIdx = "$stateNum,$dest";
+    if (defined($EDGES{$edgeIdx})) {
+      # already printed, skip it (but check that it is the same)
+      if ($EDGES{$edgeIdx} ne $item2) {
+        print STDERR ("what the?  edge $edgeIdx has conflicting label?\n");
+        exit(2);
+      }
+    }
+    else {
+      # emit an edge in the dot graph
+      print("  \"s$stateNum\" -> \"s$dest\" [ label = \"$item2\" ];\n");
+      $EDGES{$edgeIdx} = $item2;
+    }
+
+    # add the item to the state lines
+    $stateLines .= "\\n$item";
+
+    next;
+  }
+
+  # missed edge line?
+  if ($line =~ m/-->/) {
+    print STDERR ("warning: unrecognized: $line\n");
+    next;
+  }
+
+  # after-state summary?
+  if ($line =~ m/can reduce by/) {
+    next;
+  }
+
+  # reducible item?
+  ($item) = ($line =~ m/^  (.+->.+\.)\s*$/);         # last reduction, no lookahead
+  if (defined($item)) {
+    $stateLines .= "\\n$item  (R)";
+    next;
+  }
+  ($item) = ($line =~ m/^  (.+->.+\.,.*\S)\s*$/);    # reduction w/ lookahead
+  if (defined($item)) {
+    $stateLines .= "\\n$item  (R)";
+    next;
+  }
+}
+
+dumpState();
+print("}\n");
+
+# EOF

@@ -1,0 +1,45 @@
+// mem.in2
+// experimenting with arrays of owner pointers
+
+int * owner malloc();
+void free(int * owner p);
+
+void f1()
+{
+  int * owner p[5];    // (auto) array of 5 owner pointers
+  int i;
+
+  // here, 'p' is <uninit>
+
+  INTLOOP(i,5) {       // for(i=0; i<5; i++)
+
+    // invariant: 'p' is <i:init,uninit,uninit>
+
+    p[i] = malloc();
+
+    // here, 'p' is <i:init,init?,uninit>
+
+    if (!p[i]) {
+
+      // 'p' is <i:init,null,uninit>
+
+      abort();
+
+      // 'p' is top
+
+      /*
+      for (j=0; j<i; j++) {
+        free(p[j]);
+      }
+      break;
+      */
+    }
+
+    // 'p' is <i:init,init,uninit>
+
+  }
+
+  // here, 'p' is <init>
+
+}
+

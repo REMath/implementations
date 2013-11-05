@@ -1,0 +1,4 @@
+// tiny.ast            see license.txt for copyright and terms of use
+// minimal ast test file
+
+class C(int x);

@@ -1,0 +1,2 @@
+
+void hello_world() {}

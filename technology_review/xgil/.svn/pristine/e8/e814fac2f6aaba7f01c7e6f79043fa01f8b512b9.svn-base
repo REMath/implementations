@@ -1,0 +1,18 @@
+// EEb.gr.in   -*- c++ -*-
+// a simple ambiguous arithmetic grammar
+
+// E -> E + E | b
+
+terminals {
+  p        // plus
+  b
+}
+
+nonterm E {
+  fun merge(L,R) [ cout << "merging E\n"; return ++count; ]
+  fun dup(v)     [ return ++count; ]
+  fun del(v)     []
+
+  -> a:E p b:E ;
+  -> b         ; 
+}

@@ -1,0 +1,16 @@
+// skeleton.gr            see license.txt for copyright and terms of use
+// template grammar file
+
+verbatim Skeleton [
+  #include "useract.h"       // UserActions
+
+  class Skeleton : public UserActions {
+    #include "skeleton.gen.h"
+  };
+]
+
+terminals {
+  // ... declare all terminals ...
+}
+
+// ... declare all nonterminals ...

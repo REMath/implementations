@@ -1,0 +1,378 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>Modifying Elsa</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+  <style type="text/css">
+    H1 { font-size: 150% }
+    H2 { font-size: 125% }
+    H3 { font-size: 100% }
+    P.title { font-size: 175% }
+  </style>
+</HEAD>
+
+<body>
+
+<center>
+<p class="title"><b>Part 2: Modifying Elsa</b></p>
+</center>
+
+<p>
+You presumably just came from <a href="tutorial.html">Part 1</a>,
+which introduces the Elsa build process and <tt>ccparse</tt> tool.
+In Part 2, you will modify Elsa's source code to achieve
+various effects, and to familiarize yourself with a few of its
+key data structures.
+
+<h1>4. Count the casts</h1>
+
+<p>
+One of the complaints people typically have about C is that one
+of its most unsafe features, type casts, has just about the hardest
+syntax to <tt>grep</tt> for: a parenthesized type, juxtaposed with
+an expression.  But with a parser like Elsa, casts are easy to find,
+so we will write a simple AST visitor to do just this.
+
+<p>
+Open <tt>main.cc</tt> (in <tt>elsa/</tt>), and near the top (say,
+after the block of #includes but before <tt>DeclTypeChecker</tt>),
+add the following:
+<pre>
+  class CastCounter : public ASTVisitor {
+  public:      // data
+    int count;
+
+  public:      // funcs
+    CastCounter() : count(0) {}
+    virtual bool visitExpression(Expression *obj);
+  };
+
+  bool CastCounter::visitExpression(Expression *obj)
+  {
+    if (obj-&gt;isE_cast()) {
+      count++;         // found a cast!
+    }
+    return true;       // visit my children too
+  }
+</pre>
+          
+<p>
+This declares class <tt>CastCounter</tt>, which inherits from
+<tt>ASTVisitor</tt>.  <tt>ASTVisitor</tt> contains a bunch of virtual
+methods, one for each kind of AST node (superclass, not subclass).
+By default these methods do nothing, but we can override that behavior
+in subclasses like <tt>CastCounter</tt>.
+
+<p>
+In <tt>CastCounter</tt>, we have a <tt>count</tt> member to keep track
+of how many casts are found.  We also override
+<tt>visitExpression</tt>, which will be called whenever the visitor
+encounters an <tt>Expression</tt> AST node.  The implementation of
+this method simply increments <tt>count</tt> whenever the expression
+is an <tt>E_cast</tt>.  (The rest of the AST is defined in
+<a href="../cc.ast">cc.ast</a> and documented in 
+<a href="cc.ast.html">cc.ast.html</a>.)
+
+<p>Now, go to the bottom of the <tt>doit()</tt> function, and just
+before the call to <tt>strTable.clear()</tt>, add the following code:
+<pre>
+  CastCounter cc;
+  unit-&gt;traverse(cc);
+  cout &lt;&lt; inputFname &lt;&lt; ": found " &lt;&lt; cc.count &lt;&lt; " casts\n";
+</pre>
+This code creates an instance of <tt>CastCounter</tt>, initiates
+an AST traversal with <tt>traverse()</tt>, and finally prints out
+the count.
+
+<p>
+Rebuild <tt>ccparse</tt> with these changes:
+<pre>
+  elsa$ make
+</pre>
+     
+<p>
+Now, run it on some input:
+<pre>
+  elsa$ ./ccparse in/t0001.cc
+  %%% progress: 0ms: done parsing (1 ms, 0_249063 cycles)
+  ambiguous nodes: 0
+  %%% progress: 4ms: done type checking (3 ms)
+  typechecking results:
+    errors:   0
+    warnings: 0
+  %%% progress: 6ms: done elaborating (0 ms)
+  in/t0001.cc: found 0 casts
+</pre>
+Well that wasn't too exciting, there aren't any casts in <tt>in/t0001.cc</tt>.
+Here are some other files to try:
+<ul>
+<li>t0001.cc: 0 casts
+<li>t0004.cc: 1 cast
+<li>t0014.cc: 1 function-style cast, plus one each of the keyword casts
+<li>t0059.cc: 3 casts
+<li>t0117.cc: 184 casts
+</ul>
+
+<p>
+One interesting aspect of 
+<a href="../in/t0014.cc"><tt>in/t0014.cc</tt></a> is that the "cast" on
+line 11 is actually parsed as an <tt>E_constructor</tt> (constructor
+call), but because the type it constructs is not a class, the
+type checker <em>replaces</em> it with an <tt>E_cast</tt>.  This
+makes the meaning of the code more obvious to an analysis: there is
+no function call there, despite the syntax suggesting it.  
+
+<p>
+If you want, you can verify the absence of the <tt>E_cast</tt> by
+moving the cast-counting code up to between the parser and type
+checking phases in <tt>doit()</tt>.
+
+<h1>5. Print the casts</h1>
+
+<p>
+Let's try something a little more ambitious: instead of just 
+counting the casts, we will print for each cast its source location,
+the source expression, the destination type, and which C++ cast
+keyword it uses (if any).
+
+<p>
+To accomplish all of this, replace the existing <tt>visitExpression</tt>
+implementation with the following:
+<pre>
+  // find the location of a type-id; as locations are not stored on
+  // all AST nodes, we must dig a little to get it
+  inline SourceLoc locOfType(ASTTypeId *id)
+  {
+    return id-&gt;decl-&gt;decl-&gt;loc;
+  }
+
+  bool CastCounter::visitExpression(Expression *obj)
+  {
+    if (obj-&gt;isE_cast()) {
+      count++;
+      E_cast *cast = obj-&gt;asE_cast();
+
+      cout &lt;&lt; toString(locOfType(cast-&gt;ctype))
+           &lt;&lt; ": C cast of `" &lt;&lt; cast-&gt;expr-&gt;exprToString()
+           &lt;&lt; "' to type `" &lt;&lt; cast-&gt;ctype-&gt;getType()-&gt;toString() &lt;&lt; "'\n";
+    }
+
+    else if (obj-&gt;isE_keywordCast()) {
+      count++;
+      E_keywordCast *cast = obj-&gt;asE_keywordCast();
+
+      cout &lt;&lt; toString(locOfType(cast-&gt;ctype))
+           &lt;&lt; ": " &lt;&lt; toString(cast-&gt;key)
+           &lt;&lt; " of `" &lt;&lt; cast-&gt;expr-&gt;exprToString()
+           &lt;&lt; "' to type `" &lt;&lt; cast-&gt;ctype-&gt;getType()-&gt;toString() &lt;&lt; "'\n";
+    }
+
+    return true;       // visit my children too
+  }
+</pre>
+
+<p>
+Source locations have type <tt>SourceLoc</tt>, which is defined
+in <a href="../../smbase/srcloc.h">srcloc.h</a>.  Not all AST nodes
+have locations, because I was concerned about wasting space.
+As in this example, there's usually a location "nearby" that will
+suffice.  The <tt>locOfType</tt> function goes and gets it.
+
+<p>
+The printing code uses the <tt>toString(SourceLoc)</tt> function,
+the <tt>toString(CastKeyword)</tt> function,
+the <tt>Expression::exprToString()</tt> method, and 
+the <tt>Type::toString</tt> method to print the AST components.
+Most things in Elsa can be printed with such routines.  
+
+<p>
+Since keyword casts are their own AST node, there are two conditional
+blocks.  Each uses a "downcast" method such as <tt>asE_cast()</tt> or
+<tt>asE_keywordCast()</tt>, only after checking the type with a type
+interrogation method such as <tt>isE_cast()</tt> or
+<tt>isE_keywordCast()</tt>.  If you call a downcast method and the
+object is not of the appropriate type, an assertion will fail.
+(You <em>can</em> also use the C++ RTTI mechanisms like
+<tt>dynamic_cast</tt> to do this; I just prefer to do it my way.)
+
+<p>
+Build and run this program:
+<pre>
+  elsa$ make
+  [...]
+  elsa$ ./ccparse in/t0014.cc
+  %%% progress: 0ms: done parsing (1 ms, 1_080294 cycles)
+  ambiguous nodes: 2
+  %%% progress: 6ms: done type checking (5 ms)
+  typechecking results:
+    errors:   0
+    warnings: 0
+  %%% progress: 9ms: done elaborating (1 ms)
+  in/t0014.cc:11:7: C cast of ` (6)' to type `int'
+  in/t0014.cc:28:21: const_cast of ` (x)' to type `int'
+  in/t0014.cc:29:23: dynamic_cast of ` (x)' to type `int'
+  in/t0014.cc:30:22: static_cast of ` (x)' to type `int'
+  in/t0014.cc:31:27: reinterpret_cast of ` (x)' to type `int'
+  in/t0014.cc: found 5 casts
+</pre>
+
+<p>
+One annoyance with the output above is the leading space that
+gets printed before the expressions.  That comes from the
+pretty printer module, <tt>cc_print</tt> 
+(<a href="../cc_print.ast">cc_print.ast</a>,
+<a href="../cc_print.h">cc_print.h</a> and
+<a href="../cc_print.cc">cc_print.cc</a>), because it is trying
+to avoid problems with printing things too close together.
+Eventually, the pretty printer will be fixed to not do that.
+A simple short-term fix, if you're inclined, is to pass
+the expression text through <tt>trimWhitespace()</tt> like this
+(be sure to #include <a href="../../smbase/strutil.h">strutil.h</a>):
+<pre>
+  &lt;&lt; ": C cast of `" &lt;&lt; trimWhitespace(cast-&gt;expr-&gt;exprToString())
+</pre>
+
+<h1>6. Semantic grep</h1>
+
+<p>
+A frequent programmer's task is to find all uses of some variable or
+function.  People often use the Unix <tt>grep</tt> utility for this task, but
+<tt>grep</tt> is easily confused by entities that have the same name
+(but are declared in different scopes).  Using Elsa, we can write a
+tool that will report all uses of a given variable.  
+
+<p>
+Rather than have you type in the code for the grepper, it is a
+part of the distribution tarball, in <a href="../semgrep.cc"><tt>semgrep.cc</tt></a>.
+The targets for building it are already in the
+<A href="../Makefile.in"><tt>Makefile</tt></A>, so let's build and
+use it right away:
+<pre>
+  elsa$ make semgrep
+  [...]
+  elsa$$ ./semgrep f 6 in/t0005.cc
+  in/t0005.cc:6:6: declaration
+  in/t0005.cc:13:4: use as variable
+  in/t0005.cc:15:3: use as variable
+</pre>
+
+<p>
+I've chosen to denote variables by their name and the line on
+which they are declared or defined.  This is both reasonably
+convenient and unambiguous.  The usage is then
+<pre>
+  ./semgrep &lt;name&gt; &lt;line&gt; input.cc
+</pre>
+Try a few more examples.
+
+<p>
+Now let's look at how <a href="../semgrep.cc"><tt>semgrep.cc</tt></a> works.
+Near the top is <tt>GrepVisitor</tt>, the visitor that looks for
+uses of a variable.  It visits <tt>E_variable</tt> and <tt>E_fieldAcc</tt>
+nodes to find uses in expressions.  It also looks in <tt>Declarators</tt>,
+to try to find the definition (of, say, a function).
+
+<p>
+Both kinds of expressions are annotated by the type checker with
+a field "<tt>var</tt>", which points at the <tt>Variable</tt> object
+that represents the variable referred-to.  The <tt>var</tt> field
+is declared in <a href="../cc_tcheck.ast"><tt>cc_tcheck.ast</tt></a>,
+an extension module to <a href="../cc.ast"><tt>cc.ast</tt></a> that
+specifies what annotations the type checker adds.
+
+<p>
+<tt>Variable</tt> objects are used for quite a few things, including functions; see
+<a href="../variable.h"><tt>variable.h</tt></a> for more details.
+Each variable has an associated location, and that is what the grep
+checks.  When a hit is found, the location of the <em>reference</em>
+to that variable is printed.
+
+<p>
+The <tt>Declarator</tt> case works similarly, as it has been
+annotated with the <tt>Variable</tt> to which the declarator
+refers.
+
+<p>
+One problem with this grepper is that <tt>Variable</tt> only has
+one location, but a variable can be declared in multiple places,
+and it's not always obvious which location will be stored there
+(look in <a href="../variable.h"><tt>variable.h</tt></a> for details).
+A better grepper would use one traversal to robustly find the 
+<tt>Variable</tt> of interest using any of a variety of identification
+criteria, and then another traversal to identify uses.  I leave
+this as an exercise for the interested reader.
+
+<h1>7. Example language extension</h1>
+
+<p>
+This is for the moment a TODO item ....
+
+
+<h1>8. Directions for further exploration</h1>
+
+<p>
+(outline)
+<ul>
+<li>cc.ast
+<li>cc_type
+<li>cc.gr (just skim it)
+<li>cc_tcheck.cc (skim)
+<li>look at the regression tester, ERROR lines, etc; learn how to add
+    a new test
+<li>... what else?
+</ul>
+
+<!--
+<p>
+ideas for more projects
+<ul>
+<li>lint-like checking
+  <ul>
+  <li>don't make an iterator without also advancing it at some point
+  <li>don't pass large objects by value
+  <li>simpleminded leak checker: for every "new x" where "x" is a local,
+      there should be a "delete x" in same function
+  <li>scan for uses of List::append(), which can lead to quadratic behavior
+  <li>find places that string::pchar()'s result is stored in a
+      variable instead of being used right away
+  <li>find clashes between char* and StringRef
+  <li>look for places where an iterator is outstanding on a data structure
+      and it might be modified
+  </ul>
+<li>?
+</ul>
+-->
+
+
+
+
+
+
+<!-- blank space -->
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

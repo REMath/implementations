@@ -1,0 +1,20 @@
+// ffollow.gr            see license.txt for copyright and terms of use
+// grammar 4.11 of [ASU] (p.189), designed to show First and Follow
+
+terminals {
+  0 : eof "$";
+  1 : plus "+";
+  2 : star "*";
+  3 : lparen "(";
+  4 : rparen ")";
+  5 : id "id";
+}
+
+context_class Context : public UserActions {};
+
+nonterm S  ->  E /*"$"*/ ;
+nonterm E  ->  T Ep ;
+nonterm Ep{->  "+" T Ep;  -> empty; }
+nonterm T  ->  F Tp ;
+nonterm Tp{->  "*" F Tp;  -> empty; }
+nonterm F {->  "(" E ")"; -> "id"; }

@@ -1,0 +1,190 @@
+# Makefile.in for ast
+# see license.txt for copyright and terms of use
+
+# main targets
+all: ccsstr astgen libast.a example.o ext1.o
+
+
+# directories of other software
+SMBASE := @SMBASE@
+LIBSMBASE := $(SMBASE)/libsmbase.a
+
+# external tools
+PERL := @PERL@
+MYFLEX := $(PERL) $(SMBASE)/run-flex.pl
+
+# TODO: agramlex.yy.cc apparently has backing up, which should
+# ideally be removed; add -nobackup to the run-flex.pl command
+# line to see this
+
+
+# C++ compiler, etc.
+CXX := $(CXX)
+
+# flags for the C and C++ compilers (and preprocessor)
+CCFLAGS := @CCFLAGS@ -I$(SMBASE)
+
+# flags for the linker
+LDFLAGS := -g -Wall $(LIBSMBASE)
+
+
+# some other tools
+AR     := ar
+RANLIB := ranlib
+
+
+# compile .cc to .o
+%.o: %.cc
+	$(CXX) -c -o $@ $< $(CCFLAGS)
+	@perl $(SMBASE)/depend.pl -o $@ $< $(CCFLAGS) > $*.d
+
+
+# remake the generated Makefile if its inputs have changed
+Makefile: Makefile.in config.status
+	./config.status
+
+# reconfigure if the configure script has changed
+config.status: configure.pl $(SMBASE)/sm_config.pm
+	./config.status -reconfigure
+
+
+# ---------------------- intermediate files -------------------
+# for bison-1.28:
+  # unfortunately, the way bison.simple declares YYSTYPE precludes a proper
+  # declaration of yylex(), unless I modify it as below; the 'grep' is so
+  # I have a .h file without the union, since the union refers to types
+  # whose declarations I'd like to avoid spreading everywhere
+# for bison-1.875:
+  # g++ doesn't like __attribute__((__unused__))
+agrampar.tab.cc agrampar.tab.h agrampar.codes.h: agrampar.y
+	bison -d -v agrampar.y
+	mv -f agrampar.tab.c tmp
+	sed -e 's/typedef union {/typedef union YYSTYPE {/' \
+	    -e 's/__attribute__ ((__unused__))//' \
+	  < tmp > agrampar.tab.cc
+	mv -f agrampar.tab.h tmp
+	sed -e 's/typedef union {/typedef union YYSTYPE {/' < tmp > agrampar.tab.h
+	rm tmp
+	grep '# *define' agrampar.tab.h > agrampar.codes.h
+
+agrampar.tab.o: ast.hand.h ast.ast.h agrampar.h
+
+# have to use sed to change the forward declaration of 'istream'
+# into an #include, so the std:: namespace doesn't cause a problem
+agramlex.yy.cc: gramlex.h agramlex.lex agrampar.codes.h
+	$(MYFLEX) -o$@ agramlex.lex
+
+
+# ------------------------- ccsstr ---------------------
+CCSSTR_OBJS := \
+  reporterr.o \
+  embedded.o
+
+ccsstr: ccsstr.cc ccsstr.h $(CCSSTR_OBJS)
+	$(CXX) -o $@ -DTEST_CCSSTR $(CCFLAGS) ccsstr.cc $(CCSSTR_OBJS) $(LDFLAGS)
+
+
+# ------------------------- astgen ---------------------
+ASTGEN_OBJS := \
+  gramlex.o \
+  agrampar.tab.o \
+  ccsstr.o \
+  agramlex.yy.o \
+  reporterr.o \
+  embedded.o \
+  ast.hand.o \
+  asthelp.o \
+  xmlhelp.o \
+  strtable.o \
+  agrampar.o  \
+  astgen.o
+-include $(ASTGEN_OBJS:.o=.d)
+
+# ast.ast.cc is a dependency here but not explicitly in the command
+# line because ast.hand.cc #includes it
+astgen: $(ASTGEN_OBJS) ast.ast.cc $(LIBSMBASE) 
+	$(CXX) -o astgen $(ASTGEN_OBJS) $(LDFLAGS)
+
+
+# ---------------------- run astgen ----------------------
+# simple ast spec file
+example.cc: astgen example.ast
+	./astgen example.ast
+
+exampletest: exampletest.o example.o asthelp.o locstr.o strtable.o $(LIBSMBASE)
+	$(CXX) -o $@ $^
+
+# simple extension
+ext1.cc: astgen example.ast ext1.ast
+	./astgen -oext1 example.ast ext1.ast
+
+# If you want to regenerate astgen's own ast file, you do
+#   ./astgen -oast.ast ast.ast
+#
+# This rule is *not* in the Makefile because if you do it
+# without thinking you can break the self-bootstrapping
+# (and be forced to restore your ast.ast.{cc,h} from the
+# distribution tarball or from CVS).
+
+
+# ------------------------ libast.a -------------------
+# this library is the set of support modules required for
+# using astgen-generated code, or are simply useful generally
+# but don't belong in smbase
+LIB_OBJS := \
+  gramlex.o \
+  ccsstr.o \
+  reporterr.o \
+  embedded.o \
+  asthelp.o \
+  xmlhelp.o \
+  strtable.o \
+  locstr.o
+-include $(ASTGEN_OBJS:.o=.d)
+
+libast.a: $(LIB_OBJS)
+	$(AR) -r $@ $(LIB_OBJS)
+	-$(RANLIB) $@
+
+
+# ------------------ documentation ------------------
+gendoc:
+	mkdir gendoc
+
+gendoc/configure.txt: configure
+	./configure --help >$@
+
+gendoc/demo.h gendoc/demo.cc: demo.ast astgen
+	./astgen -ogendoc/demo demo.ast
+
+.PHONY: doc
+doc: gendoc gendoc/configure.txt gendoc/demo.h
+	@echo "built documentation"
+
+
+# ------------------------ misc ---------------------
+check: ccsstr
+	./ccsstr
+
+# delete outputs of compiler, linker
+clean:
+	rm -f *.o tmp *.d
+	rm -f agrampar astgen ccsstr towner exampletest libast.a
+	rm -f agrampar.output
+	rm -f example.{h.cc} ext1.{h,cc}
+	rm -f agramlex.yy.cc
+
+# return to pristine checked-out state
+distclean: clean
+	rm -f Makefile config.status config.summary
+	rm -rf gendoc
+
+# 'clean', plus remove distributed outputs of bison
+toolclean: clean
+	rm -f agrampar.tab.h
+	rm -f agrampar.tab.cc
+	rm -f agrampar.codes.h
+
+# test for owner
+towner: owner.h towner.o
+	$(CXX) -o towner towner.o $(LDFLAGS)

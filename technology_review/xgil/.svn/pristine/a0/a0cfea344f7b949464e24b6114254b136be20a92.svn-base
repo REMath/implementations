@@ -1,0 +1,1673 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>Elkhound Tutorial</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+</HEAD>
+
+<body>
+
+<center><h2>
+Elkhound Tutorial
+</h2></center>
+
+<p><center><img src="http://www.castlebarelkhounds.com/puppy111.jpg"></center>
+
+<p>The purpose of this tutorial is to walk through the steps of
+building a parser using Elkhound.  Familiarity with another parser
+generator (such as
+<a href="http://www.gnu.org/manual/bison-1.25/bison.html">Bison</a>) 
+might be helpful but should not be necessary.
+
+<p>The
+<a href="manual.html">Elkhound manual</a> may also be of use, but
+at the moment the manual is far from complete, and this tutorial
+has much more information.
+
+<h3>Contents</h3>
+<ul>
+<li><a href="#sec1">1. The Language to Parse</a>
+<li><a href="#sec2">2. The Lexer</a>
+<li><a href="#sec3">3. A grammar for AExp</a>
+<li><a href="#sec4">4. The parser driver</a>
+<li><a href="#sec5">5. Resolving the ambiguity</a>
+<li><a href="#sec6">6. Parse actions</a>
+<li><a href="#sec7">7. Filling out the language</a>
+<li><a href="#sec8">8. Building an AST</a>
+<li><a href="#sec9">9. Late disambiguation</a>
+<li><a href="#conc">Conclusion</a>
+<li><a href="#refs">References</a>
+</ul>
+
+<a name="sec1"></a>
+<h2>1. The Language to Parse</h2>
+<!-- FILES: gcom1 -->
+
+<p>I'll use Dijkstra's guarded command language as the example language
+to parse <a href="#ref1">[1]</a>.  We can describe the syntax with
+the nonterminals <b>AExp</b> (arithmetic expression), <b>BExp</b> (boolean
+expression), <b>Stmt</b> (statement) and <b>GCom</b> (guarded command):
+
+<pre>
+  AExp ::= n                  // integer literal
+         | x                  // variable name
+         | AExp + AExp        // addition
+         | AExp - AExp        // subtraction
+         | AExp * AExp        // multiplication
+         | (AExp)             // grouping parentheses
+
+  BExp ::= true
+         | false
+         | AExp = AExp        // equality test
+         | AExp &lt; AExp        // less than
+         | !BExp              // boolean negation
+         | BExp /\ BExp       // and
+         | BExp \/ BExp       // or
+         | (BExp)             // grouping
+
+  Stmt ::= skip               // do nothing
+         | abort              // terminate execution unsuccessfully
+         | print x            // print variable value
+         | x := AExp          // variable assignment
+         | Stmt ; Stmt        // sequential execution
+         | if GCom fi         // guarded command
+         | do GCom od         // loop
+
+  GCom ::= BExp -&gt; Stmt       // run command if expression is true
+         | GCom # GCom        // nondeterministic choice (using "#" for "fatbar")
+</pre>
+
+<p>My hope is this example language will illustrate the main tasks of
+parser construction without being yet another "desktop calculator"
+example.  Of course, we'll start with just AExp (since it's the only
+nonterminal that doesn't depend on the others), so initially it
+will be the same old example.
+
+<a name="sec2"></a>
+<h2>2. The Lexer</h2>
+<!-- FILES: gcom1 -->
+
+<p>The first step is to write the lexer.  While it is possible to
+put the lexer definition right into the grammar file (using the
+<tt>verbatim</tt> and <tt>impl_verbatim</tt> directives), and
+doing so might make the example shorter, it would not represent
+very good design.  So the lexer is its own module.
+
+<a name="sec2.1"></a>
+<h3>2.1 &nbsp; lexer.h</h3>
+
+<p>The header <a href="examples/gcom1/lexer.h"><tt>lexer.h</tt></a>
+starts with an enumeration describing the tokens and their
+associated codes:
+
+<pre>
+  // token codes (must agree with the parser)
+  enum TokenCode {
+    TOK_EOF         = 0,     // end of file
+    TOK_LITERAL,             // integer literal
+    TOK_IDENTIFIER,          // identifier like "x"
+    TOK_PLUS,                // "+"
+    TOK_MINUS,               // "-"
+    TOK_TIMES,               // "*"
+    TOK_LPAREN,              // "("
+    TOK_RPAREN,              // ")"
+  };
+</pre>
+
+<p>Next, a class needs to implement <tt>LexerInterface</tt>
+(<a href="lexerint.h"><tt>lexerint.h</tt></a>).  The parser's
+interaction with the lexer is conducted via this interface:
+
+<pre>
+  // read characters from stdin, yield tokens for the parser
+  class Lexer : public LexerInterface {
+  public:
+    // function that retrieves the next token from
+    // the input stream
+    static void nextToken(LexerInterface *lex);
+    virtual NextTokenFunc getTokenFunc() const
+      { return &amp;Lexer::nextToken; }
+
+    // debugging assistance functions
+    string tokenDesc() const;
+    string tokenKindDesc(int kind) const;
+  };
+</pre>
+
+<a name="sec2.2"></a>
+<h3>2.2 &nbsp; lexer.cc</h3>
+
+<p>Typically, one would use a lexer generator such as <a
+href="http://www.gnu.org/software/flex/">flex</a> to help write a fast
+lexer.  However, this tutorial is not about flex, and is not concerned
+with performance, so we'll use a simple hand-coded lexer.  The lexer's
+primary task is to set the <tt>type</tt> field equal to the code of
+the token that is found.  For some tokens (<tt>TOK_LITERAL</tt> and
+<tt>TOK_IDENTIFIER</tt> in our example), it also sets the
+<tt>sval</tt> (semantic value) field.  The meaning of <tt>sval</tt> is
+decided by the person who writes the lexer.
+
+<p>Here is the <tt>Lexer::nextToken</tt> function from
+<a href="examples/gcom1/lexer.cc">lexer.cc</a>:
+
+<pre>
+  void Lexer::nextToken(LexerInterface *lex)
+  {
+    int ch = getchar();
+
+    // skip whitespace
+    while (isspace(ch)) {
+      ch = getchar();
+    }
+
+    // end of file?
+    if (ch == EOF) {
+      lex-&gt;type = TOK_EOF;
+      return;
+    }
+
+    // simple one-character tokens
+    switch (ch) {
+      case '+': lex-&gt;type = TOK_PLUS; return;
+      case '-': lex-&gt;type = TOK_MINUS; return;
+      case '*': lex-&gt;type = TOK_TIMES; return;
+      case '(': lex-&gt;type = TOK_LPAREN; return;
+      case ')': lex-&gt;type = TOK_RPAREN; return;
+    }
+
+    // integer literal
+    if (isdigit(ch)) {
+      int value = 0;
+      while (isdigit(ch)) {
+        value = value*10 + ch-'0';
+        ch = getchar();
+      }
+      ungetc(ch, stdin);      // put back the nondigit
+
+      // semantic value is the integer value of the literal
+      lex-&gt;sval = (SemanticValue)value;
+
+      lex-&gt;type = TOK_LITERAL;
+      return;
+    }
+
+    // identifier
+    if (isalpha(ch)) {        // must start with letter
+      char buf[80];
+      int i=0;
+      while (isalnum(ch)) {   // but allow digits later on
+        buf[i++] = (char)ch;
+        if (i==80) {
+          fprintf(stderr, "identifier is too long\n");
+          abort();
+        }
+        ch = getchar();
+      }
+      buf[i]=0;
+      ungetc(ch, stdin);
+
+      // semantic value is a pointer to an allocated string; it
+      // is simply leaked (never deallocated) for this example
+      lex-&gt;sval = (SemanticValue)strdup(buf);
+
+      lex-&gt;type = TOK_IDENTIFIER;
+      return;
+    }
+
+    fprintf(stderr, "illegal character: %c\n", ch);
+    abort();
+  }
+</pre>
+
+<p>The lexer interface includes functions that return information
+about the tokens, mainly to assist in debugging.  For example,
+when the Elkhound parser is told to print out the actions it is
+taking, it uses these description functions to make that output
+more informative.
+
+<pre>
+  string Lexer::tokenDesc() const
+  {
+    switch (type) {
+      // for two kinds of tokens, interpret their semantic value
+      case TOK_LITERAL:      return stringf("%d", (int)sval);
+      case TOK_IDENTIFIER:   return string((char*)sval);
+
+      // otherwise, just return the token kind description
+      default:               return tokenKindDesc(type);
+    }
+  }
+
+
+  string Lexer::tokenKindDesc(int kind) const
+  {
+    switch (kind) {
+      case TOK_EOF:          return "EOF";
+      case TOK_LITERAL:      return "lit";
+      case TOK_IDENTIFIER:   return "id";
+      default: {
+        static char const map[] = "+-*()";
+        return substring(&amp;map[kind-TOK_PLUS], 1);
+      }
+    }
+  }
+</pre>
+
+<a name="sec2.3"></a>
+<h3>2.3 &nbsp; Test the lexer</h3>
+
+<p>Finally, it's useful to write a simple driver to test the lexer by
+itself.  It also illustrates how the parser will use the lexer
+interface.  This driver will only be used for the lexer test program;
+it's not the <tt>main()</tt> function of the completed parser program.
+
+<pre>
+  #ifdef TEST_LEXER
+  int main()
+  {
+    Lexer lexer;
+    for (;;) {
+      lexer.getTokenFunc()(&amp;lexer);    // first call yields a function pointer
+
+      // print the returned token
+      string desc = lexer.tokenDesc();
+      printf("%s\n", desc.c_str());
+
+      if (lexer.type == TOK_EOF) {
+        break;
+      }
+    }
+
+    return 0;
+  }
+  #endif // TEST_LEXER
+</pre>
+
+<p>We can compile and run this completed lexer test program:
+
+<pre>
+  $ g++ -o lexer -g -Wall -I../.. -I../../../smbase -DTEST_LEXER lexer.cc \
+    ../../libelkhound.a ../../../smbase/libsmbase.a
+  $ echo "5 + myVar * (6 + 7)" | ./lexer
+  5
+  +
+  myVar
+  *
+  (
+  6
+  +
+  7
+  )
+  EOF
+</pre>
+
+<p>The <a href="examples/gcom1/Makefile"><tt>Makefile</tt></a> knows how
+to do the compilation step; just say <tt>make lexer</tt> in the
+<tt>examples/gcom1</tt> directory of Elkhound.
+
+<a name="sec3"></a>
+<h2>3. A grammar for AExp</h2>
+<!-- FILES: gcom1 -->
+
+<a name="sec3.1"></a>
+<h3>3.1 &nbsp; Context class</h3>
+
+<p>All of the parsing actions become methods of a class, called the
+parser context class.  Fields of that class do the job that would
+be done with global variables in other parser generators.  Since
+we don't need any such context yet, we use an empty class.  It
+must implement the <tt>UserActions</tt>
+(<a href="useract.h"><tt>useract.h</tt></a>) interface.
+
+<pre>
+  context_class GCom : public UserActions {
+  public:
+    // empty for now
+  };
+</pre>
+
+<a name="sec3.2"></a>
+<h3>3.2 &nbsp; Terminals</h3>
+
+<p>Next, the tokens or terminal symbols of the grammar must be
+declared, along with their numeric codes.  Tokens can be given
+optional aliases (in quotes) to make the grammar that follows
+more readable.
+
+<pre>
+  terminals {
+    0 : TOK_EOF                        ;
+    1 : TOK_LITERAL                    ;
+    2 : TOK_IDENTIFIER                 "x";
+    3 : TOK_PLUS                       "+";
+    4 : TOK_MINUS                      "-";
+    5 : TOK_TIMES                      "*";
+    6 : TOK_LPAREN                     "(";
+    7 : TOK_RPAREN                     ")";
+  }
+</pre>
+
+<p>Since this information repeats information already in <tt>lexer.h</tt>,
+there is a script, <a href="make-tok"><tt>make-tok</tt></a>, that can
+create it automatically.  Run the script like this:
+
+<pre>
+  $ perl ../../make-tok TokenCode &lt;lexer.h &gt;tokens.tok
+</pre>
+
+and then the terminals section of the grammar becomes simply
+
+<pre>
+  terminals {
+    include("tokens.tok")
+  }
+</pre>
+
+<a name="sec3.3"></a>
+<h3>3.3 &nbsp; The grammar</h3>
+
+<p>Finally, we specify the grammar.  Nonterminals are introduced with
+the <tt>nonterm</tt> keyword, then the name of the nonterminal and an
+open-brace ("<tt>{</tt>").  Inside the braces are a sequence of
+right-hand sides: begin with "<tt>-&gt;</tt>" (pronounced "rewrites
+as"), then a sequence of terminals or nonterminals, then a semicolon
+("<tt>;</tt>").
+
+<pre>
+  nonterm AExp {
+    -> TOK_LITERAL;
+    -> TOK_IDENTIFIER;
+    -> AExp "+" AExp;
+    -> AExp "-" AExp;
+    -> AExp "*" AExp;
+    -> "(" AExp ")";
+  }
+</pre>
+
+<p>The syntax is free-form; all whitespace is equivalent.  The example
+could have been written all on one line, or spread out onto even more
+lines (with blank lines wherever).  You can put comments, either C++-style
+"<tt>//</tt>" or C-style "<tt>/*...*/</tt>", anywhere you can put
+whitespace.
+
+<p>Some optional components have been left out of this example:
+semantic value types, right-hand side (RHS) labels, and parse
+actions.  They will be addressed in subsequent sections.
+
+<a name="sec3.4"></a>
+<h3>3.4 &nbsp; Running elkhound</h3>
+
+<p>The next step is to run <tt>elkhound</tt>, the parser generator
+program.  (Run it without arguments to see a short usage description.)
+
+<pre>
+  $ ../../elkhound gcom.gr
+  9 shift/reduce conflicts
+</pre>
+
+<p>It has some shift/reduce conflicts, because the grammar is
+ambiguous, but we'll deal with them later.
+
+<p><tt>elkhound</tt> wrote output to two files, <tt>gcom.h</tt> and
+<tt>gcom.cc</tt>.  <tt>gcom.h</tt> contains the definition of the
+parser context class, <tt>GCom</tt>.  It consists of whatever appeared
+in the <tt>context_class</tt> declaration in the grammar file, plus
+declarations used during parsing.
+
+<pre>
+  // gcom.h
+  // *** DO NOT EDIT BY HAND ***
+  // automatically generated by elkhound, from gcom.gr
+
+  #ifndef GCOM_H
+  #define GCOM_H
+
+  #include "useract.h"     // UserActions
+
+
+  // parser context class
+  class 
+  #line 6 "gcom.gr"
+   GCom : public UserActions {
+  public:
+    // empty for now
+
+  #line 19 "gcom.h"
+
+
+  private:
+    USER_ACTION_FUNCTIONS      // see useract.h
+
+    // declare the actual action function
+    static SemanticValue doReductionAction(
+      GCom *ths,
+      int productionId, SemanticValue const *semanticValues,
+    SourceLoc loc);
+
+    // declare the classifier function
+    static int reclassifyToken(
+      GCom *ths,
+      int oldTokenType, SemanticValue sval);
+
+    void action0___EarlyStartSymbol(SourceLoc loc, SemanticValue top);
+    void action1_AExp(SourceLoc loc);
+    void action2_AExp(SourceLoc loc);
+    void action3_AExp(SourceLoc loc);
+    void action4_AExp(SourceLoc loc);
+    void action5_AExp(SourceLoc loc);
+    void action6_AExp(SourceLoc loc);
+
+  // the function which makes the parse tables
+  public:
+    virtual ParseTables *makeTables();
+  };
+
+  #endif // GCOM_H
+</pre>
+
+<p><tt>gcom.cc</tt> contains implementations of those functions,
+plus the parse tables themselves as static data.  I don't include
+example output here because the details aren't very important
+right now.
+
+<a name="sec4"></a>
+<h2>4. The parser driver</h2>
+<!-- FILES: gcom1 -->
+
+<p>Finally, we're ready to write a <tt>main()</tt> function to tie it
+all together.  Again, this could have been stuffed into
+<tt>gcom.gr</tt>, but it's better to separate it into another file (<a
+href="examples/gcom1/parser.cc"><tt>parser.cc</tt></a>) for
+maintainability.
+
+<pre>
+  #include "lexer.h"     // Lexer
+  #include "gcom.h"      // GCom
+  #include "glr.h"       // GLR
+
+  int main()
+  {
+    // create and initialize the lexer
+    Lexer lexer;
+    lexer.nextToken(&amp;lexer);
+
+    // create the parser context object
+    GCom gcom;
+
+    // initialize the parser
+    GLR glr(&amp;gcom, gcom.makeTables());
+
+    // parse the input
+    SemanticValue result;
+    if (!glr.glrParse(lexer, result)) {
+      printf("parse error\n");
+      return 2;
+    }
+
+    // print result
+    printf("result: %d\n", (int)result);
+
+    return 0;
+  }
+</pre>
+
+<p>Compile and link this program (can also use the
+<a href="examples/gcom1/Makefile"><tt>Makefile</tt></a>: "<tt>make parser</tt>"):
+
+<pre>
+  $ g++ -c -o lexer.o -g -Wall -I../.. -I../../../smbase lexer.cc
+  $ g++ -c -o parser.o -g -Wall -I../.. -I../../../smbase parser.cc
+  $ g++ -c -o gcom.o -g -Wall -I../.. -I../../../smbase gcom.cc
+  $ g++ -o parser lexer.o parser.o gcom.o -g -Wall ../../libelkhound.a ../../../smbase/libsmbase.a
+</pre>
+
+<p>Right now, it doesn't do much more than recognize the language:
+
+<pre>
+  $ echo "2" | ./parser
+  result: 0
+
+  $ echo "2 + 3" | ./parser
+  result: 0
+
+  $ echo "2 + 3 +" | ./parser
+  WARNING: there is no action to deallocate terminal TOK_PLUS
+  In state 4, I expected one of these tokens:
+    [1] lit
+    [2] id
+    [6] (
+  &lt;noloc&gt;:1:1: Parse error (state 4) at EOF
+  parse error
+
+  $ echo "2 + 3 + 5" | ./parser
+  &lt;noloc&gt;:1:1: WARNING: there is no action to merge nonterm AExp
+  result: 0
+
+  $ echo "2 + 3 + 5 +" | ./parser
+  &lt;noloc&gt;:1:1: WARNING: there is no action to merge nonterm AExp
+  WARNING: there is no action to deallocate terminal TOK_PLUS
+  In state 4, I expected one of these tokens:
+    [1] lit
+    [2] id
+    [6] (
+  &lt;noloc&gt;:1:1: Parse error (state 4) at EOF
+  parse error
+</pre>
+
+<p>The parse error message explains which tokens would have allowed
+the parser to make progress for at least one more token of input.
+Elkhound's error diagnosis and recovery is unfortunately still quite
+primitive; among the TODOs is to improve it.  Anyway,
+the output can be suppressed if desired by adding to <tt>main()</tt>:
+<pre>
+  glr.noisyFailedParse = false;
+</pre>
+
+<p>The complaints about not being able to deallocate terminals mean
+the parser is dropping semantic values on the floor.  Elkhound offers
+a way to specify what should happen in that case, but since we did
+not, the parser prints a warning.  The warning can be suppressed by
+adding at the top of <tt>gcom.gr</tt>:
+<pre>
+  option useGCDefaults;
+</pre>
+
+<p>2005-03-03: I just made it so that terminals with no declared type
+are silently dropped on the floor, so you won't see the above
+warnings about deallocating terminals.
+
+<p>Finally, the warning about merging the nonterminal AExp means that
+the parser discovered an ambiguity, but the grammar did not specify
+how to handle it, so (at least) one of the ambiguous alternatives was
+arbitrarily dropped.  We could suppress that by specifying an empty
+ambiguity resolution procedure, but let's leave it alone for now.
+
+<p>The source files for this point in the tutorial are in the
+<a href="examples/gcom1"><tt>examples/gcom1</tt></a> directory:
+<ul>
+<li><a href="examples/gcom1/lexer.h"><tt>lexer.h</tt></a>
+<li><a href="examples/gcom1/lexer.cc"><tt>lexer.cc</tt></a>
+<li><a href="examples/gcom1/gcom.gr"><tt>gcom.gr</tt></a>
+<li><a href="examples/gcom1/parser.cc"><tt>parser.cc</tt></a>
+<li><a href="examples/gcom1/Makefile"><tt>Makefile</tt></a>
+</ul>
+
+<a name="sec5"></a>
+<h2>5. Resolving the ambiguity</h2>
+<!-- FILES: gcom2 -->
+
+<a name="sec5.1"></a>
+<h3>5.1 &nbsp; Look at the conflicts</h3>
+
+<p>Often, you can tell what the problem is by looking at the parser's
+conflict report.  To do that, run <tt>elkhound</tt> with
+"<tt>-tr conflict</tt>":
+
+<pre>
+  $ ../../elkhound -tr conflict gcom.gr
+  %%% conflict: --------- state 11 ----------
+  left context: AExp + AExp
+  sample input: TOK_LITERAL + TOK_LITERAL
+  %%% conflict: conflict for symbol TOK_PLUS
+  %%% conflict:   shift, and move to state 4
+  %%% conflict:   reduce by rule [3] AExp[void] -> AExp + AExp
+  %%% conflict: conflict for symbol TOK_MINUS
+  %%% conflict:   shift, and move to state 5
+  %%% conflict:   reduce by rule [3] AExp[void] -> AExp + AExp
+  %%% conflict: conflict for symbol TOK_TIMES
+  %%% conflict:   shift, and move to state 6
+  %%% conflict:   reduce by rule [3] AExp[void] -> AExp + AExp
+  (etc.)
+</pre>
+
+<p>What this is saying is that after seeing "AExp + AExp", if
+it sees a "+", "-" or "*" then it has two possible actions:
+<ul>
+<li>reduce using "AExp -> AExp + AExp", or
+<li>shift the symbol, in hopes of reducing that symbol before
+    reducing via the "+" rule
+</ul>
+This information may be enough for you to understand what the
+problem is and how to solve it.  However, it's rather low-level
+information, and sometimes it isn't clear where the problem
+actually lies.  Also, not every conflict leads to an ambiguity.
+
+<p>For those familiar with other parser generators, you may
+find yourself wanting to see the entire LR table.  For that,
+add "<tt>-tr lrtable</tt>" to the <tt>elkhound</tt> command
+line.  It will write another file (<tt>gcom.out</tt>).
+
+<a name="sec5.2"></a>
+<h3>5.2 &nbsp; Print the tree</h3>
+
+<p>If you have an input that demonstrates a geniune ambiguity, you can
+have Elkhound print the parse tree, including ambiguities.  The parse
+tree can then be compared with the input and grammar to decide how to
+proceed.
+
+<p>To print the parse tree, we just need to change the driver
+a little.  Specifically, we wrap the lexer with a version that
+just yields the nonterminal name, and substitute the given actions
+with actions that build a parse tree.  We need two more headers:
+
+<pre>
+  #include "ptreenode.h" // PTreeNode
+  #include "ptreeact.h"  // ParseTreeLexer, ParseTreeActions
+</pre>
+
+Then, run the parser like this:
+
+<pre>
+  // wrap the lexer and actions with versions that make a parse tree
+  ParseTreeLexer ptlexer(&amp;lexer, &amp;gcom);
+  ParseTreeActions ptact(&amp;gcom, gcom.makeTables());
+
+  // initialize the parser
+  GLR glr(&amp;ptact, ptact.getTables());
+
+  // parse the input
+  SemanticValue result;
+  if (!glr.glrParse(ptlexer, result)) {
+    printf("parse error\n");
+    return 2;
+  }
+
+  // print the tree
+  PTreeNode *ptn = (PTreeNode*)result;
+  ptn-&gt;printTree(cout, PTreeNode::PF_EXPAND);
+</pre>
+
+<p>The file <a href="examples/gcom2/parser.cc"><tt>parser.cc</tt></a>
+decides whether to print the tree based on a command-line argument
+"<tt>-tree</tt>".  The new parser gives some interesting output:
+
+<pre>
+  $ echo "2" | ./parser -tree
+  __EarlyStartSymbol -&gt; AExp TOK_EOF
+    AExp -&gt; TOK_LITERAL
+      TOK_LITERAL
+    TOK_EOF
+
+  $ echo "2 + 3" | ./parser -tree
+  __EarlyStartSymbol -&gt; AExp TOK_EOF
+    AExp -&gt; AExp TOK_PLUS AExp
+      AExp -&gt; TOK_LITERAL
+        TOK_LITERAL
+      TOK_PLUS
+      AExp -&gt; TOK_LITERAL
+        TOK_LITERAL
+    TOK_EOF
+
+  $ echo "2 + 3 + 4" | ./parser -tree
+  __EarlyStartSymbol -&gt; AExp TOK_EOF
+    --------- ambiguous AExp: 1 of 2 ---------
+      AExp -&gt; AExp TOK_PLUS AExp
+        AExp -&gt; AExp TOK_PLUS AExp
+          AExp -&gt; TOK_LITERAL
+            TOK_LITERAL
+          TOK_PLUS
+          AExp -&gt; TOK_LITERAL
+            TOK_LITERAL
+        TOK_PLUS
+        AExp -&gt; TOK_LITERAL
+          TOK_LITERAL
+    --------- ambiguous AExp: 2 of 2 ---------
+      AExp -&gt; AExp TOK_PLUS AExp
+        AExp -&gt; TOK_LITERAL
+          TOK_LITERAL
+        TOK_PLUS
+        AExp -&gt; AExp TOK_PLUS AExp
+          AExp -&gt; TOK_LITERAL
+            TOK_LITERAL
+          TOK_PLUS
+          AExp -&gt; TOK_LITERAL
+            TOK_LITERAL
+    --------- end of ambiguous AExp ---------
+    TOK_EOF
+
+</pre>
+
+<p>As one can tell by inspecting the grammar, an ambiguity arises
+because the production
+
+<pre>
+  AExp -&gt; AExp "+" AExp
+</pre>
+
+does not specify an associativity for "<tt>+</tt>".  Moreover, we
+can see that "<tt>-</tt>" and "<tt>*</tt>" have the same problem,
+and that there is no specified precedence among these operators.
+
+<a name="sec5.3"></a>
+<h3>5.3 &nbsp; Precedence and associativity</h3>
+<!-- FILES: gcom3 -->
+
+<p>These problems are easy to fix.  We can just tell Elkhound the
+precedence and associativity of these operators, in the
+<tt>terminals</tt> section of
+<a href="examples/gcom3/gcom.gr"><tt>gcom.gr</tt></a>:
+
+<pre>
+  terminals {
+    include("tokens.tok")
+
+    precedence {
+      left  20 "*";        // high precedence, left associative
+      left  10 "+" "-";    // low precedence, left associative
+    }
+  }
+</pre>
+
+<p>Higher precedence numbers mean higher precedence, i.e. that those
+operators bind more tightly.  The order in which the declarations
+appear is irrelevant; only the numbers matter.  Operators with the
+same precedence are resolved using associativity, typically either
+"<tt>left</tt>" or "<tt>right</tt>".  See the 
+<a href="manual.html">manual</a>
+(Section 7) for more information.
+
+<p>Now, <tt>elkhound</tt> reports no LR conflicts, which implies
+the grammar is unambiguous (though the converse is not true: the
+presence of conflicts does not guarantee ambiguity).  We can see
+that the tree for "<tt>2 + 3 + 4</tt>" no longer contains
+ambiguities:
+
+<pre>
+  $ echo "2 + 3 + 4" | ./parser -tree
+  __EarlyStartSymbol -&gt; AExp TOK_EOF
+    AExp -&gt; AExp TOK_PLUS AExp
+      AExp -&gt; AExp TOK_PLUS AExp
+        AExp -&gt; TOK_LITERAL
+          TOK_LITERAL
+        TOK_PLUS
+        AExp -&gt; TOK_LITERAL
+          TOK_LITERAL
+      TOK_PLUS
+      AExp -&gt; TOK_LITERAL
+        TOK_LITERAL
+    TOK_EOF
+</pre>
+
+<p>Precedence and associativity can only be used when the
+disambiguation criteria is entirely syntactic, and fairly simple at
+that.  One of Elkhound's special features is the ability to tolerate
+ambiguity during parsing, letting the user defer disambiguation until
+it is convenient.  Later on I'll demonstrate how to do this.
+
+
+<a name="sec6"></a>
+<h2>6. Parse actions</h2>
+<!-- FILES: gcom4 -->
+
+<p>To make the program do anything besides simply recognize a
+language, we need to add actions to the grammar productions.  Actions
+are written in C++, inside braces ("<tt>{</tt>" and "<tt>}</tt>")
+after the right-hand side (RHS).  Like the rest of the grammar,
+actions are free-form, and can span many lines if needed.
+
+<p>An action can yield a <i>semantic value</i>, or sval.  Svals
+can have whatever meaning you want.  However, since they are stored
+internally in a single word (typically 32 bits), data that does not
+fit into one word must be referred to with a pointer or some other
+indirection mechanism.  Svals are yielded by simply <tt>return</tt>ing
+them.
+
+<p>Semantic values have a declared type.  When the generated parser is
+compiled by the C++ compiler, it will check that the type matches what
+is actually yielded.  The sval type for a nonterminal is specified by
+enclosing it in parentheses ("<tt>(</tt>" and "<tt>)</tt>") right
+after the <tt>nonterm</tt> keyword at the beginning of the nonterminal
+declaration.  The type for a terminal is declared in the
+<tt>terminals</tt> section with the syntax:
+
+<blockquote>
+  <tt>token(</tt> <i>type</i> <tt>)</tt> <i>tokenName</i> <tt>;</tt>
+</blockquote>
+
+<p>Actions accept svals from the actions that run for productions
+lower in the parse tree.  Specifically, each RHS element of a rule
+will yield some semantic value, and that value can be used by
+referring to the RHS label.  Labels are attached to RHS elements by
+preceding their symbol (terminal or nonterminal) name with an
+identifier and a colon ("<tt>:</tt>").  Within the action body, these
+labels are ordinary C++ variable names, with their proper declared type.
+
+<p>Here is a complete example for AExp which simply evaluates the
+expression in the usual way (from
+<a href="examples/gcom4/gcom.gr"><tt>gcom.gr</tt></a>):
+
+<pre>
+  nonterm(int) AExp {
+    -&gt; n:TOK_LITERAL         { return n; }
+    -&gt; a1:AExp "+" a2:AExp   { return a1 + a2; }
+    -&gt; a1:AExp "-" a2:AExp   { return a1 - a2; }
+    -&gt; a1:AExp "*" a2:AExp   { return a1 * a2; }
+    -&gt; "(" a:AExp ")"        { return a; }
+
+    // interpret identifiers using environment variables; it's
+    // a bit of a hack, and we'll do something better later
+    -&gt; x:TOK_IDENTIFIER {
+         char const *envp = getenv(x);
+         if (envp) {
+           return atoi(envp);
+         }
+         else {
+           return 0;      // not defined, call it 0
+         }
+       }
+  }
+</pre>
+
+<p>I added a <tt>verbatim</tt> section at the top, so the identifier
+action could call two library functions.  This gets emitted directly
+into the generated <tt>gcom.h</tt> file.  In this case it could also
+have been <tt>impl_verbatim</tt>, which is only inserted into 
+<tt>gcom.cc</tt>.
+
+<pre>
+  verbatim {
+    #include &lt;stdlib.h&gt;     // getenv, atoi
+  }
+</pre>
+
+
+<p>Now the parser finally does some useful computation.  (The last two
+examples assume you're using the
+<a href="http://www.gnu.org/software/bash/bash.html">bash</a> shell.
+If not, adjust them to use your shell's syntax for setting environment
+variables.)
+
+<pre>
+  $ echo "2 + 3 * 4" | ./parser
+  result: 14
+
+  $ echo "(2 + 3) * 4" | ./parser
+  result: 20
+
+  $ echo "(2 + 3) * 4 - 72" | ./parser
+  result: -52
+
+  $ echo "(2 + 3) * z - 72" | ./parser
+  result: -72
+
+  $ export a=4; echo "2 + a" | ./parser
+  result: 6
+
+  $ export a=4 b=6; echo "2 + a * b" | ./parser
+  result: 26
+</pre>
+
+<p>The source files for this point in the tutorial are in the
+<a href="examples/gcom4"><tt>examples/gcom4</tt></a> directory:
+<ul>
+<li><a href="examples/gcom4/lexer.h"><tt>lexer.h</tt></a>
+<li><a href="examples/gcom4/lexer.cc"><tt>lexer.cc</tt></a>
+<li><a href="examples/gcom4/gcom.gr"><tt>gcom.gr</tt></a>
+<li><a href="examples/gcom4/parser.cc"><tt>parser.cc</tt></a>
+<li><a href="examples/gcom4/Makefile"><tt>Makefile</tt></a>
+</ul>
+
+<a name="sec7"></a>
+<h2>7. Filling out the language</h2>
+<!-- FILES: gcom5 -->
+
+<p>At this point, let's fill out the lexer and grammar to parse the 
+whole GCom language.  The lexer header gets some new tokens,
+<a href="examples/gcom5/lexer.h"><tt>lexer.h</tt></a>:
+
+<pre>
+  // for BExp
+  TOK_TRUE,                // "true"
+  TOK_FALSE,               // "false"
+  TOK_EQUAL,               // "="
+  TOK_LESS,                // "<"
+  (etc.)
+</pre>
+
+<p>The lexer implementation gets more complicated (just an excerpt),
+<a href="examples/gcom5/lexer.cc"><tt>lexer.cc</tt></a>:
+
+<pre>
+  case '-':
+    // TOK_MINUS or TOK_ARROW?
+    ch = getchar();
+    if (ch == '>') {
+      lex->type = TOK_ARROW;
+    }
+    else {
+      lex->type = TOK_MINUS;
+      ungetc(ch, stdin);
+    }
+    return;
+</pre>
+
+<p>Finally, three new nonterminals are added to the grammar file,
+<a href="examples/gcom5/gcom.gr"><tt>gcom.gr</tt></a>:
+
+<pre>
+  nonterm(bool) BExp {
+    -> "true"                     { return true; }
+    -> "false"                    { return false; }
+    -> a1:AExp "=" a2:AExp        { return a1 == a2; }
+    -> a1:AExp "<" a2:AExp        { return a1 < a2; }
+    -> "!" b:BExp                 { return !b; }
+    -> b1:BExp TOK_AND b2:BExp    { return b1 && b2; }
+    -> b1:BExp TOK_OR  b2:BExp    { return b1 || b2; }
+    -> "(" b:BExp ")"             { return b; }
+  }
+
+
+  nonterm Stmt {
+    -> "skip" {
+         // no-op
+       }
+
+    -> "abort" {
+         printf("abort command executed\n");
+         exit(0);
+       }
+
+    -> "print" x:TOK_IDENTIFIER {
+         char const *envp = getenv(x);
+         printf("%s is %d\n", x, envp? atoi(envp) : 0);
+       }
+
+    -> x:TOK_IDENTIFIER ":=" a:AExp {
+         // like above, use the environment variables
+         putenv(strdup(stringf("%s=%d", x, a).c_str()));
+       }
+
+    -> Stmt ";" Stmt {
+         // sequencing is automatic
+       }
+
+    -> "if" g:GCom "fi" {
+         if (!g) {
+           printf("'if' command had no enabled alternatives; aborting\n");
+           exit(0);
+         }
+       }
+
+    -> "do" GCom "od" {
+         // There's no way to get the parser to loop; that's not its job.
+         // For now, we'll just treat it like an 'if' that doesn't mind
+         // when no alternative is enabled.  Later, we'll build a tree
+         // and do this right.
+       }
+  }
+
+
+  // a guarded command returns true if it found an enabled guard, and
+  // false otherwise
+  nonterm(bool) GCom {
+    -> b:BExp "->" Stmt {
+         // Like for 'do', there is no way to tell the parser not to
+         // parse part of its input, so the statement will be executed
+         // regardless of the value of 'b'.  Again, this will be fixed
+         // in a later version of this example.  For now, we can at
+         // least indicate whether the guard succeeded.
+         return b;
+       }
+
+    -> g1:GCom "#" g2:GCom {
+         return g1 || g2;
+       }
+  }
+</pre>
+
+<p>It behaves reasonably well, except that the control flow doesn't
+quite work, because the parse actions are not capable of causing the
+parser to skip sections of input, nor loop over the input.
+
+<pre>
+  $ echo "x := 2 + 3; print x" | ./parser
+  x is 5
+  result: 0
+
+  $ echo "abort" | ./parser
+  abort command executed
+
+  $ echo "skip" | ./parser
+  result: 0
+
+  $ echo "if true -> skip fi" | ./parser
+  result: 0
+
+  $ echo "if false -> skip fi" | ./parser
+  'if' command had no enabled alternatives; aborting
+
+  $ echo "if false -> skip # true -> skip fi" | ./parser
+  result: 0
+
+  $ echo "do false -> skip od" | ./parser
+  result: 0
+</pre>
+
+<p>The source files for this point in the tutorial are in the
+<a href="examples/gcom5"><tt>examples/gcom5</tt></a> directory:
+<ul>
+<li><a href="examples/gcom5/lexer.h"><tt>lexer.h</tt></a>
+<li><a href="examples/gcom5/lexer.cc"><tt>lexer.cc</tt></a>
+<li><a href="examples/gcom5/gcom.gr"><tt>gcom.gr</tt></a>
+<li><a href="examples/gcom5/parser.cc"><tt>parser.cc</tt></a>
+<li><a href="examples/gcom5/Makefile"><tt>Makefile</tt></a>
+</ul>
+
+<a name="sec8"></a>
+<h2>8. Building an AST</h2>
+<!-- FILES: gcom -->
+
+<p>To demonstrate some of the more sophisticated features of
+disambiguation and semantic-value handling, we need to make the
+example more realistic.  We'll modify the parser to build an abstract
+syntax tree (AST), instead of evaluating the program directly.  This
+will involve the use of another tool, 
+<a href="../ast/index.html"><tt>astgen</tt></a>, which is
+useful in its own right.
+
+<a name="sec8.1"></a>
+<h3>8.1 &nbsp; AST definition</h3>
+
+<p>The input to <tt>astgen</tt> consists of a sequence of class
+declarations.  Inside each class is one or more subclass
+declarations, that will become nodes in the AST.  The file
+<a href="examples/gcom/gcom.ast"><tt>gcom.ast</tt></a> begins
+with a few enumerations, and then has the classes:
+
+<pre>
+  // arithmetic expressions
+  class AExp {
+    pure_virtual int eval(Env &amp;env);
+
+    -&gt; A_lit(int n);
+    -&gt; A_var(string x);
+    -&gt; A_bin(AExp a1, AOp op, AExp a2);
+  }
+
+  // boolean expressions
+  class BExp {
+    pure_virtual bool eval(Env &amp;env);
+
+    -&gt; B_lit(bool b);
+    -&gt; B_pred(AExp a1, BPred op, AExp a2);
+    -&gt; B_not(BExp b);
+    -&gt; B_bin(BExp b1, BOp op, BExp b2);
+  }
+
+  // statements
+  class Stmt {
+    pure_virtual void eval(Env &amp;env);
+
+    -&gt; S_skip();
+    -&gt; S_abort();
+    -&gt; S_print(string x);
+    -&gt; S_assign(string x, AExp a);
+    -&gt; S_seq(Stmt s1, Stmt s2);
+    -&gt; S_if(GCom g);
+    -&gt; S_do(GCom g);
+  }
+
+  // guarded commands
+  class GCom {
+    // returns true if it finds an enabled alternative, false o.w.
+    pure_virtual bool eval(Env &amp;env);
+
+    -&gt; G_stmt(BExp b, Stmt s);
+    -&gt; G_seq(GCom g1, GCom g2);
+  }
+</pre>
+
+<p>Then, <tt>astgen</tt> will produce two files that contain
+full C++ class definitions for the AST nodes.  See
+<a href="../ast/index.html">the ast page</a> for more information.
+
+<pre>
+  $ ../../../ast/astgen -o ast gcom.ast
+  writing ast.h...
+  writing ast.cc...
+</pre>
+
+<a name="sec8.2"></a>
+<h3>8.2 &nbsp; AST-building grammar actions</h3>
+
+<p>Next, we modify the grammar to build these AST components,
+instead of evaluating the program directly; the result is
+<a href="examples/gcom/gcom.gr"><tt>gcom.gr</tt></a>.
+The only slightly tricky part is that we deallocate the strings
+allocated by the lexer when they are consumed.  The rules are
+otherwise straightforward:
+
+<pre>
+  nonterm(AExp*) AExp {
+    -&gt; n:TOK_LITERAL                { return new A_lit(n); }
+    -&gt; x:TOK_IDENTIFIER             { return new A_var(copyAndFree(x)); }
+    -&gt; a1:AExp "+" a2:AExp          { return new A_bin(a1, AO_PLUS, a2); }
+    -&gt; a1:AExp "-" a2:AExp          { return new A_bin(a1, AO_MINUS, a2); }
+    -&gt; a1:AExp "*" a2:AExp          { return new A_bin(a1, AO_TIMES, a2); }
+    -&gt; "(" a:AExp ")"               { return a; }
+  }
+
+
+  nonterm(BExp*) BExp {
+    -&gt; "true"                       { return new B_lit(true); }
+    -&gt; "false"                      { return new B_lit(false); }
+    -&gt; a1:AExp "=" a2:AExp          { return new B_pred(a1, BP_EQUAL, a2); }
+    -&gt; a1:AExp "<" a2:AExp          { return new B_pred(a1, BP_LESS, a2); }
+    -&gt; "!" b:BExp                   { return new B_not(b); }
+    -&gt; b1:BExp TOK_AND b2:BExp      { return new B_bin(b1, BO_AND, b2); }
+    -&gt; b1:BExp TOK_OR  b2:BExp      { return new B_bin(b1, BO_OR, b2); }
+    -&gt; "(" b:BExp ")"               { return b; }
+  }
+
+
+  nonterm(Stmt*) Stmt {
+    -&gt; "skip"                       { return new S_skip; }
+    -&gt; "abort"                      { return new S_abort; }
+    -&gt; "print" x:TOK_IDENTIFIER     { return new S_print(copyAndFree(x)); }
+    -&gt; x:TOK_IDENTIFIER ":=" a:AExp { return new S_assign(copyAndFree(x), a); }
+    -&gt; s1:Stmt ";" s2:Stmt          { return new S_seq(s1, s2); }
+    -&gt; "if" g:GCom "fi"             { return new S_if(g); }
+    -&gt; "do" g:GCom "od"             { return new S_do(g); }
+  }
+
+
+  nonterm(GCom*) GCom {
+    -&gt; b:BExp "-&gt;" s:Stmt           { return new G_stmt(b, s); }
+    -&gt; g1:GCom "#" g2:GCom          { return new G_seq(g1, g2); }
+  }
+</pre>
+
+<p>Do not be confused by the double meaning of names like "AExp".
+Inside the parentheses, they refer to a C++ class name; outside,
+they refer to a grammar nonterminal.  Since grammar nonterminal
+names do not automatically become type names anywhere, there is
+no conflict.
+
+<p>Digression: Notice the difference between a parse tree and an AST.
+In the AST, we do not need nodes for the grouping parentheses (they
+are only an aid to the parser), and we are free to consolidate similar
+nodes like the binary arithmetic expressions.  In general, the AST
+should reflect semantics more than syntax, whereas the parse tree
+necessarily reflects the syntax directly.  A good AST design is a key
+ingredient in a good language analysis program, since it serves as the
+communication medium between the parser and every other analysis that
+follows.
+
+<h3>8.3 &nbsp; Evaluation</h3>
+
+<p>We're ready to write the evaluation rules as methods of the AST
+nodes.  Those methods are declared in 
+<a href="examples/gcom/gcom.ast"><tt>gcom.ast</tt></a> like:
+
+<pre>
+  pure_virtual int eval(Env &amp;env);
+</pre>
+
+<p>This declaration means that in class AExp, <tt>eval</tt> is
+pure (no definition).  Further, <tt>astgen</tt> will insert
+declarations for <tt>eval</tt> into each of the subclasses
+<tt>A_lit</tt>, <tt>A_var</tt> and <tt>A_bin</tt>.  Thus, we
+only need to implement them.
+
+<p><a href="examples/gcom/eval.h"><tt>eval.h</tt></a> declares
+class <tt>Env</tt>, which contains variable bindings; we're not
+using the program's environment variables anymore.
+
+<pre>
+  class Env {
+  private:
+    // map: name -&gt; value
+    TStringHash&lt;Binding&gt; map;
+
+  public:
+    Env();
+    ~Env();
+
+    int get(char const *x);
+    void set(char const *x, int val);
+  };
+</pre>
+
+<p>Then,
+<a href="examples/gcom/eval.cc"><tt>eval.cc</tt></a> has the
+implementations of the <tt>eval</tt> routines.  Here are the
+evaluation rules for AExp; the others are straightforward as
+well:
+
+<pre>
+  int A_lit::eval(Env &amp;env)
+  {
+    return n;
+  }
+
+  int A_var::eval(Env &amp;env)
+  {
+    return env.get(x.c_str());
+  }
+
+  int A_bin::eval(Env &amp;env)
+  {
+    switch (op) {
+      default:       assert(!"bad code");
+      case AO_PLUS:  return a1-&gt;eval(env) + a2-&gt;eval(env);
+      case AO_MINUS: return a1-&gt;eval(env) - a2-&gt;eval(env);
+      case AO_TIMES: return a1-&gt;eval(env) * a2-&gt;eval(env);
+    }
+  }
+</pre>
+
+<a name="#sec8.4"></a>
+<h3>8.4 &nbsp; Modifications to the driver</h3>
+
+<p>We need a few modifications to the driver,
+<a href="examples/gcom/parser.cc"><tt>parser.cc</tt></a>.
+We need two more headers:
+
+<pre>
+  #include "ast.h"       // Stmt, etc.
+  #include "eval.h"      // Env
+</pre>
+
+<p>I've added a command-line option to print the AST (in addition
+to the one already there to print the parse tree):
+
+<pre>
+  bool printAST  = argc==2 &amp;&amp; 0==strcmp(argv[1], "-ast");
+</pre>
+
+<p>I changed the context class name to avoid a clash with an
+AST node name:
+
+<pre>
+  GComContext gcom;
+</pre>
+
+<p>And finally we have the code to print and evaluate the tree.  One
+of <tt>astgen</tt>'s features is that it supplies the <tt>debugPrint</tt>
+method automatically.
+
+<pre>
+  // result is an AST node
+  Stmt *top = (Stmt*)result;
+
+  if (printAST) {
+    top-&gt;debugPrint(cout, 0);
+  }
+
+  // evaluate
+  printf("evaluating...\n");
+  Env env;
+  top-&gt;eval(env);
+  printf("program terminated normally\n");
+
+  // recursively deallocate the tree
+  delete top;
+</pre>
+
+<a name="sec8.5"></a>
+<h3>8.5 &nbsp; A few examples</h3>
+
+<p>Let's try it on a few examples!
+
+<p><a href="examples/gcom/in1"><tt>in1</tt></a> just prints 5
+(here I also told it to print the AST):
+
+<pre>
+  $ cat in1
+  x := 5;
+  print x
+
+  $ ./parser -ast &lt;in1
+  S_seq:
+    S_assign:
+      x = "x"
+      A_lit:
+        n = 5
+    S_print:
+      x = "x"
+  evaluating...
+  x is 5
+  program terminated normally
+</pre>
+
+<p><a href="examples/gcom/in2"><tt>in2</tt></a> counts to 10:
+
+<pre>
+  $ cat in2
+  x := 0;
+  do x &lt; 10 -&gt;
+    print x;
+    x := x + 1
+  od;
+  print x
+
+  $ ./parser &lt;in2
+  evaluating...
+  x is 0
+  x is 1
+  x is 2
+  x is 3
+  x is 4
+  x is 5
+  x is 6
+  x is 7
+  x is 8
+  x is 9
+  x is 10
+  program terminated normally
+</pre>
+
+<p><a href="examples/gcom/in3"><tt>in3</tt></a> computes the greatest
+common divisor of two numbers:
+
+<pre>
+  $ cat in3
+  x := 152;
+  y := 104;
+  do !(x = y) -&gt;
+    print x;
+    print y;
+    if x &lt; y -&gt; y := y - x #
+       y &lt; x -&gt; x := x - y fi
+  od;
+  print x
+
+  $ ./parser &lt;in3
+  evaluating...
+  x is 152
+  y is 104
+  x is 48
+  y is 104
+  x is 48
+  y is 56
+  x is 48
+  y is 8
+  x is 40
+  y is 8
+  x is 32
+  y is 8
+  x is 24
+  y is 8
+  x is 16
+  y is 8
+  x is 8
+  program terminated normally
+</pre>
+
+<p>The source files for this point in the tutorial are in the
+<a href="examples/gcom"><tt>examples/gcom</tt></a> directory:
+<ul>
+<li><a href="examples/gcom/lexer.h"><tt>lexer.h</tt></a>
+<li><a href="examples/gcom/lexer.cc"><tt>lexer.cc</tt></a>
+<li><a href="examples/gcom/gcom.gr"><tt>gcom.gr</tt></a>
+<li><a href="examples/gcom/parser.cc"><tt>parser.cc</tt></a>
+<li><a href="examples/gcom/gcom.ast"><tt>gcom.ast</tt></a>
+<li><a href="examples/gcom/eval.h"><tt>eval.h</tt></a>
+<li><a href="examples/gcom/eval.cc"><tt>eval.cc</tt></a>
+<li><a href="examples/gcom/Makefile"><tt>Makefile</tt></a>
+</ul>
+
+<a name="sec9"></a>
+<h2>9. Late disambiguation</h2>
+<!-- FILES: gcom7 -->
+
+<p>Now that we've got a realistic infrustructure, I can demonstrate
+some of the options for late disambiguation.  Let's imagine that we
+wanted to implement precedence and associativity for AExp sometime
+later than parser generation time.  After removing the precedence and
+associativity declarations for "+", "-" and "*" from <a
+href="examples/gcom7/gcom.gr"><tt>gcom.gr</tt></a>, there are two main
+tasks: specify how to deallocate unused semantic values, and specify
+how to merge ambiguous alternatives.
+
+<a name="sec9.1"></a>
+<h3>9.1 &nbsp; dup and del</h3>
+
+<p>Anytime the grammar contains LR conflicts, the parser will pursue
+all possible alternatives in parallel.  When an alternative fails, it
+tries to "undo" the actions that were executed on the failed parse
+branch by calling the <tt>del()</tt> function associated with the each
+symbol that produced a value that will now be ignored.  Furthermore,
+when a value produced by one action is consumed by more than one
+action, it may be necessary to take additional action (like
+incrementing a reference count).  The <tt>dup()</tt> function makes a
+copy of an sval for later use.
+
+<p>For terminals, dup and del are specified in the <tt>terminals</tt>
+section:
+
+<pre>
+  token(int) TOK_LITERAL {
+    fun dup(n) { return n; }     // nothing special to do for ints
+    fun del(n) {}
+  }
+  token(char*) TOK_IDENTIFIER {
+    fun dup(x) { return strdup(x); }     // make a copy
+    fun del(x) { free(x); }              // delete a copy
+  }
+</pre>
+
+<p>For nonterminals, these functions are included with the
+rest of the <tt>nonterm</tt> info:
+
+<pre>
+  nonterm(AExp*) AExp {
+    fun dup(a) { return a-&gt;clone(); }     // deep copy
+    fun del(a) { delete a; }              // deep delete
+    // ... rest of AExp ...
+  }
+</pre>
+
+<p>During development, you may want to postpone dealing with
+<tt>dup</tt> and <tt>del</tt>.  Or, you might be using a
+garbage collector, and all of your dup and del functions would
+be trivial, like for TOK_LITERAL, above.  In either case, you
+can say
+
+<pre>
+  option useGCDefaults;
+</pre>
+
+at the top of the grammar file.  Then, Elkhound will automatically
+insert trivial dup/del everywhere, to suppress the warning that
+is otherwise printed when such a function is called but not
+implemented.
+
+<a name="sec9.2"></a>
+<h3>9.2 &nbsp; merge</h3>
+
+<p>An ambiguity is a situation where some sequence of terminals
+can be rewritten in more than one way to yield some nonterminal.
+For example, in the ambiguous AExp grammar, we have
+
+<pre>
+  2+3+4 -&gt; (AExp+AExp)+AExp -&gt; AExp+AExp -&gt; AExp
+  2+3+4 -&gt; AExp+(AExp+AExp) -&gt; AExp+AExp -&gt; AExp
+</pre>
+
+<p>When this happens, the parser executes both reduction
+actions for AExp, and then hands the results to the <tt>merge()</tt>
+function associated with AExp.  The merge function must return
+a semantic value to be used in place of the ambiguous alternatives.
+Furthermore, it assumes "ownership" of the original values; if one
+or both are not used in the result, it should deallocate them.
+
+<p>For AExp, we'll look inside the two alternatives, pick the
+one that respects the usual precedence and associativity rules,
+and deallocate the other one:
+
+<pre>
+  fun merge(a1,a2) {
+    if (precedence(a1) &lt; precedence(a2))
+      { delete a2; return a1; }         // lowest precedence goes on top
+    if (precedence(a1) &gt; precedence(a2))
+      { delete a1; return a2; }
+
+    // equal precedence, must be binary operators
+    A_bin *ab1 = a1-&gt;asA_bin();         // cast to A_bin*
+    A_bin *ab2 = a2-&gt;asA_bin();
+
+    // same precedence; associates to the left; that means
+    // that the RHS must use a higher-precedence operator
+    if (precedence(ab1) &lt; precedence(ab1-&gt;a2))
+      { delete ab2; return ab1; }       // high-prec exp on right
+    if (precedence(ab2) &lt; precedence(ab2-&gt;a2))
+      { delete ab1; return ab2; }       // high-prec exp on right
+
+    printf("failed to disambiguate!\n");
+    delete ab2; return ab1;             // pick arbitrarily
+  }
+</pre>
+
+<p>This depends on the <tt>precedence</tt> function:
+
+<pre>
+  static int precedence(AExp *a)
+  {
+    if (!a-&gt;isA_bin())       { return 20; }      // unary
+
+    A_bin *ab = a-&gt;asA_bin();
+    if (ab-&gt;op == AO_TIMES)  { return 10; }      // *
+    else                     { return 0;  }      // +,-
+  }
+</pre>
+
+<p>It also requires that we add an AST node to represent
+parenthetical grouping, since they now must be retained to
+participate in run-time disambiguation; see
+<a href="examples/gcom7/gcom.ast"><tt>gcom.ast</tt></a>,
+<a href="examples/gcom7/gcom.gr"><tt>gcom.gr</tt></a> and
+<a href="examples/gcom7/eval.cc"><tt>eval.cc</tt></a>.
+
+<p>One way to see how this is different from the way it was
+with precedence and associativity implemented at parser generation
+time is to compare the parse tree to the AST: the parse tree
+has the ambiguities, whereas the AST is disambiguated during
+construction by <tt>merge()</tt>:
+
+<pre>
+  $ echo "x := 2+3*4; print x" | ./parser -tree
+  __EarlyStartSymbol -&gt; Start TOK_EOF
+    Start -&gt; Stmt
+      Stmt -&gt; Stmt TOK_SEMI Stmt
+        Stmt -&gt; TOK_IDENTIFIER TOK_ASSIGN AExp
+          TOK_IDENTIFIER
+          TOK_ASSIGN
+          --------- ambiguous AExp: 1 of 2 ---------
+            AExp -&gt; AExp TOK_TIMES AExp
+              AExp -&gt; AExp TOK_PLUS AExp
+                AExp -&gt; TOK_LITERAL
+                  TOK_LITERAL
+                TOK_PLUS
+                AExp -&gt; TOK_LITERAL
+                  TOK_LITERAL
+              TOK_TIMES
+              AExp -&gt; TOK_LITERAL
+                TOK_LITERAL
+          --------- ambiguous AExp: 2 of 2 ---------
+            AExp -&gt; AExp TOK_PLUS AExp
+              AExp -&gt; TOK_LITERAL
+                TOK_LITERAL
+              TOK_PLUS
+              AExp -&gt; AExp TOK_TIMES AExp
+                AExp -&gt; TOK_LITERAL
+                  TOK_LITERAL
+                TOK_TIMES
+                AExp -&gt; TOK_LITERAL
+                  TOK_LITERAL
+          --------- end of ambiguous AExp ---------
+        TOK_SEMI
+        Stmt -&gt; TOK_PRINT TOK_IDENTIFIER
+          TOK_PRINT
+          TOK_IDENTIFIER
+    TOK_EOF
+    
+  $ echo "x := 2+3*4; print x" | ./parser -ast
+  S_seq:
+    S_assign:
+      x = "x"
+      A_bin:
+        A_lit:
+          n = 2
+        op = 0
+        A_bin:
+          A_lit:
+            n = 3
+          op = 2
+          A_lit:
+            n = 4
+    S_print:
+      x = "x"
+  evaluating...
+  x is 14
+  program terminated normally
+</pre>
+
+<p>In this example, the <tt>merge()</tt> function is able to decide
+which alternative to keep based on local (syntactic) information.
+In some situations, this might not be possible.  Another approach
+is to write <tt>merge()</tt> so that it retains <em>both</em>
+alternatives, and then <tt>eval()</tt> could do disambiguation.
+While this tutorial does not have an example of this approach,
+it is used extensively in the 
+<a href="../elsa/index.html">Elsa C++ parser</a>, so you can look
+there for further guidance.
+
+
+<p>The source files for this point in the tutorial are in the
+<a href="examples/gcom7"><tt>examples/gcom7</tt></a> directory:
+<ul>
+<li><a href="examples/gcom7/lexer.h"><tt>lexer.h</tt></a>
+<li><a href="examples/gcom7/lexer.cc"><tt>lexer.cc</tt></a>
+<li><a href="examples/gcom7/gcom.gr"><tt>gcom.gr</tt></a>
+<li><a href="examples/gcom7/parser.cc"><tt>parser.cc</tt></a>
+<li><a href="examples/gcom7/gcom.ast"><tt>gcom.ast</tt></a>
+<li><a href="examples/gcom7/eval.h"><tt>eval.h</tt></a>
+<li><a href="examples/gcom7/eval.cc"><tt>eval.cc</tt></a>
+<li><a href="examples/gcom7/Makefile"><tt>Makefile</tt></a>
+</ul>
+
+
+<a name="conc"></a>
+<h2>Conclusion</h2>
+
+<p>By now you know how to:
+<ul>
+<li>Implement the LexerInterface that Elkhound uses
+<li>Read and write the grammar syntax
+<li>Write a parser driver
+<li>Resolve ambiguities at parser-generation time with
+    precedence and associativity
+<li>Write grammar actions for use at parse time
+<li>Use <tt>astgen</tt> to build an AST
+<li>Manage copying and deallocation of semantic values during
+    nondeterministic parsing with <tt>dup()</tt> and <tt>del()</tt>
+<li>Resolve ambiguities at parse time with <tt>merge()</tt>
+</ul>
+
+<p>It's my hope that, with these skills and the Elkhound tool, you'll
+find it's easy and fun to write language analysis and translation
+programs.  If not, you can always email me (smcpeak <tt>at</tt> cs
+<tt>dot</tt> berkeley <tt>dot</tt> edu) and complain! &nbsp;
+<tt>:)</tt>
+
+
+
+<a name="refs"></a>
+<h2>References</h2>
+
+<p>
+<a name="ref1"></a>
+[1] Edsger W. Dijkstra.  <i>A Discipline of Programming.</i>
+Prentice-Hall, 1976.
+
+<p>
+  <a href="http://validator.w3.org/check/referer"><img border="0"
+      src="http://www.w3.org/Icons/valid-html401"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+
+</body>
+</html>

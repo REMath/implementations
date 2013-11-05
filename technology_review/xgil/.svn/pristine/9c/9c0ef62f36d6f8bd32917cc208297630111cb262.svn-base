@@ -1,0 +1,44 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>Elsa Contributors</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+</HEAD>
+
+<body>
+
+<p>
+<a href="http://www.cs.berkeley.edu/~smcpeak">Scott McPeak</a> ("sm"): 
+Original author, maintainer.
+
+<p>
+<a href="http://www.cs.berkeley.edu/~dsw">Daniel Wilkerson</a> ("dsw"):
+Template instantiation, c/dtor elaboration, pretty printer,
+implicit members, testing and bugfixes (among other things).
+
+<br>
+Nominal maintainer of:
+<ul>
+<li><a href="../matchtype.h">matchtype</a>
+<li><a href="../cc_elaborate.h">cc_elaborate</a>
+<li><a href="../template.h">template</a> (shared)
+<li><a href="../cc_print.h">cc_print</a>
+</ul>
+
+<p>
+Wes Weimer
+
+<p>
+Ben Liblit
+
+<p>
+Jeff Foster: OSX fixes
+
+<p>
+Jim Nichols: cygwin fixes
+
+
+</body>
+</html>

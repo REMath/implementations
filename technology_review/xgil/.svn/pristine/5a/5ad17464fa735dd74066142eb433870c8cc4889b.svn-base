@@ -1,0 +1,15 @@
+// gramlex.in1
+// test input for grammar lexer
+
+foo bar(5);
+
+include("a filename")
+
+include("something unterminated
+
+!    // illegal character
+
+67 {}
+
+/* unterminated comment
+   2nd line, last of file

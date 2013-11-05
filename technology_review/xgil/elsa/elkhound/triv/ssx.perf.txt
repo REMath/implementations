@@ -1,0 +1,63 @@
+15: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+15: %%% progress: 4ms: parsing...
+15: %%% progress: 4ms: done parsing (0 ms) (575287 cycles)
+15: stack nodes: 3, max stack nodes: 24
+15: num parses: 429
+15: should be: 429
+15: tree nodes: 195
+25: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+25: %%% progress: 2ms: parsing...
+25: %%% progress: 5ms: done parsing (3 ms) (2811074 cycles)
+25: stack nodes: 3, max stack nodes: 39
+25: num parses: 208012
+25: should be: 208012
+25: tree nodes: 905
+35: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+35: %%% progress: 2ms: parsing...
+35: %%% progress: 10ms: done parsing (8 ms) (7857984 cycles)
+35: stack nodes: 3, max stack nodes: 54
+35: num parses: 1.29645e+08
+35: should be: 1.29645e+08
+35: tree nodes: 2515
+45: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+45: %%% progress: 3ms: parsing...
+45: %%% progress: 21ms: done parsing (18 ms) (18318657 cycles)
+45: stack nodes: 3, max stack nodes: 69
+45: num parses: 9.14826e+10
+45: should be: 9.14826e+10
+45: tree nodes: 5400
+55: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+55: %%% progress: 2ms: parsing...
+55: %%% progress: 41ms: done parsing (38 ms) (38492315 cycles)
+55: stack nodes: 3, max stack nodes: 84
+55: num parses: 6.95336e+13
+55: should be: 6.95336e+13
+55: tree nodes: 9935
+65: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+65: %%% progress: 2ms: parsing...
+65: %%% progress: 79ms: done parsing (76 ms) (76793323 cycles)
+65: stack nodes: 3, max stack nodes: 99
+65: num parses: 5.55341e+16
+65: should be: 5.55341e+16
+65: tree nodes: 16495
+75: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+75: %%% progress: 2ms: parsing...
+75: %%% progress: 128ms: done parsing (126 ms) (125952343 cycles)
+75: stack nodes: 3, max stack nodes: 114
+75: num parses: 4.59508e+19
+75: should be: 4.59508e+19
+75: tree nodes: 25455
+85: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+85: %%% progress: 2ms: parsing...
+85: %%% progress: 203ms: done parsing (201 ms) (201079678 cycles)
+85: stack nodes: 3, max stack nodes: 129
+85: num parses: 3.90444e+22
+85: should be: 3.90444e+22
+85: tree nodes: 37190
+99: %%% progress: 0ms: reading binary grammar file SSx.tree.bin
+99: %%% progress: 7ms: parsing...
+99: %%% progress: 366ms: done parsing (359 ms) (357607109 cycles)
+99: stack nodes: 3, max stack nodes: 150
+99: num parses: 5.09552e+26
+99: should be: 5.09552e+26
+99: tree nodes: 58995

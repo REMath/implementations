@@ -1,0 +1,11 @@
+#!/bin/sh
+# toplevel elsa distribution configure
+
+# for now, just fire off default configurations
+# in each of the subdirs; users can then go customize
+# as desired
+
+(cd smbase && ./configure "$@") || exit
+(cd ast && ./configure "$@") || exit
+(cd elkhound && ./configure "$@") || exit
+(cd elsa && ./configure "$@") || exit

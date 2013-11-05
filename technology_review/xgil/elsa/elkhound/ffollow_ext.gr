@@ -1,0 +1,47 @@
+// ffollow_ext.gr
+// extension to ffollow.gr, just to test new replace/delete keywords
+
+// ---- correct ----
+
+nonterm Ep {
+  // new production
+  -> "+" "+";
+
+  // delete a production
+  delete -> "+" T Ep;
+
+  // replace a production
+  replace -> empty { return 1; }
+}
+
+nonterm T {
+  // delete and then new
+  delete -> F Tp;
+  -> F Tp;
+}
+
+
+// ---- incorrect ----
+nonterm Tp {
+  // try to make new, but it already exists in base
+  //ERROR(1): -> "*" F Tp;
+  
+  // delete nonexistent
+  //ERROR(3): delete -> "*" "*" "*";
+
+  // replace nonexistent
+  //ERROR(4): replace -> "*" "*" "*" "*";
+}
+
+nonterm Ep {
+  // try to make new, but already exists above
+  //ERROR(2): -> "+" "+";
+}
+
+nonterm F {
+  // try to replace and then new
+  //ERROR(5): replace -> "(" E ")";
+  //ERROR(5): -> "(" E ")";
+}
+
+

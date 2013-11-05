@@ -1,0 +1,10 @@
+module EFa
+
+exports
+  sorts S E F
+  context-free syntax
+    E            -> S
+    E "P" F      -> E
+    F            -> E
+    "A"          -> F
+    "L" E "R"    -> F

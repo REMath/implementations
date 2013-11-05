@@ -1,0 +1,48 @@
+10: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+10: %%% progress: 2ms: parsing...
+10: %%% progress: 3ms: done parsing (1 ms) (1505578 cycles)
+10: stack nodes: 3, max stack nodes: 32
+10: num parses: 16796
+10: tree nodes: 231
+20: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+20: %%% progress: 2ms: parsing...
+20: %%% progress: 6ms: done parsing (4 ms) (4257318 cycles)
+20: stack nodes: 3, max stack nodes: 62
+20: num parses: 6.56412e+09
+20: tree nodes: 1561
+50: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+50: %%% progress: 2ms: parsing...
+50: %%% progress: 88ms: done parsing (86 ms) (85995163 cycles)
+50: stack nodes: 3, max stack nodes: 152
+50: num parses: 1.97826e+27
+50: tree nodes: 22151
+100: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+100: %%% progress: 2ms: parsing...
+100: %%% progress: 1798ms: done parsing (1796 ms) (1793372018 cycles)
+100: stack nodes: 3, max stack nodes: 302
+100: num parses: 8.9652e+56
+100: tree nodes: 171801
+200: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+200: %%% progress: 2ms: parsing...
+200: %%% progress: 48138ms: done parsing (48136 ms) (48057959428 cycles)
+200: stack nodes: 3, max stack nodes: 602
+200: num parses: 5.12201e+116
+200: tree nodes: 1353601
+300: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+300: %%% progress: 2ms: parsing...
+300: %%% progress: 256131ms: done parsing (256129 ms) (255711956383 cycles)
+300: stack nodes: 3, max stack nodes: 902
+300: num parses: 4.48864e+176
+300: tree nodes: 4545401
+400: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+400: %%% progress: 2ms: parsing...
+400: %%% progress: 823036ms: done parsing (823034 ms) (821694785100 cycles)
+400: stack nodes: 3, max stack nodes: 1202
+400: num parses: 4.68934e+236
+400: tree nodes: 10747201
+500: %%% progress: 0ms: reading binary grammar file EEb.tree.bin
+500: %%% progress: 2ms: parsing...
+500: %%% progress: 2040164ms: done parsing (2040162 ms) (2036841762687 cycles)
+500: stack nodes: 3, max stack nodes: 1502
+500: num parses: 5.39497e+296
+500: tree nodes: 20959001

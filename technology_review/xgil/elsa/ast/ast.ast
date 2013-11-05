@@ -1,0 +1,183 @@
+// ast.ast            see license.txt for copyright and terms of use
+// ast definition for an ast definition
+
+verbatim {
+  #include "str.h"         // string
+
+  // this signals to ast.hand.cc that ast.ast.cc is nonempty,
+  // so none of the bootstrap code in ast.hand.cc should be used
+  #define GENERATED_AST_PRESENT
+}
+
+// the entire specification
+class ASTSpecFile (ASTList<ToplevelForm> forms);
+
+class ToplevelForm {
+  // code to be copied verbatim into the generated .h file
+  -> TF_verbatim(string code);
+
+  // code to be copied verbatim into the generated .cc file
+  -> TF_impl_verbatim(string code);
+
+  // a superclass, and a list of subclasses ("constructors")
+  -> TF_class(ASTClass super,
+              ASTList<ASTClass> ctors) {
+       public bool hasChildren() const { return ctors.isNotEmpty(); };
+     }
+   
+  // a generic option: first word specifies the kind of option, and
+  // additional words (if any) are arguments
+  -> TF_option(string name, ASTList<string> args);
+  
+  // generic custom/verbatim code
+  -> TF_custom(CustomCode cust);
+
+  // enumeration (at one point I had support for explicit enumerator
+  // values, but decided that if the user wants that, they should put
+  // the enum in a 'verbatim' section instead)
+  -> TF_enum(string name, ASTList<string> enumerators);
+}
+
+// a definition of a grammar terminal or nonterminal
+class ASTClass (string name,
+                ASTList<CtorArg> args,
+                ASTList<CtorArg> lastArgs,    // only for nonterminal
+                ASTList<BaseClass> bases,
+                ASTList<Annotation> decls) {
+  // the name of the enum constant denoting this ctor, as distinguished
+  // from its sibling ctors
+  public string classKindName() const;
+}
+
+verbatim {
+  // specifies what kind of userdecl this is; pub/priv/prot are uninterpreted
+  // class members with the associated access control; ctor and dtor are
+  // code to be inserted into the ctor or dtor, respectively
+  enum AccessCtl {
+    AC_PUBLIC,      // access
+    AC_PRIVATE,     //   control
+    AC_PROTECTED,   //     keywords
+    AC_CTOR,        // insert into ctor
+    AC_DTOR,        // insert into dtor
+    AC_PUREVIRT,    // declare pure virtual in superclass, and impl in subclass
+    NUM_ACCESSCTLS
+  };
+
+  // map the enum value to a string like "public"
+  string toString(AccessCtl acc);      // defined in ast.cc
+}
+
+// an access control keyword with optional modifier list
+class AccessMod(AccessCtl acc, ASTList<string> mods) {
+  // true if the given modifier is present
+  public bool hasMod(char const *mod) const;
+  // true if the given modifier prefix is present as a prefix of a modifier
+  public bool hasModPrefix(char const *mod) const;
+  // get the suffix after the given prefix of the (first) modifier it matches
+  public string getModSuffixFromPrefix(char const *mod) const;
+}
+
+// additional user annotations
+class Annotation {
+  // verbatim declarations, plus an access qualifier, to be
+  // copied into the a class declaration; also has an optional
+  // initializer (might be "")
+  -> UserDecl (AccessMod amod, string code, string init) {
+       public AccessCtl access() const { return amod->acc; };
+     }
+
+  // verbatim code to be inserted somewhere; exactly where depends
+  // on the qualifier string
+  -> CustomCode (string qualifier, string code) {
+       // keep track of whether it gets used
+       public bool used;  ctor used=false;
+     }
+}
+
+// something that has to be passed to create a constructor
+class CtorArg (bool isOwner, string type, string name, string defaultValue);
+
+// designate a class that one of the ASTClasses should inherit; for
+// AST subclasses, this inheritance is in addition to inheriting the
+// corresponding AST superclass
+class BaseClass (AccessCtl access, string name);
+
+
+// ------------------- extra implementation helpers ------------------
+impl_verbatim {
+
+#include "strutil.h"      // stringToupper
+
+string toString(AccessCtl acc)
+{
+  char const *arr[] = {
+    "public",
+    "private",
+    "protected",
+    "ctor",
+    "dtor",
+    "pure_virtual"
+  };
+  STATIC_ASSERT(TABLESIZE(arr) == NUM_ACCESSCTLS);
+  xassert((unsigned)acc < NUM_ACCESSCTLS);
+  return string(arr[acc]);
+}
+
+string ASTClass::classKindName() const
+{
+  string ret = stringToupper(name);
+  if (ret == name) {
+    // this simplemindedly avoids collisions with itself, and I think
+    // it even avoids collisions with other classes, since if they would
+    // collide with this, they'd collide with themselves too, and hence
+    // get an extra "KIND_" prepended..
+    ret &= "KIND_";
+  }
+  return ret;
+}
+
+bool AccessMod::hasMod(char const *mod) const
+{
+  FOREACH_ASTLIST(string, mods, iter) {
+    if (iter.data()->equals(mod)) {
+      return true;
+    }
+  }
+  return false;      // not found
+}
+
+bool AccessMod::hasModPrefix(char const *mod) const
+{
+  string mod0(mod);
+  FOREACH_ASTLIST(string, mods, iter) {
+    rostring i = *iter.data();
+    if (prefixEquals(i, mod0)) {
+      return true;
+    }
+  }
+  return false;      // not found
+}
+
+string AccessMod::getModSuffixFromPrefix(char const *mod) const
+{
+  string mod0(mod);
+  string ret;
+  bool found = false;
+  FOREACH_ASTLIST(string, mods, iter) {
+    rostring s = *iter.data();
+    if (prefixEquals(s, mod0)) {
+      if (found) {
+        xfailure(stringc << "two modifiers with this prefix found " << mod);
+      }
+      int len = strlen(mod);
+      ret = s.substring(len, s.length()-len);
+      found = true;
+    }
+  }
+  if (!found) {
+    xfailure(stringc << "no such prefix found " << mod);
+  }
+  return ret;
+}
+
+} // end impl_verbatim

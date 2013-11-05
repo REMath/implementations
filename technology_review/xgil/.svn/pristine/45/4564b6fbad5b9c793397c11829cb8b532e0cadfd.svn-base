@@ -1,0 +1,43 @@
+#!/bin/sh
+# run ccparse on preprocessed stdlib headers
+
+
+#  valarray       fails because of template template params
+
+for n in           \
+  algorithm        \
+  bitset           \
+  complex          \
+  deque            \
+  exception        \
+  fstream          \
+  functional       \
+  iomanip          \
+  ios              \
+  iosfwd           \
+  iostream         \
+  istream          \
+  iterator         \
+  limits           \
+  list             \
+  locale           \
+  map              \
+  memory           \
+  new              \
+  numeric          \
+  ostream          \
+  queue            \
+  set              \
+  sstream          \
+  stack            \
+  stdexcept        \
+  strstream        \
+  streambuf        \
+  string           \
+  typeinfo         \
+  utility          \
+  vector; do       \
+  echo "----------------- $n --------------"
+  ./ccparse ../elsa/other-examples/triv/$n.ii || exit
+done
+

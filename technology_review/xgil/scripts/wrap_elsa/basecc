@@ -1,0 +1,103 @@
+#!/usr/bin/perl
+
+# Sixgill: Static assertion checker for C/C++ programs.
+# Copyright (C) 2009-2010  Stanford University
+# Author: Brian Hackett
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# intercept calls to gcc and store the preprocessed code in another dir.
+# this preprocessed source can be consumed by the Elsa frontend.
+
+# instructions:
+# - add the directory containing this script and the stubs which invoke it
+#   to the beginning of $PATH.
+# - set $XGILLPP to a directory which will receive preprocessed files.
+#   the directory must already exist and be empty.
+# - build your system. directory $XGILLPP will be filled in by this script.
+
+# this script is designed for the gcc family of compilers and other
+# compilers which behave like them, e.g. gcc, g++, cc, c++
+
+# get the name of the compiler we are emulating.
+my $ccname = shift or die "USAGE: basecc ccname ccarg*\n";
+
+# directory where the real version of $ccname is located.
+my $bindir = "/usr/bin";
+
+# whether there is an input .c or .cpp file to run on.
+my $has_input = 0;
+
+# current working directory for .info file.
+my $cwd = `pwd`;
+chomp $cwd;
+
+# output object file for .info file.
+my $output = "";
+
+# arguments to pass when producing preprocessed code.
+my $ppargs = " -E";
+
+# arguments to pass when producing the final object file.
+my $args = "";
+
+# accumulate the preprocessed and actual arguments to pass to cc.
+while (my $arg = shift) {
+
+    # bizarre: arguments unrecognized by gcc when compiling linux,
+    # but using the regular gcc straight up works fine.
+    # TODO: figure out what's going on here.
+    next if ($arg =~ /^-Wframe-larger-than/);
+    next if ($arg =~ /-fno-strict-overflow/);
+    next if ($arg =~ /-fno-dwarf2-cfi-asm/);
+    next if ($arg =~ /-fno-toplevel-reorder/);
+
+    if ($arg eq "-o") {
+        # remove output file for -E version.
+        $output = shift;
+        $args .= " -o '$output'";
+    }
+    else {
+        # check if this is an input file.
+        $has_input = 1 if ($arg =~ /\.c$/);
+        $has_input = 1 if ($arg =~ /\.cpp$/);
+        $has_input = 1 if ($arg =~ /\.cc$/);
+
+        # quote the argument to make sure it is passed to the shell correctly.
+        $ppargs .= " '$arg'";
+        $args .= " '$arg'";
+    }
+}
+
+if ($has_input == 1) {
+
+  # generate the preprocessed code for the input file.
+  my $file = `mktemp $ENV{'XGILLPP'}/tmp.i.XXXXXXXXX`;
+  chomp $file;
+
+  system("$bindir/$ccname $ppargs > $file");
+
+  # generate the information for this preprocessed file: the working directory
+  # it was built from and name of the object file (if available).
+  open(OUT, "> $file.info");
+  print OUT "$cwd\n";
+  print OUT "$bindir/$ccname $args\n";
+  if ($output ne "") {
+      print OUT "$output\n";
+  }
+  close(OUT);
+}
+
+# run the command we were originally asked to do.
+system("$bindir/$ccname $args");

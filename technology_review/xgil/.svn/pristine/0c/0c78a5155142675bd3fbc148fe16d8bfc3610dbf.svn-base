@@ -1,0 +1,406 @@
+# Makefile.in for libsmbase
+# see license.txt for copyright and terms of use
+
+# main target
+THIS := libsmbase.a
+all: gensrc $(THIS)
+
+
+# C preprocessor, compiler and linker
+CC := @CC@
+
+# C++ compiler, etc.
+CXX := @CXX@
+
+# flags for the C and C++ compilers (and preprocessor)
+CFLAGS  := @CFLAGS@
+CCFLAGS := @CCFLAGS@
+
+# cross-compile info
+CROSSTARGET   := @CROSSTARGET@
+EXE           := @EXE@
+
+# flags for the linker
+LDFLAGS := -g -Wall libsmbase.a
+
+
+# some other tools
+AR     := ar
+RANLIB := ranlib
+
+
+# compile .cc to .o
+%.o: %.cc
+	$(CXX) -c -o $@ $< $(CCFLAGS)
+	@perl ./depend.pl -o $@ $< $(CCFLAGS) > $*.d
+
+%.o: %.cpp
+	$(CXX) -c -o $@ $< $(CCFLAGS)
+	@perl ./depend.pl -o $@ $< $(CCFLAGS) > $*.d
+
+%.o: %.c
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+
+# remake the generated Makefile if its inputs have changed
+Makefile: Makefile.in config.status
+	./config.status
+
+# reconfigure if the configure script has changed
+config.status: configure.pl sm_config.pm
+	./config.status -reconfigure
+
+
+# -------- experimenting with m4 for related files -------
+# I don't delete these during make clean because I don't want
+# to force people to have m4 installed
+gensrc: sobjlist.h objlist.h
+
+sobjlist.h: xobjlist.h
+	rm -f sobjlist.h
+	m4 -Dm4_output=sobjlist.h --prefix-builtins xobjlist.h > sobjlist.h
+	chmod a-w sobjlist.h
+
+objlist.h: xobjlist.h
+	rm -f objlist.h
+	m4 -Dm4_output=objlist.h --prefix-builtins xobjlist.h > objlist.h
+	chmod a-w objlist.h
+
+
+# ----------------------- malloc ------------------------
+# Doug Lea's malloc:
+#   add the -DDEBUG flag to turn on doug lea's additional checks
+#   add the -DDEBUG_HEAP flag to turn on my zone-based protection
+#   add the -DTRACE_MALLOC_CALLS flag to print on every alloc/dealloc
+#   normally -O3 is specified
+MALLOC_CCFLAGS := -O3
+
+# By default, compile+link a stub module that does nothing, so that
+# we will just use the normal system malloc.  Only if the user wants
+# special malloc features will we switch to Doug Lea's.  The reason
+# is I've only tested my extra features on Linux, and on some other
+# systems (cygwin, OSX) they don't work and I don't have the inclination
+# to fix all my hacks.
+MALLOC_MODULE := malloc_stub
+
+# debug version (much slower, but *great* for finding memory errors)
+ifeq (@DEBUG_HEAP@,1)
+  MALLOC_CCFLAGS := -DDEBUG -DDEBUG_HEAP
+  MALLOC_MODULE := malloc
+endif
+
+# tracing messages
+ifeq (@TRACE_HEAP@,1)
+  MALLOC_CCFLAGS += -DTRACE_MALLOC_CALLS
+  MALLOC_MODULE := malloc
+endif
+
+$(MALLOC_MODULE).o: $(MALLOC_MODULE).c
+	$(CC) -c -g $(MALLOC_CCFLAGS) $(MALLOC_MODULE).c
+
+
+# --------------------- main target ---------------------
+
+# mysig needs some flags to *not* be set ....
+mysig.o: mysig.cc mysig.h
+	$(CXX) -c -g mysig.cc
+
+# library itself
+OBJS := \
+  autofile.o \
+  bflatten.o \
+  bit2d.o \
+  bitarray.o \
+  boxprint.o \
+  breaker.o \
+  crc.o \
+  cycles.o \
+  datablok.o \
+  exc.o \
+  flatten.o \
+  gprintf.o \
+  growbuf.o \
+  hashline.o \
+  hashtbl.o \
+  $(MALLOC_MODULE).o \
+  missing.o \
+  mypopen.o \
+  mysig.o \
+  nonport.o \
+  point.o \
+  pprint.o \
+  smregexp.o \
+  srcloc.o \
+  str.o \
+  strdict.o \
+  strhash.o \
+  stringset.o \
+  strtokp.o \
+  strutil.o \
+  svdict.o \
+  syserr.o \
+  trace.o \
+  trdelete.o \
+  unixutil.o \
+  vdtllist.o \
+  vptrmap.o \
+  voidlist.o \
+  warn.o
+-include $(OBJS:.o=.d)
+
+# some modules do not build on mingw32; for the moment I do not need them
+ifeq ($(strip $(CROSSTARGET)),i386-mingw32msvc)
+  OBJS := $(filter-out mypopen.o mysig.o smregexp.o,$(OBJS))
+endif
+
+$(THIS): $(OBJS)
+	rm -f $(THIS)
+	$(AR) -r $(THIS) $(OBJS)
+	-$(RANLIB) $(THIS)
+
+
+# ---------- module tests ----------------
+# test program targets
+TESTS := nonport voidlist tobjlist bit2d growbuf testmalloc mypopen \
+         strdict svdict str strutil trdelete bflatten mysig \
+         testmalloc mypopen tobjpool strhash cycles tsobjlist crc \
+         srcloc hashline gprintf smregexp vptrmap vdtllist pprint \
+         boxprint tarrayqueue testarray taillist_test autofile \
+         bitarray
+
+# some programs do not build on mingw32
+ifeq ($(strip $(CROSSTARGET)),i386-mingw32msvc)
+  TESTS := $(filter-out testmalloc mypopen mysig smregexp,$(TESTS))
+endif
+
+TESTS := $(addsuffix $(EXE),$(TESTS))
+
+tests: $(TESTS)
+
+
+# command to compile and link
+TESTCC  := $(CC) -g -Wall
+TESTCXX := $(CXX) -g -Wall
+
+# this goes at the end of most commands that build a test binary
+TESTFLAGS := $(CCFLAGS) $(LDFLAGS)
+
+# this one is explicitly *not* linked against $(THIS)
+nonport$(EXE): nonport.cpp nonport.h gprintf.o
+	$(TESTCXX) -o $@ -DTEST_NONPORT nonport.cpp gprintf.o $(CCFLAGS)
+
+voidlist$(EXE): voidlist.cc voidlist.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_VOIDLIST voidlist.cc $(TESTFLAGS)
+
+vdtllist$(EXE): vdtllist.cc vdtllist.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_VDTLLIST vdtllist.cc $(TESTFLAGS)
+
+taillist_test$(EXE): taillist_test.cc taillist.h $(THIS)
+	$(TESTCXX) -o $@ taillist_test.cc $(TESTFLAGS)
+
+tobjlist$(EXE): tobjlist.cc objlist.h voidlist.o $(THIS)
+	$(TESTCXX) -o $@ tobjlist.cc voidlist.o $(TESTFLAGS)
+
+tsobjlist$(EXE): tsobjlist.cc sobjlist.h voidlist.o $(THIS)
+	$(TESTCXX) -o $@ tsobjlist.cc voidlist.o $(TESTFLAGS)
+
+bit2d$(EXE): bit2d.cc bit2d.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_BIT2D bit2d.cc $(TESTFLAGS)
+
+growbuf$(EXE): growbuf.cc growbuf.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_GROWBUF growbuf.cc $(TESTFLAGS)
+
+strdict$(EXE): strdict.cc strdict.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_STRDICT strdict.cc $(TESTFLAGS)
+
+svdict$(EXE): svdict.cc svdict.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_SVDICT svdict.cc $(TESTFLAGS)
+
+str$(EXE): str.cpp str.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_STR str.cpp $(TESTFLAGS)
+
+strutil$(EXE): strutil.cc strutil.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_STRUTIL strutil.cc $(TESTFLAGS)
+
+strhash$(EXE): strhash.cc strhash.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_STRHASH strhash.cc $(TESTFLAGS)
+
+trdelete$(EXE): trdelete.cc trdelete.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_TRDELETE trdelete.cc $(TESTFLAGS)
+
+bflatten$(EXE): bflatten.cc bflatten.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_BFLATTEN bflatten.cc $(TESTFLAGS)
+
+mysig$(EXE): mysig.cc mysig.h $(THIS)
+	$(TESTCXX) -o $@ -DTEST_MYSIG mysig.cc $(TESTFLAGS)
+
+testmalloc$(EXE): testmalloc.cc $(THIS)
+	echo TESTS is $(TESTS)
+	$(TESTCXX) -o $@ testmalloc.cc $(TESTFLAGS)
+
+mypopen$(EXE): mypopen.c mypopen.h
+	$(TESTCC) -o $@ -DTEST_MYPOPEN mypopen.c
+
+# this test is only useful when malloc is compiled with DEBUG_HEAP
+tmalloc$(EXE): tmalloc.c libsmbase.a
+	$(TESTCC) -o $@ tmalloc.c $(TESTFLAGS)
+
+tobjpool$(EXE): tobjpool.cc objpool.h
+	$(TESTCXX) -o $@ tobjpool.cc $(TESTFLAGS)
+
+cycles$(EXE): cycles.h cycles.c
+	$(TESTCC) -o $@ -DTEST_CYCLES cycles.c
+
+crc$(EXE): crc.cpp
+	$(TESTCXX) -o $@ $(CCFLAGS) -DTEST_CRC crc.cpp
+
+srcloc$(EXE): srcloc.cc $(THIS)
+	$(TESTCXX) -o $@ -DTEST_SRCLOC srcloc.cc $(TESTFLAGS)
+
+hashline$(EXE): hashline.cc $(THIS)
+	$(TESTCXX) -o $@ -DTEST_HASHLINE hashline.cc $(TESTFLAGS)
+
+gprintf$(EXE): gprintf.c gprintf.h
+	$(TESTCC) -o $@ -DTEST_GPRINTF gprintf.c $(CFLAGS)
+
+smregexp$(EXE): smregexp.cc $(THIS)
+	$(TESTCXX) -o $@ -DTEST_SMREGEXP smregexp.cc $(TESTFLAGS)
+
+vptrmap$(EXE): vptrmap.cc $(THIS)
+	$(TESTCXX) -o $@ -DTEST_VPTRMAP vptrmap.cc $(TESTFLAGS)
+
+pprint$(EXE): pprint.cc $(THIS)
+	$(TESTCXX) -o $@ -DTEST_PPRINT pprint.cc $(TESTFLAGS)
+
+boxprint$(EXE): boxprint.cc $(THIS)
+	$(TESTCXX) -o $@ -DTEST_BOXPRINT boxprint.cc $(TESTFLAGS)
+
+tarrayqueue$(EXE): tarrayqueue.cc $(THIS)
+	$(TESTCXX) -o $@ tarrayqueue.cc $(TESTFLAGS)
+
+testarray$(EXE): testarray.cc $(THIS)
+	$(TESTCXX) -o $@ testarray.cc $(TESTFLAGS)
+
+autofile$(EXE): autofile.cc $(THIS)
+	$(TESTCXX) -o $@ -DTEST_AUTOFILE autofile.cc $(TESTFLAGS)
+
+bitarray$(EXE): bitarray.cc $(THIS)
+	$(TESTCXX) -o $@ -DTEST_BITARRAY bitarray.cc $(TESTFLAGS)
+
+ifeq ($(CROSSTARGET),0)
+  RUN :=
+else
+  # there is a necessary space at the end of the next line ...
+  RUN := true 
+endif
+
+check: $(TESTS)
+	$(RUN)./nonport$(EXE)
+	$(RUN)./voidlist$(EXE)
+	$(RUN)./vdtllist$(EXE)
+	$(RUN)./tobjlist$(EXE)
+	$(RUN)./bit2d$(EXE)
+	$(RUN)./growbuf$(EXE)
+	$(RUN)./strdict$(EXE)
+	$(RUN)./svdict$(EXE)
+	$(RUN)./str$(EXE)
+	$(RUN)./strutil$(EXE)
+	$(RUN)./strhash$(EXE)
+	$(RUN)./trdelete$(EXE)
+	$(RUN)./bflatten$(EXE)
+	$(RUN)./mysig$(EXE)
+	$(RUN)./testmalloc$(EXE) >/dev/null 2>&1
+	$(RUN)./mypopen$(EXE)
+	$(RUN)./tobjpool$(EXE)
+	$(RUN)./cycles$(EXE)
+	$(RUN)./tsobjlist$(EXE)
+	$(RUN)./hashline$(EXE)
+	$(RUN)./srcloc$(EXE)
+	$(RUN)./gprintf$(EXE)
+	$(RUN)./smregexp$(EXE)
+	$(RUN)./vptrmap$(EXE)
+	$(RUN)./pprint$(EXE)
+	$(RUN)./boxprint$(EXE)
+	$(RUN)./tarrayqueue$(EXE)
+	$(RUN)./testarray$(EXE)
+	$(RUN)./taillist_test$(EXE)
+	$(RUN)./autofile$(EXE) autofile.cc
+	$(RUN)./bitarray$(EXE)
+ifeq ($(CROSSTARGET),0)
+	@echo
+	@echo "make check: all the tests PASSED"
+else
+	@echo
+	@echo "make check: all the test programs were built, but I did not"
+	@echo "try to run any of them because of cross-compile mode; you"
+	@echo "may want to try running the above commands yourself on the target"
+	@echo "(remove the 'true' prefixes)"
+endif
+
+
+# ------------------- documentation -------------------------
+# directory of generated documentation
+gendoc:
+	mkdir gendoc
+
+# main dependencies for the library; some ubiquitous dependencies
+# are omitted to avoid too much clutter; the files listed below are
+# the roots of the dependency exploration; I don't include any of
+# the stand-alone programs since those are just clutter to someone
+# trying to understand the library's structure
+.PHONY: gendoc/dependencies.dot
+gendoc/dependencies.dot:
+	perl ./scan-depends.pl -r -Xxassert.h -Xtest.h -Xtyp.h -Xmacros.h -Xstr.h \
+		-Xbreaker.h \
+		growbuf.h objpool.h strhash.h voidlist.h svdict.h str.h \
+		warn.cpp mysig.h srcloc.cc hashline.cc astlist.h taillist.h \
+		objstack.h ohashtbl.h okhasharr.h okhashtbl.h sobjlist.h \
+		exc.h >$@
+
+# check to see if they have dot
+.PHONY: dot
+dot:
+	@if ! which dot >/dev/null; then \
+	  echo "You don't have the 'dot' tool.  You can get it at:"; \
+	  echo "http://www.research.att.com/sw/tools/graphviz/"; \
+	  exit 2; \
+	fi
+
+# use 'dot' to lay out the graph
+%.ps: %.dot dot
+	dot -Tps <$*.dot >$@
+
+# use 'convert' to make a PNG image with resolution not to exceed
+# 1000 in X or 700 in Y ('convert' will preserve aspect ratio); this
+# also antialiases, so it looks very nice (it's hard to reproduce
+# this using 'gs' alone)
+%.png: %.ps
+	convert -geometry 1000x700 $^ $@
+
+gendoc/configure.txt: configure
+	./configure --help >$@
+
+# build auto-generated documentation
+.PHONY: doc
+doc: gendoc gendoc/dependencies.png gendoc/configure.txt
+	@echo "built documentation"
+
+
+# --------------------- clean --------------------
+# delete compiling/editing byproducts
+clean:
+	rm -f *.o *~ *.d gmon.out srcloc.tmp testcout
+	rm -f $(TESTS)
+	rm -f *.a
+	rm -rf test.dir
+
+distclean: clean
+	rm -f Makefile config.status config.summary
+	rm -rf gendoc
+
+# remove crap that vc makes
+vc-clean:
+	rm -f *.plg *.[ip]db *.pch
+
+
+# end of Makefile

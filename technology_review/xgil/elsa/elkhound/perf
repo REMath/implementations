@@ -1,0 +1,192 @@
+#!/usr/bin/perl -w
+# perf: run performance tests on Elkhound
+
+use strict 'subs';
+
+# number of iterations to do, and take the median
+$iters = 1;
+
+# for the C test, whether to run bison
+$runBison = 1;
+
+# which tests to run
+@tests = ("mozilla", "c");
+
+
+# process arguments
+while (@ARGV) {
+  my $arg = $ARGV[0];
+  if ($arg eq "-iters") {
+    $iters = $ARGV[1];
+    shift @ARGV;
+  }
+  elsif ($arg eq "-tests") {
+    @tests = split(',', $ARGV[1]);
+    shift @ARGV;
+  }
+  elsif ($arg eq "-nobison") {
+    $runBison = 0;
+  }
+  elsif ($arg eq "-help") {
+    usage();
+    exit(0);
+  }
+  else {
+    print STDERR ("unknown argument: $arg\n");
+    usage();
+    exit(2);
+  }
+  shift @ARGV;
+}
+
+sub usage {
+  print(<<"EOF");
+usage: $0 [options]
+
+This script runs the Elkhound performance tests.
+
+options:
+  -iters <n>     : run each test n times, taking medians
+  -nobison       : do not run Bison for the C test
+  -tests <list>  : comma-separated list of test to run, selected from:
+                     @tests
+  -help          : print this message
+EOF
+}
+
+
+# run the tests
+for my $t (@tests) {
+  if ($t eq "mozilla") {
+    testMozilla();
+  }
+  elsif ($t eq "c") {
+    testC();
+  }
+  else {
+    print STDERR ("unknown test: $t\n");
+    exit(2);
+  }
+}
+
+
+
+# ----------------------- particular tests ----------------------
+# mozilla tests
+sub testMozilla {
+  # make sure the files are there
+  run("make cc.in/big >/dev/null");
+
+  print("C++ parser, mozilla input:\n");
+
+  my $format = "  %-30s %6s %6s %6s\n";
+  printf($format, "module", "lines", "parse", "tcheck");
+  printf($format, "-" x 30, "-" x 6, "-" x 6, "-" x 6);
+
+  my @modules = (
+    'nsUnicodeToTeXCMRt1.i',
+    'nsAtomTable.i',
+    'nsCLiveconnectFactory.i',
+    'nsSOAPPropertyBag.i',
+    'nsMsgServiceProvider.i',
+    'nsHTMLEditRules.i'
+  );
+  foreach my $fn (@modules) {
+    my $lines = linesInFile("cc.in/big/$fn");
+
+    my @parse = ();
+    my @tcheck = ();
+
+    for (my $run=0; $run < $iters; $run++) {
+      my @output = run("cc/ccparse cc.in/big/$fn");
+      #print(@output);
+      for $line (@output) {
+        if (($tmp) = ($line =~ m/done parsing \((\d+) ms/)) {
+          push @parse, $tmp;
+        }
+        if (($tmp) = ($line =~ m/done type checking \((\d+) ms/)) {
+          push @tcheck, $tmp;
+        }
+      }
+    }
+
+    printf($format, $fn, $lines, median(@parse), median(@tcheck));
+  }
+}
+
+
+# C parser performance
+sub testC {
+  print("C parser, c.in/c.in4d input:\n");
+
+  # bccgr, the bison-based C parser (can't handle typedefs)
+  my @parse = ();
+  if ($runBison) {
+    for (my $run=0; $run < $iters; $run++) {
+      my @output = run("c/bcparse c.in/c.in4d");
+      for $line (@output) {
+        if (($tmp) = ($line =~ m/finished parse \((\d+) ms/)) {
+          push @parse, $tmp;
+        }
+      }
+    }
+    printf("  bison: %d  (%s)\n", median(@parse), join(',', @parse));
+  }
+
+  # cparse, the Elkhound-based C parser, with typedef support disabled
+  # to allow completely-deterministic parsing
+  @parse = ();
+  for (my $run=0; $run < $iters; $run++) {
+    my @output = run("c/cparse -tr trivialActions,stopAfterParse,yieldVariableName c.in/c.in4d");
+    for $line (@output) {
+      if (($tmp) = ($line =~ m/done parsing \((\d+) ms/)) {
+        push @parse, $tmp;
+      }
+    }
+  }
+  printf("  Elkhound: %d  (%s)\n", median(@parse),  join(',', @parse));
+}
+
+
+# ---------------------- utilities --------------------
+sub run {
+  my ($cmd) = @_;
+  @ret = `$cmd`;
+  my $code = $?;
+  if ($code != 0) {
+    print STDERR ("failed: $cmd\n");
+    exit(2);
+  }
+  return @ret;
+}
+
+
+#print("median: ", median(1,2,35,2,1), "\n");
+#print("median: ", median(5,4,3,2,1), "\n");
+#exit(0);
+
+sub median {
+  my (@vals) = @_;
+
+  # sort in numerically ascending order
+  my @sorted = sort {$a <=> $b} @vals;
+  #print("sorted: ", join(',', @sorted), "\n");
+  my $len = @vals;
+  #print("len: $len\n");
+
+  my $index = int(($len-1) / 2);
+  #print("index: $index\n");
+  return $sorted[$index];
+}
+
+
+sub linesInFile {
+  my ($fname) = @_;
+  open(IN, "<$fname") or die("can't open $fname: $!\n");
+  my $ret = 0;
+  while (<IN>) {
+    $ret++;
+  }
+  close(IN) or die;
+  return $ret;
+}

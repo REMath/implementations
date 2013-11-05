@@ -1,0 +1,33 @@
+// CNI.gr.in
+// grammar that Shaban reports Nozohoor-Farshi has trouble with
+
+// turns out Shaban is just saying you have to put the semantic
+// values into the sibling links, not the stack nodes (a lesson
+// I learned very early on)
+
+// C -> N I          (i.e. C -> N N I, language is n?n?v in regexp not'n)
+// I -> N v
+// N -> empty
+// N -> n
+
+terminals {
+  n
+  v
+}
+
+nonterm C {
+  fun merge(p1, p2) [ return p1; ]
+
+  -> N I;
+}
+
+nonterm I {
+  -> N v;
+}
+
+nonterm N {
+  -> empty;
+  -> n;
+}
+
+

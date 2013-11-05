@@ -1,0 +1,238 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>Declarator Parsing in Elsa</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+  <style type="text/css">
+    H1 { font-size: 150% }
+    H2 { font-size: 125% }
+    H3 { font-size: 100% }
+  </style>
+</HEAD>
+
+<body>
+
+<h1>Declarator Parsing in Elsa</h1>
+
+<p>
+One of the trickier aspects of parsing C and C++ is parsing the
+declarator structure.  In <a href="cc.ast.html#declarator">cc.ast.html</a>, I showed
+a diagram of how a somewhat complicated declarator is to be decomposed;
+but there is no suggestion there of <em>how</em> that decomposition is
+accomplished.  The mechanism of said decomposition, namely parsing a
+declarator, is the subject of this document.
+
+<h2>The Core Parsing Automaton</h2>
+
+<p>
+The parsing algorithm can be succinctly described by the following
+pushdown automaton:<br>
+<center>
+<img src="declarator.png" alt="Declarator Automaton Diagram">
+</center>
+
+<p>
+Quick pushdown automaton refresher: A pushdown automaton is like a finite
+automaton, transitioning from state to state as it consumes input.  In addition,
+it has the option of <em>pushing</em> a state onto its pushdown stack while
+making a transition, or <em>popping</em> a state off the stack instead of
+making a fixed transition.  In the diagram above, every transition on
+"leftparen" is accompanied by pushing a state (if I don't say which state,
+it means push the state you just came from), and every action on "rightparen"
+is to pop a state (and go there).  As demonstrated by this example, a
+pushdown automaton is more powerful than a finite automaton in that it can
+deal with arbitrarily nested constructs.
+
+<p>
+Ignoring the dashed arrows (which are discussed below), this automaton is 
+completely deterministic:
+in every state, for every next token, there is either zero or one
+possible transitions (zero transitions corresponds to a syntax error).
+This deterministic automaton is the core of the declarator parser
+mechanism.
+
+<p>
+Note that the automaton only includes the pointer type constructor "*"
+and function type constructor "()".  I have left out references ("&"),
+arrays ("[]"), and pointer to member ("<i>class</i>::*") for
+simplicity.  I have also left out the possibility of a parameter list
+being empty; adding it is a matter of splitting "Parameter" into
+"FirstParameter" (rightparen enabled) and "NextParameter" (reached by
+comma; rightparen not enabled), but I decided it's more clutter than
+it's worth here.
+
+<p>
+From here, I will consider in turn three complications that Elsa must
+deal with.
+
+<h2>Complication 1: Omitted Parameter Names</h2>
+
+<p>
+Parameters do not have to be given names; it is sufficient to give
+their types, for example:
+<pre>
+  int strcmp(char*, char*);
+</pre>
+
+<p>
+The effect on the automaton is to introduce an "epsilon transition",
+that is a transition that does not consume any input.  In particular,
+it introduces the transition from "Parameter Declarator" (PD) to
+"Parameter Declarator End" (PDE), labeled "epsilon 3".  Equivalently, all
+of the outgoing transitions for PDE are available in PD.
+
+<p>
+However, this creates a non-determinism: both PD and PDE have an
+outgoing transition on leftparen, and they do <em>not</em> go to the
+same place.  This choice, between "(" as a grouping punctuator and
+"(" as the function type constructor, is resolved in the C++ standard
+(section 8.2 paragraph 7, plus some deduction) by looking at the
+token <em>after</em> the "(" in question.  If it is a type keyword, or
+an identifier that names a type (in the current scope), or a rightparen, then the
+function type constructor interpretation is preferred.  Otherwise,
+the grouping punctuator interpretation is used.  Example:
+<pre>
+  int f(  int (int)  );      // 'f' accepts (a pointer to) a function
+
+  typedef int x;
+  int f(  int (x)  );        // same type as above
+
+  int g(  int (y)  );        // 'g' accepts an integer
+  
+  int h(  int ()  );         // 'h' accepts a function
+</pre>
+
+<h2>Complication 2: Constructor Initializers</h2>
+
+<p>
+In C++, objects can be initialized by invoking a constructor ("ctor"):
+<pre>
+  class A {
+  public:
+    A(int, float);
+  };
+
+  A a(3, 4.5);       // initialization by ctor call
+</pre>
+
+<p>
+In the automaton, this possibility adds an transition on "leftparen" from 
+"Declarator End" (DE) to the parsing of an argument list (not shown); the
+arc is labeled "ctor init (Note 4)" (CI).
+
+<p>
+Unfortunately, there is already a transition on "leftparen" in that
+state, to "Parameter" (P).  How do we decide whether to go to P or CI?
+The C++ standard (section 8.2 paragraph 1) says that if a construct
+"could possibly be a declaration" then it is a declaration.  What this
+(apparently) means is that we prefer the P interpretation, as that
+entails parsing a parameter <em>declaration</em>, instead of the CI
+interpretation.  But exactly what circumstances are covered by the
+phrase "could possibly be"?  How much checking should be done before
+deciding whether something could be a P; must we go all the way to
+type checking?
+
+<p>
+Now, in fact, Elsa <em>does</em> go all the way to type checking,
+though that's an artifact of what is convenient in Elsa, not a
+determination of what is perfect behavior (see below).  For this
+document, I want to have a simple, local rule.  As best I can tell,
+the determining factor is again the token after the "(": if it is a
+type keyword or an identifier that names a type, choose P, otherwise
+choose CI.
+
+<h2>Complication 3: Implicit Int</h2>
+
+<p>
+In old-style Kernighan and Ritchie (K&amp;R) C, declarations were allowed
+to omit specifying the type of a declared variable, and the type would
+implicitly be "int".  C++ does not allow this, but Elsa (in certain
+configurations) nevertheless allows this rule.  In the automaton
+diagram, this adds the epsilon transitions labeled "epsilon 1" and
+"epsilon 2".
+
+<p>
+Transition "epsilon 1" is easy to handle.  It adds no nondeterminisms.
+
+<p>
+Transition "epsilon 2" is more interesting.  It creates a nondeterminism
+for an identifier that names a type, since P can transition to PD or
+to PDE (using the implicit int for the latter).  However this is a
+familiar ambiguity for implicit int, and is resolved in the usual way:
+prefer the "type name" interpretation.
+
+<p>
+Interestingly, gcc (which is for the moment my only reference for
+what K&amp;R is) does <em>not</em> accept arbitrary use of implicit int
+for parameters.  Instead, it only allows it when the "register" keyword
+is used.  Thus, "epsilon 2" is really only available when that keyword
+appears first (the automaton does not include such keywords, for
+simplicity).  Elsa doesn't enforce this.
+
+
+<h2>Implementation in a Grammar</h2>
+
+<p>
+Now, the fact is that Elsa does not use a directly-written pushdown
+automaton to parse declarators, but a grammar instead.  Morever, that
+grammar was designed before the automaton was conceived (the grammar
+is based on the grammar in the C++ standard).  So what role does the
+automaton play?
+
+<p>
+Bascially, I use the automaton as a conceptual tool, to let me analyze
+tricky example syntax to figure out the "right" behavior.  Then, I
+modify the grammar and/or type checker to get the behavior I want.
+
+<p>
+It's somewhat ironic that my specification is the low-level automaton,
+and my implementation is the high-level grammar.  However, this is due
+to the fact that C's declarator parsing rules were developed along
+with other low-level implementations, so those rules are easier to
+formulate as low-level rules.  Fortunately, this is the only part of
+the language that has this specification inversion property; for all
+other parts, the high-level grammar spec is much preferable to an
+automaton.
+
+
+<h2>Elsa vs. Perfect Behavior</h2>
+
+<p>
+As hinted above, Elsa resolves ambiguities during type checking,
+rather than during parsing.  This is because Elsa does not use
+the "lexer hack" feedback technique, and hence does not have
+enough information at parse time to do ambiguity resolution.
+
+<p>
+The particular strategy employed is typically to type check both
+alternatives of a given ambigutiy, and keep the one that checks
+without any errors.  In the case of the declarator ambiguity, Elsa
+checks the declarator possibility first, and keeps it if it
+succeeds, regardless of what might happen to the other alternative.
+
+<p>
+This strategy works well when the input is assumed to be valid C++.
+However, there is a risk that Elsa will accept code that is not
+valid C++, if:
+<ul>
+<li>the "correct" syntactic interpretation turns out to have a
+    type checking error,
+<li>but the "incorrect" interpretation does not have any errors,
+    and hence is selected by Elsa.
+</ul>
+For the moment, we don't have any examples of this behavior.  If such
+behavior were observed, it would be relatively easy to modify the
+parser to detect the relevant syntax, and flag it as erroneous
+(thus defeating the second bullet).
+
+
+<p>
+  <a href="http://validator.w3.org/check?uri=referer"><img border="0"
+      src="http://www.w3.org/Icons/valid-html401"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+
+</body>
+</HTML>

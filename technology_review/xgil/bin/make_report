@@ -1,0 +1,1178 @@
+#!/usr/bin/perl
+
+# Sixgill: Static assertion checker for C/C++ programs.
+# Copyright (C) 2009-2010  Stanford University
+# Author: Brian Hackett
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# make a single report from input checker XML.
+
+use strict;
+
+# string to replace tabs with.
+my $tab_str = ' ' x 8;
+
+my $usage = "USAGE: make_report cur-link prev-link next-link [-success] < report-xml\n";
+
+my $cur_link = shift or die $usage;
+my $prev_link = shift or die $usage;
+my $next_link = shift or die $usage;
+my $success = shift or "";
+
+die $usage if ($success ne "" && $success ne "-success");
+
+my $file_xdb = "file_source.xdb";
+my $filepp_xdb = "file_preprocess.xdb";
+die "Missing $file_xdb\n" if (not -e $file_xdb);
+die "Missing $filepp_xdb\n" if (not -e $filepp_xdb);
+
+my $path;
+my $report_name;
+my $title;
+
+if ($success eq "") {
+    # parse the input XML.
+    my $data = <STDIN>;
+    my $table = recursive_parse_xml($data);
+
+    my $path_entries = $table->{path};
+    $path = @{$path_entries}[0];
+    die "Could not find <path>\n" if not defined $path;
+
+    $report_name = get_single_xml_tag($path, 'name');
+    print "<!-- '$report_name' -->\n";
+
+    $title = "Report: " . report_printable($report_name);
+}
+else {
+    $title = "Successful Check";
+}
+
+print "<html>\n<head>\n<title>$title</title>\n\n";
+
+print <<EOF;
+
+<style type="text/css">
+
+body {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  height: 100%; 
+  max-height: 100%; 
+}
+
+#header_div {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 160px;
+  margin: 15px;
+  white-space: nowrap;
+  font-size: 16pt;
+  overflow: auto;
+}
+
+#path_div {
+  position: fixed;
+  top: 165px;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  overflow: auto;
+  margin: 15px;
+}
+
+#code_div {
+  position: fixed;
+  top: 165px;
+  left: 260px;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
+  margin: 15px 15px 15px 20px;
+}
+
+table.code_display td {
+  border-width: 1px 1px 1px 1px;
+  padding: 0px 0px 0px 0px;
+  white-space: pre;
+  font-family: monospace;
+}
+
+a.navlink {
+  padding: 0px 6px;
+  font-weight: bold;
+  text-decoration: none;
+  color: black;
+  border-style: solid;
+  border-width: thin;
+}
+
+a.helplink {
+  padding: 0px 6px;
+  font-weight: bold;
+  text-decoration: none;
+  color: black;
+  border-style: solid;
+  border-width: thin;
+  background-color: #FF0000;
+}
+
+a.joblink {
+  padding: 0px 6px;
+  font-weight: bold;
+  text-decoration: none;
+  color: black;
+  border-style: solid;
+  border-width: thin;
+  background-color: #9999FF;
+}
+
+a.pathlink {
+  font-weight: bold;
+  text-decoration: none;
+  color: black;
+}
+
+a.pathskip {
+  font-weight: bold;
+  text-decoration: none;
+  color: #777777;
+}
+
+span.code_filename {
+  font-size: 12pt;
+  font-family: monospace;
+}
+
+td {
+  vertical-align: top;
+}
+
+td.code_omit {
+  color: #777777;
+}
+
+a.code_link {
+  font-weight: bold;
+  text-decoration: none;
+  color: black;
+  background-color: #CCCCFF;
+}
+
+a.code_highlight {
+  font-weight: bold;
+  text-decoration: none;
+  color: black;
+  background-color: #FF0000;
+}
+
+span.helptext {
+  font-size: 12pt;
+  color: #DD0000;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id='header_div'>
+
+<div style="padding-bottom: 7px; padding-top: 3px">
+
+Report:
+
+<a class='helplink' id='helpme' href='#' onClick='toggleHelp(); return false;'>Help!</a>
+<a class='navlink' id='annotate' href='#' onClick='doAnnotate(); return false;'>Annotate</a>
+<a class='navlink' id='reanalyze' href='#' onClick='doReanalyze(); return false;'>Reanalyze</a>
+<a class='navlink' id='reporttop' href='index.html'>Top</a>
+
+EOF
+
+if ($prev_link eq "none") {
+    print "<a class='navlink' id='reportprev' href='#' onClick='return false;'>Prev</a>\n";
+}
+else {
+    print "<a class='navlink' id='reportprev' href='$prev_link.html'>Prev</a>\n";
+}
+
+if ($next_link eq "none") {
+    print "<a class='navlink' id='reportnext' href='#' onClick='return false;'>Next</a>\n";
+}
+else {
+    print "<a class='navlink' id='reportnext' href='$next_link.html'>Next</a>\n";
+}
+
+print "</div>\n";
+
+print <<EOF;
+
+<script type="text/javascript">
+
+function setNavLink(name, value)
+{
+    var navItem = document.getElementById(name);
+    if (value != 0) {
+        navItem.style.backgroundColor = "#9999FF";
+    }
+    else {
+        navItem.style.backgroundColor = "#CCCCCC";
+    }
+}
+
+setNavLink("annotate",0);
+setNavLink("reanalyze",0);
+setNavLink("reporttop",1);
+
+EOF
+
+if ($prev_link eq "none") {
+    print "setNavLink(\"reportprev\",0);\n";
+}
+else {
+    print "setNavLink(\"reportprev\",1);\n";
+}
+
+if ($next_link eq "none") {
+    print "setNavLink(\"reportnext\",0);\n";
+}
+else {
+    print "setNavLink(\"reportnext\",1);\n";
+}
+
+if ($success ne "") {
+    print "function doAnnotate() {}\n";
+    print "function doReanalyze() {}\n";
+    print "</script>\n";
+    print "<div>Assertion successfully checked</div>\n";
+
+    exit;
+}
+
+print <<EOF;
+
+</script>
+
+<span class="helptext" id="help_result"></span>
+<span class="helptext" style="font-size: 3px" id="help_resultnext"></span>
+<div id="job_result" style="font-size: 12pt"></div>
+
+<div style="padding-bottom: 5px">
+<span class="helptext" id="help_goal"></span>
+<span style="float: left; width: 125px">Goal:</span><span id="maindata"></span>
+</div>
+
+<div style="padding-bottom: 10px">
+<span class="helptext" id="help_dependent"></span>
+<span style="float: left; width: 125px">Dependent:</span><span id="wheredata"></span>
+</div>
+
+<div>
+
+<span class="helptext" id="help_steps"></span>
+<span class="helptext" style="font-size: 3px" id="help_stepsnext"></span>
+Steps:
+<a class="navlink" href="#" id="navfirst" onClick="setMoveIndex(firstArray[curIndex]); return false;">First</a>
+<a class="navlink" href="#" id="navprev"  onClick="setMoveIndex(prevArray[curIndex]); return false;">Prev</a>
+<a class="navlink" href="#" id="navnext"  onClick="setMoveIndex(nextArray[curIndex]); return false;">Next</a>
+<a class="navlink" href="#" id="navlast"  onClick="setMoveIndex(lastArray[curIndex]); return false;">Last</a>
+
+<span style="padding-left: 10px; padding-right: 5px">Statement:</span>
+<span id="textdata"></span>
+
+</div>
+</div>
+
+<script type="text/javascript">
+
+var nextArray = new Array();
+var prevArray = new Array();
+var firstArray = new Array();
+var lastArray = new Array();
+
+var valueArray = new Array();
+var annotArray = new Array();
+var mainArray = new Array();
+var whereArray = new Array();
+var textArray = new Array();
+
+var codeFrameArray = new Array();
+var codeLineArray = new Array();
+
+var curIndex = 0;
+
+EOF
+
+# maximum index for points and frames (minimum index is 1)
+my $maxpoint = 0;
+my $maxframe = 0;
+
+# map from point indexes to frame indexes
+my @point_frames;
+
+# all frames, indexed by the frame index
+my @frames;
+
+my $frame_entries = $path->{frame};
+for my $frame (@{$frame_entries}) {
+    my $index = get_single_xml_tag($frame, 'frameindex');
+    $maxframe = $index if ($index > $maxframe);
+
+    die if (defined $frames[$index]);
+    $frames[$index] = $frame;
+
+    my $beginpoint = get_single_xml_tag($frame, 'beginpoint');
+    my $endpoint = get_single_xml_tag($frame, 'endpoint');
+
+    $maxpoint = $endpoint if ($endpoint > $maxpoint);
+
+    for my $point ($beginpoint .. $endpoint) {
+        die if (defined $point_frames[$point]);
+        $point_frames[$point] = $index;
+    }
+}
+print "\n";
+
+# source lines to mark or highlight in each frame
+my %mark_lines;
+my %highlight_lines;
+
+my $point_entries = $path->{point};
+for my $point (@{$point_entries}) {
+    my $index = get_single_xml_tag($point, 'pointindex');
+    $maxpoint = $index if ($index > $maxpoint);
+
+    my $frameindex = $point_frames[$index];
+    my $frame = $frames[$frameindex];
+    die if not (defined $frame);
+
+    my $line = get_single_xml_tag($point, 'line');
+
+    if (not (defined $mark_lines{"$frameindex:$line"})) {
+        $mark_lines{"$frameindex:$line"} = $index;
+    }
+
+    my $beginpoint = get_single_xml_tag($frame, 'beginpoint');
+    my $endpoint = get_single_xml_tag($frame, 'endpoint');
+
+    my $nextpoint = 0;
+    my $prevpoint = 0;
+    my $firstpoint = 0;
+    my $lastpoint = 0;
+
+    if ($index < $endpoint) {
+        $nextpoint = $index + 1;
+        $lastpoint = $endpoint;
+    }
+
+    if ($index > $beginpoint) {
+        $prevpoint = $index - 1;
+        $firstpoint = $beginpoint;
+    }
+
+    my $main_text = get_single_xml_tag($frame, 'maintext');
+    my $where_text = get_single_xml_tag($frame, 'wheretext');
+    my $line_text = get_single_xml_tag($point, 'linetext');
+
+    my $highlight = has_xml_tag($point, 'highlight');
+    if ($highlight) {
+        $highlight_lines{"$frameindex:$line"} = 1;
+    }
+
+    my $value_text = "";
+    my $value_entries = $point->{value};
+
+    for my $value (@{$value_entries}) {
+        my $lval = get_single_xml_tag($value, 'lval');
+        my $rval = get_single_xml_tag($value, 'rval');
+        my $newval = get_single_xml_tag($value, 'newval', "");
+
+        $value_text .= "$lval: $rval";
+        if ($newval ne "") {
+            $value_text .= " ($newval)";
+        }
+        $value_text .= " <br>";
+    }
+
+    my $annot_text = "";
+    my $annot_entries = $frame->{annotation};
+
+    for my $annot (@{$annot_entries}) {
+        my $annot_val = $annot->{'#data'} or die;
+
+        # add the header for the annotation if there are any annotations.
+        # unlike for the value data, we only show the header if there
+        # are actually annotations.
+        if ($annot_text eq "") {
+            $annot_text .= "<h3>Annotations</h3>";
+        }
+
+        $annot_text .= "$annot_val<br>";
+    }
+
+    $main_text = text_escape($main_text);
+    $where_text = text_escape($where_text);
+    $line_text = text_escape($line_text);
+    $value_text = text_escape($value_text);
+    $annot_text = text_escape($annot_text);
+
+    print "nextArray[$index] = $nextpoint;\n";
+    print "prevArray[$index] = $prevpoint;\n";
+    print "firstArray[$index] = $firstpoint;\n";
+    print "lastArray[$index] = $lastpoint;\n";
+    print "mainArray[$index] = \"$main_text\";\n";
+    print "whereArray[$index] = \"$where_text\";\n";
+    print "textArray[$index] = \"$line_text\";\n";
+    print "codeFrameArray[$index] = $frameindex;\n";
+    print "codeLineArray[$index] = $line;\n";
+    print "valueArray[$index] = \"$value_text\";\n";
+    print "annotArray[$index] = \"$annot_text\";\n";
+    print "\n";
+}
+
+print <<EOF;
+
+function setIndex(newIndex)
+{
+    var valueItem = document.getElementById("valuedata");
+    valueItem.innerHTML = valueArray[newIndex];
+
+    var annotItem = document.getElementById("annotdata");
+    annotItem.innerHTML = annotArray[newIndex];
+
+    var mainItem = document.getElementById("maindata");
+    mainItem.innerHTML = mainArray[newIndex];
+
+    var whereItem = document.getElementById("wheredata");
+    whereItem.innerHTML = whereArray[newIndex];
+
+    var textItem = document.getElementById("textdata");
+    textItem.innerHTML = textArray[newIndex];
+
+    setNavLink("navnext", nextArray[newIndex]);
+    setNavLink("navprev", prevArray[newIndex]);
+    setNavLink("navfirst", firstArray[newIndex]);
+    setNavLink("navlast", lastArray[newIndex]);
+
+    curIndex = newIndex;
+}
+
+function setInitialIndex(newIndex)
+{
+    var newFrame = codeFrameArray[newIndex];
+    var newLine = codeLineArray[newIndex];
+
+    var newFrameItem = document.getElementById("path_" + newFrame);
+    newFrameItem.style.backgroundColor = "#99FF99";
+
+    var newBlockItem = document.getElementById("code_" + newFrame);
+    newBlockItem.style.display = "";
+
+    var newLineItem = document.getElementById("code_" + newFrame + "_" + newLine);
+    newLineItem.style.backgroundColor = "#99FF99";
+
+    var newPPLineItem = document.getElementById("ppcode_" + newFrame + "_" + newLine);
+    newPPLineItem.style.backgroundColor = "#99FF99";
+
+    setIndex(newIndex);
+}
+
+function setMoveIndex(newIndex)
+{
+    if (newIndex == 0)
+        return;
+
+    var curFrame = codeFrameArray[curIndex];
+    var curLine = codeLineArray[curIndex];
+
+    var newFrame = codeFrameArray[newIndex];
+    var newLine = codeLineArray[newIndex];
+
+    var curLineItem = document.getElementById("code_" + curFrame + "_" + curLine);
+    curLineItem.style.backgroundColor = "";
+
+    var curPPLineItem = document.getElementById("ppcode_" + curFrame + "_" + curLine);
+    curPPLineItem.style.backgroundColor = "";
+
+    if (curFrame != newFrame) {
+        var curFrameItem = document.getElementById("path_" + curFrame);
+        curFrameItem.style.backgroundColor = "";
+
+        var newFrameItem = document.getElementById("path_" + newFrame);
+        newFrameItem.style.backgroundColor = "#99FF99";
+
+        var curBlockItem = document.getElementById("code_" + curFrame);
+        curBlockItem.style.display = "none";
+
+        var newBlockItem = document.getElementById("code_" + newFrame);
+        newBlockItem.style.display = "";
+    }
+
+    var newLineItem = document.getElementById("code_" + newFrame + "_" + newLine);
+    newLineItem.style.backgroundColor = "#99FF99";
+
+    var newPPLineItem = document.getElementById("ppcode_" + newFrame + "_" + newLine);
+    newPPLineItem.style.backgroundColor = "#99FF99";
+
+    setIndex(newIndex);
+
+    if (newFrame != curFrame && result_annotate) {
+        hideResult();
+        doAnnotate();
+    }
+}
+
+function toggleCode(code, line)
+{
+    var checkItem = document.getElementById("check_" + code + "_" + line);
+    var codeItem = document.getElementById("code_" + code + "_" + line);
+    var ppcodeItem = document.getElementById("ppcode_" + code + "_" + line);
+
+    if (checkItem.checked) {
+        codeItem.style.display = "none";
+        ppcodeItem.style.display = "";
+    }
+    else {
+        codeItem.style.display = "";
+        ppcodeItem.style.display = "none";
+    }
+}
+
+var showHelp = false;
+var showResult = false;
+
+var result_reanalyze = false;
+var result_annotate = false;
+
+function refreshHeader()
+{
+    var headerHeight;
+    if (showHelp)
+        headerHeight = showResult ? 310 : 240;
+    else
+        headerHeight = showResult ? 210 : 160;
+
+    document.getElementById("header_div").style.height = headerHeight + "px";
+    document.getElementById("path_div").style.top = (headerHeight + 5) + "px";
+    document.getElementById("code_div").style.top = (headerHeight + 5) + "px";
+
+    var goal = document.getElementById("help_goal");
+    var dependent = document.getElementById("help_dependent");
+    var steps = document.getElementById("help_steps");
+    var stepsnext = document.getElementById("help_stepsnext");
+    var path = document.getElementById("help_path");
+    var values = document.getElementById("help_values");
+    var result = document.getElementById("help_result");
+    var resultnext = document.getElementById("help_resultnext");
+
+    if (showHelp) {
+        goal.innerHTML = "The assertion sixgill is trying to prove<br>";
+        dependent.innerHTML = "The condition sixgill thinks it needs to prove in order to prove the goal.<br> If this condition is something that should hold of the program, navigate the path below.<br> Otherwise, add an annotation for a different condition.<br>";
+        steps.innerHTML = "Navigation for the steps taken in the current path node, and the statement at the current step<br>";
+        stepsnext.innerHTML = "<br>";
+        path.innerHTML = "Path through the code which sixgill explored. The dependent for one node in the path is the goal in the next node up. Walk up the path from the final assertion until the dependent is incorrect.<br>";
+        values.innerHTML = "Assignment of values to each variable at the current step. Added annotations should generally be false under this assignment.";
+
+        if (showResult) {
+            if (result_reanalyze)
+                result.innerHTML = "Reanalyze this report using any newly added annotations<br>";
+            else
+                result.innerHTML = "Add an annotation at a place within the current path node, and reanalyze this report<br>";
+            resultnext.innerHTML = "<br>";
+        }
+        else {
+            result.innerHTML = "";
+            resultnext.innerHTML = "";
+        }
+    }
+    else {
+        goal.innerHTML = "";
+        dependent.innerHTML = "";
+        steps.innerHTML = "";
+        stepsnext.innerHTML = "";
+        path.innerHTML = "";
+        values.innerHTML = "";
+        result.innerHTML = "";
+        resultnext.innerHTML = "";
+    }
+}
+
+function toggleHelp()
+{
+    showHelp = !showHelp;
+    refreshHeader();
+}
+
+function setupResult(job_html)
+{
+    setNavLink("reanalyze",0);
+    setNavLink("annotate",0);
+
+    showResult = true;
+    refreshHeader();
+
+    document.getElementById("job_result").style.paddingBottom = "5px";
+    document.getElementById("job_result").innerHTML = job_html;
+}
+
+function hideResult()
+{
+    result_reanalyze = false;
+    result_annotate = false;
+
+    setNavLink("reanalyze",1);
+    setNavLink("annotate",1);
+
+    showResult = false;
+    refreshHeader();
+
+    document.getElementById("job_result").innerHTML = "";
+    document.getElementById("job_result").style.paddingBottom = "";
+}
+
+var refreshJob = function (ext) {
+    document.getElementById("job_server").innerHTML = ":(";
+}
+
+function submitReanalyze()
+{
+
+EOF
+
+    print("var report = encodeURIComponent('$report_name');\n");
+    print("var link = '$cur_link';\n");
+    print("var prev_link = '$prev_link';\n");
+    print("var next_link = '$next_link';\n");
+
+print <<EOF;
+
+    document.getElementById("job_result").innerHTML =
+        "<span style='padding: 0px 5px' id='job_server'></span>";
+
+    refreshJob = function(ext) {
+        var head = document.getElementsByTagName("head").item(0);
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.src = "../scripts/addjob.cgi?report=" + report + "&ext=" + ext + "&link=" + link + "&prev=" + prev_link + "&next=" + next_link;
+        head.appendChild(script);
+    }
+
+    refreshJob("NEW");
+}
+
+function doReanalyze()
+{
+    if (result_reanalyze || result_annotate) {
+        hideResult();
+        return;
+    }
+    result_reanalyze = true;
+
+    var job_html =
+        "<a class='joblink' id='job_submit' href='#' onClick='submitReanalyze(); return false;'>Submit</a>";
+
+EOF
+
+    print("job_html += \"<span style='padding: 0px 5px'>Name: '$report_name'</span>\";\n");
+
+print <<EOF;
+
+    setupResult(job_html);
+}
+
+function submitAnnotate()
+{
+
+EOF
+
+    print("var report = encodeURIComponent('$report_name');");
+    print("var link = '$cur_link';\n");
+    print("var prev_link = '$prev_link';\n");
+    print("var next_link = '$next_link';\n");
+
+print <<EOF;
+
+    var hookItem = document.getElementById("annotate_hook");
+    var textItem = document.getElementById("annotate_text");
+    var trustItem = document.getElementById("annotate_trust");
+
+    var text = encodeURIComponent(textItem.value);
+
+    var hook;
+    if (hookItem.value.substring(0,5) == "point") {
+        hook = "point '" + textArray[curIndex] + "' " + hookItem.value.substring(6);
+    }
+    else {
+        hook = hookItem.value;
+    }
+    hook = encodeURIComponent(hook);
+
+    document.getElementById("job_result").innerHTML =
+        "<span style='padding: 0px 5px' id='job_server'></span>";
+
+    refreshJob = function(ext) {
+        var head = document.getElementsByTagName("head").item(0);
+        var script = document.createElement("script");
+        script.type = "text/javascript";
+        script.src = "../scripts/addjob.cgi?report=" + report + "&ext=" + ext + "&link=" + link + "&prev=" + prev_link + "&next=" + next_link + "&hook=" + hook + "&text=" + text + "&trust=" + !trustItem.checked;
+        head.appendChild(script);
+    }
+
+    refreshJob("NEW");
+}
+
+function doAnnotate()
+{
+    if (result_reanalyze || result_annotate) {
+        hideResult();
+        return;
+    }
+    result_annotate = true;
+
+    var job_html =
+        "<a class='joblink' id='job_submit' href='#' onClick='submitAnnotate(); return false;'>Submit</a>";
+    job_html += "<span style='padding: 0px 5px'><select id='annotate_hook' style='width: 200px'>";
+
+    var curFrame = codeFrameArray[curIndex];
+    switch (curFrame) {
+
+EOF
+
+my $frameindex = 1;
+while ($frameindex <= $maxframe) {
+    my $frame = $frames[$frameindex];
+    die if not (defined $frame);
+
+    print "case $frameindex:\n";
+
+    my $hook_entries = $frame->{hook};
+    for my $hook (@{$hook_entries}) {
+        my $text = get_single_xml_tag($hook, 'text');
+
+        # use 'unknown' as a patch for the case for postconditions where
+        # no callees were identified
+        my $name = get_single_xml_tag($hook, 'name', "unknown");
+        my $new_name = html_unescape($name);
+
+        print "job_html += \"<option value='$new_name'>$text</option>\";\n";
+    }
+
+    print "break;\n";
+
+    $frameindex++;
+}
+
+print <<EOF;
+
+    }
+    job_html += "</select></span>";
+    job_html += "<span style='padding-right: 5px'>Checked:<input type='checkbox' id='annotate_trust' checked=true></input></span>";
+    job_html += "<input type='text' id='annotate_text' size=60'></input>";
+
+    setupResult(job_html);
+}
+
+</script>
+
+<div id='path_div'>
+
+<h3>Path</h3>
+<span class="helptext" id="help_path"></span>
+<div style="white-space: nowrap">
+
+EOF
+
+# get a sorted list of the root frames
+my @roots;
+
+my $root_entries = $path->{frameindex};
+for my $root (@{$root_entries}) {
+    my $frameindex = $root->{'#data'} or die;
+    push(@roots, $frameindex);
+}
+@roots = sort { $a <=> $b } @roots;
+
+my $after_root = 0;
+for my $root (@roots) {
+    print "<span style='font-family: monospace'>***</span><br>\n" if ($after_root);
+    $after_root = 1;
+
+    print_xml_path($root, 0);
+}
+
+sub print_xml_path {
+    my ($frameindex,$depth) = @_;
+
+    my $frame = $frames[$frameindex];
+    die if not (defined $frame);
+
+    my $text = get_single_xml_tag($frame, 'text');
+
+    my $framechild = get_single_xml_tag($frame, 'framechild', 0);
+    my $framenext = get_single_xml_tag($frame, 'framenext', 0);
+    my $endpoint = get_single_xml_tag($frame, 'endpoint');
+
+    print "<span style='font-family: monospace'>";
+    print ("-" x $depth);
+    print "</span>\n";
+
+    print "<a class='pathlink' id='path_$frameindex' href='#' onClick='setMoveIndex($endpoint); return false;'>$text</a><br>\n";
+
+    print_xml_path($framechild, $depth + 1) if ($framechild);
+    print_xml_path($framenext, $depth) if ($framenext);
+}
+
+print <<EOF;
+
+</div>
+
+<h3>Values</h3>
+<span class="helptext" id="help_values"></span>
+<div style="white-space: nowrap">
+<span id="valuedata"></span>
+<span id="annotdata"></span>
+</div>
+
+</div>
+
+<div id='code_div'>
+
+EOF
+
+my $frameindex = 1;
+while ($frameindex <= $maxframe) {
+    my $frame = $frames[$frameindex];
+    die if not (defined $frame);
+
+    my $file = get_single_xml_tag($frame, 'file');
+    my $beginline = get_single_xml_tag($frame, 'beginline');
+    my $endline = get_single_xml_tag($frame, 'endline');
+
+    my $linecount = $endline - $beginline + 1;
+
+    my $source_cmd = "xdbfind -plain-text $file_xdb '$file' | head -$endline | tail -$linecount";
+    my @source_lines = `$source_cmd`;
+
+    my $preproc_cmd = "xdbfind -plain-text $filepp_xdb '$file' | head -$endline | tail -$linecount";
+    my @preproc_lines = `$preproc_cmd`;
+
+    # pad the lines if necessary (we weren't able to get the source correctly,
+    # but we don't want the scripts in the report to break).
+
+    while (scalar(@source_lines) < $linecount) {
+        push(@source_lines, "");
+    }
+
+    while (scalar(@preproc_lines) < $linecount) {
+        push(@preproc_lines, "");
+    }
+
+    print "<div id='code_$frameindex' style='display: none'>\n";
+
+    print "<span class='code_filename'>\n";
+    print "$file\n";
+    print "</span>\n";
+
+    print "<table class='code_display' style='padding-top: 10px; padding-bottom: 30px' cellspacing='0' cellpadding='0'>\n";
+
+    my $line = $beginline;
+    for my $source_line (@source_lines) {
+        chomp $source_line;
+
+        # format any tabs according to tab_str.
+        $source_line =~ s/\t/$tab_str/g;
+
+        my $preproc_line = shift @preproc_lines;
+        chomp $preproc_line;
+
+        my $preproc_print = ppformat($preproc_line, $source_line);
+
+        $source_line = html_escape($source_line);
+        $preproc_print = html_escape($preproc_print);
+
+        print "<tr>";
+        print "<td><input id='check_$frameindex" . "_$line' type=\"checkbox\" onClick='toggleCode($frameindex,$line)'></td>";
+
+        my $extra = "";
+
+        my $pointindex = $mark_lines{"$frameindex:$line"};
+        if (defined $pointindex) {
+            my $code_class = 'code_link';
+            if (defined $highlight_lines{"$frameindex:$line"}) {
+                $code_class = 'code_highlight';
+            }
+            print "<td><a class='$code_class' href='#' onClick='setMoveIndex($pointindex); return false;'>$line:</a></td>";
+        }
+        else {
+            $extra = "class='code_omit'";
+            print "<td $extra>$line:</td>";
+        }
+
+        print "<td id='code_$frameindex" . "_$line' $extra> $source_line</td>";
+        print "<td id='ppcode_$frameindex" . "_$line' $extra style='display:none'> $preproc_print</td>";
+        print "</tr>\n";
+
+        $line++;
+    }
+
+    print "</table>\n";
+    print "</div>\n\n";
+
+    $frameindex++;
+}
+
+print <<EOF;
+
+</div>
+
+<script type="text/javascript">
+
+setNavLink("annotate",1);
+setNavLink("reanalyze",1);
+
+EOF
+
+print "setInitialIndex($maxpoint);\n";
+
+print <<EOF;
+
+</script>
+
+</body>
+</html>
+
+EOF
+
+# printable name of a report, same as make_index. change these together.
+sub report_printable {
+    my ($report) = @_;
+
+    # remove assertion kind and file information.
+    $report =~ /(.*?)\$(.*?)\$(.*)/ or die;
+    my $name = $3;
+
+    # report names look like 'name$loop?$assert' or 'file:name$loop?$assert'
+    # where the name can look like:
+    # foo(arg_types)       (Elsa frontend)
+    # foo                  (GCC frontend with C linkage)
+    # type foo(arg_types)  (GCC frontend with C++ linkage)
+
+    # eat everything after a '$'.
+    $name =~ s/\$.*$//;
+
+    # eat everything after a '(' - argument types. watch out for '(!'
+    # which shows up in some GCC template instantiations.
+    $name =~ s/\([^\!].*$//;
+
+    # eat some keywords that can appear before the return type.
+    $name =~ s/^static //;
+    $name =~ s/^virtual //;
+    $name =~ s/^const //;
+
+    # eat everything up to a ' ' - return type.
+    $name =~ s/[^ <]* //;
+
+    # eat a leading 'file:', but preserve 'class::'
+    $name =~ s/^[^:\(]*:([^:])/$1/;
+
+    return $name;
+}
+
+# XML parsing code. this could use a library instead. (portability?)
+
+sub recursive_parse_xml {
+    my ($data) = @_;
+    my $table = {};
+
+    my $found_tag = 0;
+    while ($data =~ /^\s*\<(\w+)\>/) {
+        my $tagname = $1;
+        $found_tag = 1;
+
+        die "Error parsing XML\n" if ($data !~ /^\s*\<$tagname\>(.*?)\<\/$tagname\>(.*)/);
+
+        my $contents = $1;
+        $data = $2;
+
+        my $entry_table = recursive_parse_xml($contents);
+        push(@{$table->{$tagname}}, $entry_table);
+    }
+
+    $data =~ s/^\s+//;
+    $data =~ s/\s+$//;
+    if ($data ne "") {
+        die "Error parsing XML\n" if ($found_tag);
+        $table->{"#data"} = $data;
+    }
+
+    return $table;
+}
+
+sub has_xml_tag {
+    my $table = shift or die;
+    my $tag = shift or die;
+
+    my $entries = $table->{$tag};
+    my $entry = @{$entries}[0];
+    my $data = $entry->{'#data'};
+
+    return (defined $data);
+}
+
+sub get_single_xml_tag {
+    my $table = shift or die;
+    my $tag = shift or die;
+    my $default = shift;
+
+    my $entries = $table->{$tag};
+    my $entry = @{$entries}[0];
+    my $data = $entry->{'#data'};
+
+    if (not defined $data) {
+        die "missing required tag <$tag>\n" if not defined $default;
+        return $default;
+    }
+    else {
+        return $data;
+    }
+}
+
+sub ppformat {
+  my($text,$origtext) = @_;
+
+  # strip leading whitespace from preprocessed line.
+  $text =~ s/^\s+//;
+
+  my $result = "";
+  my $prespace;
+  if ($origtext =~ /^(\s*)/) {
+      $result = $1;
+      $prespace = $1;
+  }
+
+  # don't do any processing for short lines.
+  if (length($text) < 20) {
+      $result .= $text;
+      return $result;
+  }
+
+  my $open_braces = 0;
+  my $insnewline = 0;
+  while ($text ne "") {
+    $text =~ s/^\s*([^\,\;\{\}\(\)]*)//;
+    my $linetext = $1;
+
+    $result .= "\n$prespace" . ("  " x $open_braces) if ($insnewline == 1);
+
+    $result .= $linetext;
+    if ($text =~ s/^([\,\;])//) {
+      $result .= $1;
+      $insnewline = 1;
+      $insnewline = 0 if ($1 eq "," && $open_braces == 0);
+    }
+    elsif ($text =~ s/^([\{\(])//) {
+      my $open = $1;
+      my $match = "";
+      my $mini_open = 1;
+      while (($mini_open > 0) && ($text ne "") &&
+             (length($match) < 40 || ($open eq "(" && not ($match =~ /[\{]/)))) {
+        if ($text =~ s/^([^\{\}\(\)]*[\{\(])//) {
+          $match .= $1;
+          $mini_open++;
+        }
+        elsif ($text =~ s/^([^\{\}\(\)]*[\}\)][\,\;]?)//) {
+          $match .= $1;
+          $mini_open--;
+        }
+        else {
+          $match .= $text;
+          $text = "";
+        }
+      }
+      $insnewline = 1;
+      if (length($match) < 40 || $open eq "(") {
+        $result .= "$open$match";
+        if ($match =~ /\)[\,]?$/) {
+          $result .= " ";
+          $insnewline = 0;
+        }
+      }
+      else {
+        $open_braces++;
+        $result .= $open;
+        $text = $match . $text;
+      }
+    }
+    elsif ($text =~ s/^([\}\)][\,\;]?)//) {
+      my $term = $1;
+      if ($open_braces > 0 && ($linetext =~ /[^\s]/ || $insnewline == 0)) {
+        $result .= "\n$prespace" . ("  " x ($open_braces - 1)) . $term;
+        $insnewline = 1;
+      }
+      elsif ($open_braces == 0) {
+        $result =~ s/  $//;
+        $result .= $term;
+        $insnewline = 0;
+      }
+      else {
+        $result =~ s/  $//;
+        $result .= $term;
+        $insnewline = 1;
+      }
+      $open_braces-- if ($open_braces > 0);
+    }
+    else {
+      last;
+    }
+  }
+
+  return $result;
+}
+
+sub html_escape {
+    my ($text) = @_;
+
+    $text =~ s/\&/\&amp;/g;
+    $text =~ s/\</\&lt;/g;
+    $text =~ s/\>/\&gt;/g;
+
+    return $text;
+}
+
+sub html_unescape {
+    my ($text) = @_;
+
+    $text =~ s/\&amp;/\&/g;
+    $text =~ s/\&lt;/\</g;
+    $text =~ s/\&gt;/\>/g;
+
+    return $text;
+}
+
+sub text_escape {
+    my ($text) = @_;
+
+    # escape any backslashes in the text.
+    $text =~ s/\\/\\\\/g;
+
+    # escape any quotes in the text.
+    $text =~ s/\"/\\\"/g;
+
+    return $text;
+}

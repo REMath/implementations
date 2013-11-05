@@ -1,0 +1,17 @@
+10/29/02 18:34
+author: scott
+
+The files in this directory are the compiler-supplied header
+files for the Elkhound-based C++ parser.  For now they are
+just what is needed to get Mozilla to parse, modified to
+not use namespaces (since my parser doesn't yet handle them).
+
+I envision the parser acquiring more functionality, at which
+time more of the headers specified in the Standard will have
+to be written and placed here.
+
+The headers that are required but not supplied are, in practice,
+taken from gcc's headers since I'm using gcc's "cpp" command
+and it knows where to find its own compiler-specific headers.
+But I'm supplying a -I pointing at this directory, so anything
+here takes precedence.

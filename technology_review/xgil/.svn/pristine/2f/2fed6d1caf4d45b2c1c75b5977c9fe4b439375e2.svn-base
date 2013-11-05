@@ -1,0 +1,11 @@
+#!/bin/sh
+# config.summary
+
+echo "ast configuration summary:"
+echo "  command:     ./configure "
+echo ""
+echo "Compile flags:"
+echo "  CC:          gcc"
+echo "  CXX:         g++"
+echo "  CCFLAGS:     -g -Wall -Wno-deprecated -D__UNIX__ -O2 -DNDEBUG -D__LINUX__"
+echo ""

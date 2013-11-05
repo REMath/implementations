@@ -1,0 +1,142 @@
+// cc_print.ast            see license.txt for copyright and terms of use
+// extension module for cc.ast that supports printing C++
+// syntax from the AST
+
+verbatim {
+  class PrintEnv;               // cc_print.h
+  class CodeOutStream;          // cc_print.h
+}
+
+
+class TranslationUnit {
+  // This is the toplevel entry point to the pretty printer.
+  public void print(PrintEnv &env);
+}
+
+
+class TopForm {
+  pure_virtual void print(PrintEnv &env);
+}
+
+
+class Function {
+  public void print(PrintEnv &env);
+}
+
+
+class Declaration {
+  public void print(PrintEnv &env);
+}
+
+
+class ASTTypeId {
+  public void print(PrintEnv &env);
+}
+
+
+class PQName {
+  pure_virtual void print(PrintEnv &env);
+}
+
+verbatim {
+  // so clients outside cc_print.cc can print these lists; this
+  // does *not* print the surrounding angle brackets
+  void printTemplateArgumentFakeList(PrintEnv &env, FakeList<TemplateArgument> *args);
+}
+
+
+class TypeSpecifier {
+  pure_virtual void print(PrintEnv &env);
+}
+
+
+class BaseClassSpec {
+  public void print(PrintEnv &env);
+}
+
+
+class Member {
+  pure_virtual void print(PrintEnv &env);
+}
+
+
+class Enumerator {
+  public void print(PrintEnv &env);
+}
+
+
+class Declarator {
+  public void print(PrintEnv &env);
+}
+
+
+class IDeclarator {
+  public void print(PrintEnv &env);
+}
+
+
+class ExceptionSpec {
+  public void print(PrintEnv &env);
+}
+
+
+class Statement {
+  public void print(PrintEnv &env);
+  pure_virtual void iprint(PrintEnv &env);
+}
+
+
+class Condition {
+  pure_virtual void print(PrintEnv &env);
+}
+
+
+class Handler {
+  public void print(PrintEnv &env);
+}
+
+
+class FullExpression {
+  public void print(PrintEnv &env);
+}
+
+
+class Expression {
+  public void print(PrintEnv &env);
+  pure_virtual void iprint(PrintEnv &env);
+
+  public string exprToString() const;
+  public string asString() const { return exprToString(); };
+}
+
+verbatim {                               
+  // for debugging
+  char *expr_toString(Expression const *e);
+  int expr_debugPrint(Expression const *e);
+}
+
+
+class Initializer {
+  pure_virtual void print(PrintEnv &env);
+}
+
+
+class TemplateDeclaration {
+  public void print(PrintEnv &env);
+  pure_virtual void iprint(PrintEnv &env);
+}
+
+
+class TemplateParameter {
+  pure_virtual void print(PrintEnv &env);
+}
+
+
+class TemplateArgument {
+  pure_virtual void print(PrintEnv &env);
+}
+
+
+class NamespaceDecl {
+  pure_virtual void print(PrintEnv &env);
+}

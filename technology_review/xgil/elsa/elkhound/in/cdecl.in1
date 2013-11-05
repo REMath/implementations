@@ -1,0 +1,14 @@
+
+int(x);
+foo(y);
+
+{
+  int(x);
+  typedef int integer;
+  integer(y);
+  integer(q);
+}
+
+integer(z);
+integer(w);
+

@@ -1,0 +1,42 @@
+#!/bin/sh
+# script to:
+#   - run gv to view a postscript image
+#   - run xwd to capture that image to a file
+#   - run convert to crop and convert format
+#   - ending up in PNG
+
+if [ "$1" = "" ]; then
+  echo "usage: $0 basename"
+  echo "  converts <basename>.ps"
+  exit 0
+fi
+
+if [ ! -f "$1".ps ]; then
+  echo "file not found: $1".ps
+  exit 2
+fi
+
+# run gv in background
+gv "$1".ps &
+gvPid=$!
+
+# xwd, wait for user
+echo "when the GV window appears, and the cross hair changes, click it"
+sleep 2
+xwd >"$1".xwd || exit
+
+# kill gv
+kill $gvPid
+
+# convert the image
+convert -crop 889x707+133+87 "$1".xwd "$1".png || exit
+echo "created $1.png"
+
+rm "$1".xwd
+
+
+
+
+
+
+

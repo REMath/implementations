@@ -1,0 +1,490 @@
+triv/efa.in/0000500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0000500.in: %%% progress: 1ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0000500.in: %%% progress: 1ms: parsing...
+triv/efa.in/0000500.in: %%% progress: 3ms: done parsing (2 ms, 1_670590 cycles)
+triv/efa.in/0000500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0000500.in: detShift=0, detReduce=0, nondetShift=1002, nondetReduce=1003
+triv/efa.in/0000500.in: num parses: 1
+triv/efa.in/0000500.in: tree nodes: 1003
+triv/efa.in/0000500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0000500.in: %%% progress: 1ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0000500.in: %%% progress: 1ms: parsing...
+triv/efa.in/0000500.in: %%% progress: 3ms: done parsing (2 ms, 1_660775 cycles)
+triv/efa.in/0000500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0000500.in: detShift=0, detReduce=0, nondetShift=1002, nondetReduce=1003
+triv/efa.in/0000500.in: num parses: 1
+triv/efa.in/0000500.in: tree nodes: 1003
+triv/efa.in/0000500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0000500.in: %%% progress: 0ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0000500.in: %%% progress: 1ms: parsing...
+triv/efa.in/0000500.in: %%% progress: 3ms: done parsing (2 ms, 2_010755 cycles)
+triv/efa.in/0000500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0000500.in: detShift=0, detReduce=0, nondetShift=1002, nondetReduce=1003
+triv/efa.in/0000500.in: num parses: 1
+triv/efa.in/0000500.in: tree nodes: 1003
+triv/efa.in/0000500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0000500.in: %%% progress: 1ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0000500.in: %%% progress: 1ms: parsing...
+triv/efa.in/0000500.in: %%% progress: 4ms: done parsing (3 ms, 2_467872 cycles)
+triv/efa.in/0000500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0000500.in: detShift=0, detReduce=0, nondetShift=1002, nondetReduce=1003
+triv/efa.in/0000500.in: num parses: 1
+triv/efa.in/0000500.in: tree nodes: 1003
+triv/efa.in/0000500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0000500.in: %%% progress: 0ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0000500.in: %%% progress: 1ms: parsing...
+triv/efa.in/0000500.in: %%% progress: 2ms: done parsing (1 ms, 1_911502 cycles)
+triv/efa.in/0000500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0000500.in: detShift=0, detReduce=0, nondetShift=1002, nondetReduce=1003
+triv/efa.in/0000500.in: num parses: 1
+triv/efa.in/0000500.in: tree nodes: 1003
+triv/efa.in/0001000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001000.in: %%% progress: 1ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001000.in: %%% progress: 1ms: parsing...
+triv/efa.in/0001000.in: %%% progress: 5ms: done parsing (4 ms, 3_963433 cycles)
+triv/efa.in/0001000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001000.in: detShift=0, detReduce=0, nondetShift=2002, nondetReduce=2003
+triv/efa.in/0001000.in: num parses: 1
+triv/efa.in/0001000.in: tree nodes: 2003
+triv/efa.in/0001000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001000.in: %%% progress: 12ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001000.in: %%% progress: 12ms: parsing...
+triv/efa.in/0001000.in: %%% progress: 15ms: done parsing (3 ms, 3_328816 cycles)
+triv/efa.in/0001000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001000.in: detShift=0, detReduce=0, nondetShift=2002, nondetReduce=2003
+triv/efa.in/0001000.in: num parses: 1
+triv/efa.in/0001000.in: tree nodes: 2003
+triv/efa.in/0001000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001000.in: %%% progress: 1ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001000.in: %%% progress: 1ms: parsing...
+triv/efa.in/0001000.in: %%% progress: 5ms: done parsing (4 ms, 3_296897 cycles)
+triv/efa.in/0001000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001000.in: detShift=0, detReduce=0, nondetShift=2002, nondetReduce=2003
+triv/efa.in/0001000.in: num parses: 1
+triv/efa.in/0001000.in: tree nodes: 2003
+triv/efa.in/0001000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001000.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001000.in: %%% progress: 2ms: parsing...
+triv/efa.in/0001000.in: %%% progress: 5ms: done parsing (3 ms, 3_431078 cycles)
+triv/efa.in/0001000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001000.in: detShift=0, detReduce=0, nondetShift=2002, nondetReduce=2003
+triv/efa.in/0001000.in: num parses: 1
+triv/efa.in/0001000.in: tree nodes: 2003
+triv/efa.in/0001000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001000.in: %%% progress: 1ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001000.in: %%% progress: 1ms: parsing...
+triv/efa.in/0001000.in: %%% progress: 5ms: done parsing (4 ms, 4_117175 cycles)
+triv/efa.in/0001000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001000.in: detShift=0, detReduce=0, nondetShift=2002, nondetReduce=2003
+triv/efa.in/0001000.in: num parses: 1
+triv/efa.in/0001000.in: tree nodes: 2003
+triv/efa.in/0001500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001500.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001500.in: %%% progress: 2ms: parsing...
+triv/efa.in/0001500.in: %%% progress: 7ms: done parsing (5 ms, 5_420844 cycles)
+triv/efa.in/0001500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001500.in: detShift=0, detReduce=0, nondetShift=3002, nondetReduce=3003
+triv/efa.in/0001500.in: num parses: 1
+triv/efa.in/0001500.in: tree nodes: 3003
+triv/efa.in/0001500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001500.in: %%% progress: 1ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001500.in: %%% progress: 2ms: parsing...
+triv/efa.in/0001500.in: %%% progress: 10ms: done parsing (8 ms, 8_040446 cycles)
+triv/efa.in/0001500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001500.in: detShift=0, detReduce=0, nondetShift=3002, nondetReduce=3003
+triv/efa.in/0001500.in: num parses: 1
+triv/efa.in/0001500.in: tree nodes: 3003
+triv/efa.in/0001500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001500.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001500.in: %%% progress: 2ms: parsing...
+triv/efa.in/0001500.in: %%% progress: 10ms: done parsing (8 ms, 8_084630 cycles)
+triv/efa.in/0001500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001500.in: detShift=0, detReduce=0, nondetShift=3002, nondetReduce=3003
+triv/efa.in/0001500.in: num parses: 1
+triv/efa.in/0001500.in: tree nodes: 3003
+triv/efa.in/0001500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001500.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001500.in: %%% progress: 2ms: parsing...
+triv/efa.in/0001500.in: %%% progress: 7ms: done parsing (5 ms, 5_663236 cycles)
+triv/efa.in/0001500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001500.in: detShift=0, detReduce=0, nondetShift=3002, nondetReduce=3003
+triv/efa.in/0001500.in: num parses: 1
+triv/efa.in/0001500.in: tree nodes: 3003
+triv/efa.in/0001500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0001500.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0001500.in: %%% progress: 2ms: parsing...
+triv/efa.in/0001500.in: %%% progress: 7ms: done parsing (5 ms, 5_140152 cycles)
+triv/efa.in/0001500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0001500.in: detShift=0, detReduce=0, nondetShift=3002, nondetReduce=3003
+triv/efa.in/0001500.in: num parses: 1
+triv/efa.in/0001500.in: tree nodes: 3003
+triv/efa.in/0002000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002000.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002000.in: %%% progress: 2ms: parsing...
+triv/efa.in/0002000.in: %%% progress: 10ms: done parsing (8 ms, 7_113510 cycles)
+triv/efa.in/0002000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002000.in: detShift=0, detReduce=0, nondetShift=4002, nondetReduce=4003
+triv/efa.in/0002000.in: num parses: 1
+triv/efa.in/0002000.in: tree nodes: 4003
+triv/efa.in/0002000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002000.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002000.in: %%% progress: 2ms: parsing...
+triv/efa.in/0002000.in: %%% progress: 10ms: done parsing (8 ms, 7_426640 cycles)
+triv/efa.in/0002000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002000.in: detShift=0, detReduce=0, nondetShift=4002, nondetReduce=4003
+triv/efa.in/0002000.in: num parses: 1
+triv/efa.in/0002000.in: tree nodes: 4003
+triv/efa.in/0002000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002000.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002000.in: %%% progress: 2ms: parsing...
+triv/efa.in/0002000.in: %%% progress: 10ms: done parsing (8 ms, 7_291508 cycles)
+triv/efa.in/0002000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002000.in: detShift=0, detReduce=0, nondetShift=4002, nondetReduce=4003
+triv/efa.in/0002000.in: num parses: 1
+triv/efa.in/0002000.in: tree nodes: 4003
+triv/efa.in/0002000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002000.in: %%% progress: 2ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002000.in: %%% progress: 2ms: parsing...
+triv/efa.in/0002000.in: %%% progress: 12ms: done parsing (10 ms, 9_784288 cycles)
+triv/efa.in/0002000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002000.in: detShift=0, detReduce=0, nondetShift=4002, nondetReduce=4003
+triv/efa.in/0002000.in: num parses: 1
+triv/efa.in/0002000.in: tree nodes: 4003
+triv/efa.in/0002000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002000.in: %%% progress: 3ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002000.in: %%% progress: 3ms: parsing...
+triv/efa.in/0002000.in: %%% progress: 10ms: done parsing (7 ms, 7_319580 cycles)
+triv/efa.in/0002000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002000.in: detShift=0, detReduce=0, nondetShift=4002, nondetReduce=4003
+triv/efa.in/0002000.in: num parses: 1
+triv/efa.in/0002000.in: tree nodes: 4003
+triv/efa.in/0002500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002500.in: %%% progress: 3ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002500.in: %%% progress: 3ms: parsing...
+triv/efa.in/0002500.in: %%% progress: 15ms: done parsing (12 ms, 11_750910 cycles)
+triv/efa.in/0002500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002500.in: detShift=0, detReduce=0, nondetShift=5002, nondetReduce=5003
+triv/efa.in/0002500.in: num parses: 1
+triv/efa.in/0002500.in: tree nodes: 5003
+triv/efa.in/0002500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002500.in: %%% progress: 3ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002500.in: %%% progress: 3ms: parsing...
+triv/efa.in/0002500.in: %%% progress: 13ms: done parsing (10 ms, 9_347557 cycles)
+triv/efa.in/0002500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002500.in: detShift=0, detReduce=0, nondetShift=5002, nondetReduce=5003
+triv/efa.in/0002500.in: num parses: 1
+triv/efa.in/0002500.in: tree nodes: 5003
+triv/efa.in/0002500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002500.in: %%% progress: 3ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002500.in: %%% progress: 4ms: parsing...
+triv/efa.in/0002500.in: %%% progress: 13ms: done parsing (9 ms, 9_354397 cycles)
+triv/efa.in/0002500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002500.in: detShift=0, detReduce=0, nondetShift=5002, nondetReduce=5003
+triv/efa.in/0002500.in: num parses: 1
+triv/efa.in/0002500.in: tree nodes: 5003
+triv/efa.in/0002500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002500.in: %%% progress: 3ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002500.in: %%% progress: 3ms: parsing...
+triv/efa.in/0002500.in: %%% progress: 13ms: done parsing (10 ms, 9_322005 cycles)
+triv/efa.in/0002500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002500.in: detShift=0, detReduce=0, nondetShift=5002, nondetReduce=5003
+triv/efa.in/0002500.in: num parses: 1
+triv/efa.in/0002500.in: tree nodes: 5003
+triv/efa.in/0002500.in: %%% progress: 0ms: lexing...
+triv/efa.in/0002500.in: %%% progress: 3ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0002500.in: %%% progress: 3ms: parsing...
+triv/efa.in/0002500.in: %%% progress: 13ms: done parsing (10 ms, 9_900525 cycles)
+triv/efa.in/0002500.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0002500.in: detShift=0, detReduce=0, nondetShift=5002, nondetReduce=5003
+triv/efa.in/0002500.in: num parses: 1
+triv/efa.in/0002500.in: tree nodes: 5003
+triv/efa.in/0005000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0005000.in: %%% progress: 7ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0005000.in: %%% progress: 7ms: parsing...
+triv/efa.in/0005000.in: %%% progress: 28ms: done parsing (21 ms, 20_721315 cycles)
+triv/efa.in/0005000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0005000.in: detShift=0, detReduce=0, nondetShift=10002, nondetReduce=10003
+triv/efa.in/0005000.in: num parses: 1
+triv/efa.in/0005000.in: tree nodes: 10003
+triv/efa.in/0005000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0005000.in: %%% progress: 6ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0005000.in: %%% progress: 7ms: parsing...
+triv/efa.in/0005000.in: %%% progress: 27ms: done parsing (20 ms, 20_677365 cycles)
+triv/efa.in/0005000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0005000.in: detShift=0, detReduce=0, nondetShift=10002, nondetReduce=10003
+triv/efa.in/0005000.in: num parses: 1
+triv/efa.in/0005000.in: tree nodes: 10003
+triv/efa.in/0005000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0005000.in: %%% progress: 6ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0005000.in: %%% progress: 6ms: parsing...
+triv/efa.in/0005000.in: %%% progress: 32ms: done parsing (26 ms, 25_846410 cycles)
+triv/efa.in/0005000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0005000.in: detShift=0, detReduce=0, nondetShift=10002, nondetReduce=10003
+triv/efa.in/0005000.in: num parses: 1
+triv/efa.in/0005000.in: tree nodes: 10003
+triv/efa.in/0005000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0005000.in: %%% progress: 6ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0005000.in: %%% progress: 7ms: parsing...
+triv/efa.in/0005000.in: %%% progress: 28ms: done parsing (21 ms, 21_021150 cycles)
+triv/efa.in/0005000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0005000.in: detShift=0, detReduce=0, nondetShift=10002, nondetReduce=10003
+triv/efa.in/0005000.in: num parses: 1
+triv/efa.in/0005000.in: tree nodes: 10003
+triv/efa.in/0005000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0005000.in: %%% progress: 6ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0005000.in: %%% progress: 6ms: parsing...
+triv/efa.in/0005000.in: %%% progress: 28ms: done parsing (22 ms, 22_104630 cycles)
+triv/efa.in/0005000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0005000.in: detShift=0, detReduce=0, nondetShift=10002, nondetReduce=10003
+triv/efa.in/0005000.in: num parses: 1
+triv/efa.in/0005000.in: tree nodes: 10003
+triv/efa.in/0010000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0010000.in: %%% progress: 13ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0010000.in: %%% progress: 13ms: parsing...
+triv/efa.in/0010000.in: %%% progress: 53ms: done parsing (40 ms, 39_795232 cycles)
+triv/efa.in/0010000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0010000.in: detShift=0, detReduce=0, nondetShift=20002, nondetReduce=20003
+triv/efa.in/0010000.in: num parses: 1
+triv/efa.in/0010000.in: tree nodes: 20003
+triv/efa.in/0010000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0010000.in: %%% progress: 13ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0010000.in: %%% progress: 14ms: parsing...
+triv/efa.in/0010000.in: %%% progress: 53ms: done parsing (39 ms, 39_507938 cycles)
+triv/efa.in/0010000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0010000.in: detShift=0, detReduce=0, nondetShift=20002, nondetReduce=20003
+triv/efa.in/0010000.in: num parses: 1
+triv/efa.in/0010000.in: tree nodes: 20003
+triv/efa.in/0010000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0010000.in: %%% progress: 12ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0010000.in: %%% progress: 13ms: parsing...
+triv/efa.in/0010000.in: %%% progress: 53ms: done parsing (40 ms, 39_771562 cycles)
+triv/efa.in/0010000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0010000.in: detShift=0, detReduce=0, nondetShift=20002, nondetReduce=20003
+triv/efa.in/0010000.in: num parses: 1
+triv/efa.in/0010000.in: tree nodes: 20003
+triv/efa.in/0010000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0010000.in: %%% progress: 15ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0010000.in: %%% progress: 15ms: parsing...
+triv/efa.in/0010000.in: %%% progress: 52ms: done parsing (38 ms, 37_363763 cycles)
+triv/efa.in/0010000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0010000.in: detShift=0, detReduce=0, nondetShift=20002, nondetReduce=20003
+triv/efa.in/0010000.in: num parses: 1
+triv/efa.in/0010000.in: tree nodes: 20003
+triv/efa.in/0010000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0010000.in: %%% progress: 12ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0010000.in: %%% progress: 13ms: parsing...
+triv/efa.in/0010000.in: %%% progress: 52ms: done parsing (39 ms, 39_039165 cycles)
+triv/efa.in/0010000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0010000.in: detShift=0, detReduce=0, nondetShift=20002, nondetReduce=20003
+triv/efa.in/0010000.in: num parses: 1
+triv/efa.in/0010000.in: tree nodes: 20003
+triv/efa.in/0020000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0020000.in: %%% progress: 28ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0020000.in: %%% progress: 28ms: parsing...
+triv/efa.in/0020000.in: %%% progress: 102ms: done parsing (74 ms, 73_434082 cycles)
+triv/efa.in/0020000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0020000.in: detShift=0, detReduce=0, nondetShift=40002, nondetReduce=40003
+triv/efa.in/0020000.in: num parses: 1
+triv/efa.in/0020000.in: tree nodes: 40003
+triv/efa.in/0020000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0020000.in: %%% progress: 24ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0020000.in: %%% progress: 25ms: parsing...
+triv/efa.in/0020000.in: %%% progress: 101ms: done parsing (76 ms, 76_136400 cycles)
+triv/efa.in/0020000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0020000.in: detShift=0, detReduce=0, nondetShift=40002, nondetReduce=40003
+triv/efa.in/0020000.in: num parses: 1
+triv/efa.in/0020000.in: tree nodes: 40003
+triv/efa.in/0020000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0020000.in: %%% progress: 26ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0020000.in: %%% progress: 26ms: parsing...
+triv/efa.in/0020000.in: %%% progress: 102ms: done parsing (76 ms, 75_694523 cycles)
+triv/efa.in/0020000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0020000.in: detShift=0, detReduce=0, nondetShift=40002, nondetReduce=40003
+triv/efa.in/0020000.in: num parses: 1
+triv/efa.in/0020000.in: tree nodes: 40003
+triv/efa.in/0020000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0020000.in: %%% progress: 25ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0020000.in: %%% progress: 26ms: parsing...
+triv/efa.in/0020000.in: %%% progress: 106ms: done parsing (80 ms, 80_038883 cycles)
+triv/efa.in/0020000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0020000.in: detShift=0, detReduce=0, nondetShift=40002, nondetReduce=40003
+triv/efa.in/0020000.in: num parses: 1
+triv/efa.in/0020000.in: tree nodes: 40003
+triv/efa.in/0020000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0020000.in: %%% progress: 25ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0020000.in: %%% progress: 26ms: parsing...
+triv/efa.in/0020000.in: %%% progress: 102ms: done parsing (76 ms, 76_562490 cycles)
+triv/efa.in/0020000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0020000.in: detShift=0, detReduce=0, nondetShift=40002, nondetReduce=40003
+triv/efa.in/0020000.in: num parses: 1
+triv/efa.in/0020000.in: tree nodes: 40003
+triv/efa.in/0050000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0050000.in: %%% progress: 64ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0050000.in: %%% progress: 65ms: parsing...
+triv/efa.in/0050000.in: %%% progress: 255ms: done parsing (190 ms, 190_000552 cycles)
+triv/efa.in/0050000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0050000.in: detShift=0, detReduce=0, nondetShift=100002, nondetReduce=100003
+triv/efa.in/0050000.in: num parses: 1
+triv/efa.in/0050000.in: tree nodes: 100003
+triv/efa.in/0050000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0050000.in: %%% progress: 64ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0050000.in: %%% progress: 65ms: parsing...
+triv/efa.in/0050000.in: %%% progress: 252ms: done parsing (187 ms, 187_201447 cycles)
+triv/efa.in/0050000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0050000.in: detShift=0, detReduce=0, nondetShift=100002, nondetReduce=100003
+triv/efa.in/0050000.in: num parses: 1
+triv/efa.in/0050000.in: tree nodes: 100003
+triv/efa.in/0050000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0050000.in: %%% progress: 69ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0050000.in: %%% progress: 69ms: parsing...
+triv/efa.in/0050000.in: %%% progress: 254ms: done parsing (185 ms, 184_280962 cycles)
+triv/efa.in/0050000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0050000.in: detShift=0, detReduce=0, nondetShift=100002, nondetReduce=100003
+triv/efa.in/0050000.in: num parses: 1
+triv/efa.in/0050000.in: tree nodes: 100003
+triv/efa.in/0050000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0050000.in: %%% progress: 73ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0050000.in: %%% progress: 73ms: parsing...
+triv/efa.in/0050000.in: %%% progress: 264ms: done parsing (191 ms, 191_052983 cycles)
+triv/efa.in/0050000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0050000.in: detShift=0, detReduce=0, nondetShift=100002, nondetReduce=100003
+triv/efa.in/0050000.in: num parses: 1
+triv/efa.in/0050000.in: tree nodes: 100003
+triv/efa.in/0050000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0050000.in: %%% progress: 63ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0050000.in: %%% progress: 64ms: parsing...
+triv/efa.in/0050000.in: %%% progress: 251ms: done parsing (187 ms, 187_182690 cycles)
+triv/efa.in/0050000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0050000.in: detShift=0, detReduce=0, nondetShift=100002, nondetReduce=100003
+triv/efa.in/0050000.in: num parses: 1
+triv/efa.in/0050000.in: tree nodes: 100003
+triv/efa.in/0100000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0100000.in: %%% progress: 126ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0100000.in: %%% progress: 126ms: parsing...
+triv/efa.in/0100000.in: %%% progress: 500ms: done parsing (374 ms, 373_089660 cycles)
+triv/efa.in/0100000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0100000.in: detShift=0, detReduce=0, nondetShift=200002, nondetReduce=200003
+triv/efa.in/0100000.in: num parses: 1
+triv/efa.in/0100000.in: tree nodes: 200003
+triv/efa.in/0100000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0100000.in: %%% progress: 128ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0100000.in: %%% progress: 129ms: parsing...
+triv/efa.in/0100000.in: %%% progress: 500ms: done parsing (371 ms, 370_115692 cycles)
+triv/efa.in/0100000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0100000.in: detShift=0, detReduce=0, nondetShift=200002, nondetReduce=200003
+triv/efa.in/0100000.in: num parses: 1
+triv/efa.in/0100000.in: tree nodes: 200003
+triv/efa.in/0100000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0100000.in: %%% progress: 131ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0100000.in: %%% progress: 132ms: parsing...
+triv/efa.in/0100000.in: %%% progress: 503ms: done parsing (371 ms, 370_185577 cycles)
+triv/efa.in/0100000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0100000.in: detShift=0, detReduce=0, nondetShift=200002, nondetReduce=200003
+triv/efa.in/0100000.in: num parses: 1
+triv/efa.in/0100000.in: tree nodes: 200003
+triv/efa.in/0100000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0100000.in: %%% progress: 126ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0100000.in: %%% progress: 126ms: parsing...
+triv/efa.in/0100000.in: %%% progress: 500ms: done parsing (374 ms, 373_269547 cycles)
+triv/efa.in/0100000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0100000.in: detShift=0, detReduce=0, nondetShift=200002, nondetReduce=200003
+triv/efa.in/0100000.in: num parses: 1
+triv/efa.in/0100000.in: tree nodes: 200003
+triv/efa.in/0100000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0100000.in: %%% progress: 126ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0100000.in: %%% progress: 126ms: parsing...
+triv/efa.in/0100000.in: %%% progress: 500ms: done parsing (374 ms, 372_948413 cycles)
+triv/efa.in/0100000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0100000.in: detShift=0, detReduce=0, nondetShift=200002, nondetReduce=200003
+triv/efa.in/0100000.in: num parses: 1
+triv/efa.in/0100000.in: tree nodes: 200003
+triv/efa.in/0200000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0200000.in: %%% progress: 249ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0200000.in: %%% progress: 250ms: parsing...
+triv/efa.in/0200000.in: %%% progress: 999ms: done parsing (749 ms, 748_086030 cycles)
+triv/efa.in/0200000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0200000.in: detShift=0, detReduce=0, nondetShift=400002, nondetReduce=400003
+triv/efa.in/0200000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0200000.in: %%% progress: 266ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0200000.in: %%% progress: 266ms: parsing...
+triv/efa.in/0200000.in: %%% progress: 1010ms: done parsing (744 ms, 743_002762 cycles)
+triv/efa.in/0200000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0200000.in: detShift=0, detReduce=0, nondetShift=400002, nondetReduce=400003
+triv/efa.in/0200000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0200000.in: %%% progress: 250ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0200000.in: %%% progress: 251ms: parsing...
+triv/efa.in/0200000.in: %%% progress: 994ms: done parsing (743 ms, 742_458097 cycles)
+triv/efa.in/0200000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0200000.in: detShift=0, detReduce=0, nondetShift=400002, nondetReduce=400003
+triv/efa.in/0200000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0200000.in: %%% progress: 255ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0200000.in: %%% progress: 256ms: parsing...
+triv/efa.in/0200000.in: %%% progress: 997ms: done parsing (741 ms, 739_769017 cycles)
+triv/efa.in/0200000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0200000.in: detShift=0, detReduce=0, nondetShift=400002, nondetReduce=400003
+triv/efa.in/0200000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0200000.in: %%% progress: 253ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0200000.in: %%% progress: 253ms: parsing...
+triv/efa.in/0200000.in: %%% progress: 999ms: done parsing (746 ms, 744_837532 cycles)
+triv/efa.in/0200000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0200000.in: detShift=0, detReduce=0, nondetShift=400002, nondetReduce=400003
+triv/efa.in/0500000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0500000.in: %%% progress: 618ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0500000.in: %%% progress: 619ms: parsing...
+triv/efa.in/0500000.in: %%% progress: 2494ms: done parsing (1875 ms, 1871_914980 cycles)
+triv/efa.in/0500000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0500000.in: detShift=0, detReduce=0, nondetShift=1000002, nondetReduce=1000003
+triv/efa.in/0500000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0500000.in: %%% progress: 619ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0500000.in: %%% progress: 620ms: parsing...
+triv/efa.in/0500000.in: %%% progress: 2489ms: done parsing (1869 ms, 1865_846857 cycles)
+triv/efa.in/0500000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0500000.in: detShift=0, detReduce=0, nondetShift=1000002, nondetReduce=1000003
+triv/efa.in/0500000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0500000.in: %%% progress: 622ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0500000.in: %%% progress: 623ms: parsing...
+triv/efa.in/0500000.in: %%% progress: 2509ms: done parsing (1886 ms, 1882_869195 cycles)
+triv/efa.in/0500000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0500000.in: detShift=0, detReduce=0, nondetShift=1000002, nondetReduce=1000003
+triv/efa.in/0500000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0500000.in: %%% progress: 626ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0500000.in: %%% progress: 626ms: parsing...
+triv/efa.in/0500000.in: %%% progress: 2488ms: done parsing (1862 ms, 1858_669815 cycles)
+triv/efa.in/0500000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0500000.in: detShift=0, detReduce=0, nondetShift=1000002, nondetReduce=1000003
+triv/efa.in/0500000.in: %%% progress: 0ms: lexing...
+triv/efa.in/0500000.in: %%% progress: 622ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/0500000.in: %%% progress: 623ms: parsing...
+triv/efa.in/0500000.in: %%% progress: 2492ms: done parsing (1869 ms, 1865_956102 cycles)
+triv/efa.in/0500000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/0500000.in: detShift=0, detReduce=0, nondetShift=1000002, nondetReduce=1000003
+triv/efa.in/1000000.in: %%% progress: 0ms: lexing...
+triv/efa.in/1000000.in: %%% progress: 1226ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/1000000.in: %%% progress: 1226ms: parsing...
+triv/efa.in/1000000.in: %%% progress: 5060ms: done parsing (3834 ms, 3827_139532 cycles)
+triv/efa.in/1000000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/1000000.in: detShift=0, detReduce=0, nondetShift=2000002, nondetReduce=2000003
+triv/efa.in/1000000.in: %%% progress: 0ms: lexing...
+triv/efa.in/1000000.in: %%% progress: 1245ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/1000000.in: %%% progress: 1246ms: parsing...
+triv/efa.in/1000000.in: %%% progress: 5235ms: done parsing (3989 ms, 3982_385580 cycles)
+triv/efa.in/1000000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/1000000.in: detShift=0, detReduce=0, nondetShift=2000002, nondetReduce=2000003
+triv/efa.in/1000000.in: %%% progress: 0ms: lexing...
+triv/efa.in/1000000.in: %%% progress: 1241ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/1000000.in: %%% progress: 1241ms: parsing...
+triv/efa.in/1000000.in: %%% progress: 4987ms: done parsing (3746 ms, 3740_081617 cycles)
+triv/efa.in/1000000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/1000000.in: detShift=0, detReduce=0, nondetShift=2000002, nondetReduce=2000003
+triv/efa.in/1000000.in: %%% progress: 0ms: lexing...
+triv/efa.in/1000000.in: %%% progress: 1266ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/1000000.in: %%% progress: 1267ms: parsing...
+triv/efa.in/1000000.in: %%% progress: 4996ms: done parsing (3729 ms, 3723_388072 cycles)
+triv/efa.in/1000000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/1000000.in: detShift=0, detReduce=0, nondetShift=2000002, nondetReduce=2000003
+triv/efa.in/1000000.in: %%% progress: 0ms: lexing...
+triv/efa.in/1000000.in: %%% progress: 1244ms: reading parse tables file triv/EFa.tree.bin
+triv/efa.in/1000000.in: %%% progress: 1244ms: parsing...
+triv/efa.in/1000000.in: %%% progress: 4984ms: done parsing (3740 ms, 3733_801852 cycles)
+triv/efa.in/1000000.in: stack nodes: 0, max stack nodes: 7
+triv/efa.in/1000000.in: detShift=0, detReduce=0, nondetShift=2000002, nondetReduce=2000003

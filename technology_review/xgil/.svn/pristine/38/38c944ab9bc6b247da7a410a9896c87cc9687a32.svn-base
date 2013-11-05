@@ -1,0 +1,32 @@
+#!/bin/sh
+# test-all-config
+# test all (or a representative subset) of the ./configure options
+
+# bail on error
+set -e
+
+# default config is most important (right now, that's w/no compression)
+./configure && make clean all check
+
+testCompr() {
+  ./configure -eef=$1 -gcs=$2 -gcsc=$3 -crs=$4 && make clean all check
+}
+
+# some options on, others off
+testCompr y y y y
+testCompr y y y n
+testCompr y y n y
+testCompr y y n n
+#testCompr y n y y   # gcsc requires gcs
+#testCompr y n y n
+testCompr y n n y
+testCompr y n n n
+#testCompr n y y y   # gcs requires eef
+#testCompr n y y n
+#testCompr n y n y
+#testCompr n y n n
+#testCompr n n y y
+#testCompr n n y n
+testCompr n n n y
+testCompr n n n n
+

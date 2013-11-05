@@ -1,0 +1,17 @@
+// gramlex.in2
+// test file inclusion
+
+some stuff
+
+3+4
+
+{ include("gramlex.in3") }
+
+fundecl int foo();
+
+fun foo { 
+  return 4; 
+}
+fun bar = 5;
+
+end of gramlex.in2

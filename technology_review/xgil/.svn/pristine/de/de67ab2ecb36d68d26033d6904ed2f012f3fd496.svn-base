@@ -1,0 +1,24 @@
+#!/bin/sh
+# run elsa, gcc, icc
+
+if [ "$1" = "" ]; then
+  echo "usage: $0 input.cc"
+  exit 0
+fi
+
+# grab extra arguments for elsa
+extra=""
+if [ "$1" = "-tr" ]; then
+  extra="-tr $2"
+  shift
+  shift
+fi
+
+echo "------------- icc -------------"
+./run-icc "$@"
+
+echo "------------- gcc -------------"
+./run-g++ "$@"
+
+echo "------------- elsa -------------"
+./ccparse $extra "$@"

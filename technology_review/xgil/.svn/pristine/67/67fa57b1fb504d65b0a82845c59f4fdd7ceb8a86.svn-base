@@ -1,0 +1,17 @@
+*.cmo
+*.cmi
+main
+*.d
+tobjpool
+tmp
+arith.ml*
+een.ml*
+lexer.ml
+*.cmx
+*.dx
+oc_arith.ml
+tobjpool.opt
+main.opt
+changes
+gmon.out
+gprof.out*

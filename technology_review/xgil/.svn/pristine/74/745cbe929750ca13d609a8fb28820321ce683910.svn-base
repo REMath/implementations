@@ -1,0 +1,244 @@
+// cc_elaborate.ast            see license.txt for copyright and terms of use
+// extension to cc.ast defining data for an elaboration pass
+// see also cc_elaborate.h
+
+
+// IMPORTANT: If you add elaboration fields here, then you must also
+// add traverse() calls visiting them in LoweredASTVisitor.
+
+
+verbatim {
+  class ElabVisitor;             // cc_elaborate.h
+  string refersTo(Variable *v);  // cc_ast_aux.cc
+}
+
+
+// Objects with a FullExpressionAnnot have their own scope containing
+// both these declarations and their sub-expressions.  The
+// declarations come semantically before the sub-expression with which
+// this object is associated.
+class FullExpressionAnnot (ASTList<Declaration> declarations) {
+  public bool noTemporaries() const { return declarations.isEmpty(); };
+}
+
+
+class Function {
+  // for EA_ELIM_RETURN_BY_VALUE, this variable is the hidden
+  // parameter bound to the object into which the return value
+  // will be constructed
+  //
+  // NOTE!: If this function is a ctor, then the semantics is as if we
+  // have this line in the code before the MemberInit-s:
+  //   this = &retVar;
+  public(xml_TY) Variable *retVar = NULL;
+  custom debugPrint { ind(os,indent) << "retVar: " << refersTo(retVar) << "\n"; }
+
+  // to be called when the function exits; should only be non-NULL for
+  // dtor Functions: it is the superclass and member dtors that are
+  // implicitly called
+  public(field,xml_AST,owner) Statement *dtorStatement = NULL;
+
+  // is this function implicitly defined?  dsw: I need to know so that
+  // the linker imitator doesn't think there is a double-definition
+  // when the same class occurs in two different translation units
+  //
+  // sm: this is now redundant with Variable::isImplicitMemberFunc()
+  public(field,xml) bool implicitlyDefined = false;
+}
+
+
+class PQName {  
+  // denote an existing Variable; avoids having to create syntax
+  -> PQ_variable(Variable *var);
+}
+
+
+class TypeSpecifier {
+  // denote an existing Type
+  -> TS_type(Type *type);
+}
+
+
+class MemberInit {
+  // A single MemberInit seems very much like a single expression to
+  // me, since it is a ctor call and an IN_ctor is also
+  private(xml_AST) FullExpressionAnnot *annot = NULL;
+  public bool hasAnnot();
+  public FullExpressionAnnot *getAnnot();
+
+  // a MemberInit calls a ctor
+  public(field,xml_AST,owner) Statement *ctorStatement = NULL;
+}
+
+
+class Declarator {
+  // each declarator has a construction statement, that does its
+  // initialization, and a destruction statement, that calls any
+  // needed destructors; the latter is to be evaluated when this
+  // declarator goes out of scope
+  public(field,xml_AST,owner) Statement *ctorStatement = NULL;
+  public(field,xml_AST,owner) Statement *dtorStatement = NULL;
+
+  // the 'dflags' are the syntactic declaration flags attached
+  // to the declaration in which this declarator appears
+  public void elaborateCDtors(ElabVisitor &env, DeclFlags dflags = DF_NONE);
+}
+
+
+class IDeclarator {
+  -> D_func {
+//         // elaborate the parameters
+//         public void elaborateParameterCDtors(ElabVisitor &env);
+  }
+}
+
+
+class Statement {
+  -> S_return() {
+    // This is for the copy ctor that is needed when you do a return
+    // by value of a CompoundType.  It always will copy into the
+    // *FunctionType::retVar for the function that it is in.
+    public(field,xml_AST,owner) Statement *ctorStatement = NULL;
+
+    // this function sets 'ctorStatement', and returns a visitor boolean
+    public bool elaborate(ElabVisitor &env);
+  }
+}
+
+
+class Handler {
+    // the global that the throw argument is copy-ctored into, if
+    // thrown by value; this should be linked to the globalVar in
+    // E_throw by a backend
+    public(xml_TY) Variable *globalVar = NULL;
+    custom debugPrint { ind(os,indent) << "globalVar: " << refersTo(globalVar) << "\n"; }
+    // we need this so that the temporary that is made when an
+    // exception is caught by value has some place to go; that is, a
+    // Handler has to have all the necessary components of an
+    // E_funCall, as that's how it behaves
+    private(xml_AST) FullExpressionAnnot *annot = NULL;
+    public bool hasAnnot();
+    public FullExpressionAnnot *getAnnot();
+    // local temporary and ctor for it if we catch by value
+    public(field,xml_AST,owner) Expression *localArg=NULL;
+    // dtor for the globalVar if it is a CompoundType or ref to one
+    public(field,xml_AST,owner) Statement *globalDtorStatement = NULL;
+
+    public void elaborate(ElabVisitor &env);
+}
+
+
+class FullExpression {
+  private(xml_AST) FullExpressionAnnot *annot = NULL;
+  public bool hasAnnot();
+  public FullExpressionAnnot *getAnnot();
+}
+
+
+class Expression {
+  // All of the 'elaborate()' functions of Expression return a visitor
+  // boolean: true to elaborate the children automatically, false to
+  // skip the children.  See the SES in cc_elaborate.cc.
+
+  -> E_funCall {
+    // Pass by value (for class-valued objects) is elaborated by saying there
+    // is another function parameter, the 'return object'.  At the call site,
+    // we specify an object (reference) that will be bound to that parameter,
+    // and the function implementation is expected to write to that object.
+    public(field,xml_AST,owner) Expression *retObj = NULL;
+  }
+
+  -> E_constructor {
+    // did we manufacture it? needed during elaboration
+    public(field,xml) bool artificial = false;
+
+    // similar to E_funCall; object being constructed
+    public(field,xml_AST,owner) Expression *retObj = NULL;
+  }
+
+  -> E_new {
+    // this statement implements the 'new' operation in terms of more
+    // primitive concepts like allocation and calling the constructor;
+    // after elaboration, and analysis can just ignore the E_new and
+    // look at the 'ctorStatement' instead
+    public(field,xml_AST,owner) Statement *ctorStatement = NULL;
+
+    // I need a place to put the variable being ctored because
+    // E_constructor needs to point at a variable.  Note that this var
+    // is really on the heap.
+    public(xml_TY) Variable *heapVar = NULL;
+    custom debugPrint { ind(os,indent) << "heapVar: " << refersTo(heapVar) << "\n"; }
+
+    public bool elaborate(ElabVisitor &env);
+  }
+
+  -> E_delete {
+    // this implements destruction and deallocation; NOTE: E_delete is
+    // already an expression and so will already be inside a
+    // FullExpression; to make it a dtorStatement adds an extra layer
+    // of FullExpression; we do it anyway
+    public(field,xml_AST,owner) Statement *dtorStatement = NULL;
+
+    public bool elaborate(ElabVisitor &env);
+  }
+
+  -> E_throw {
+    // the global that the throw argument is copy-ctored into, if
+    // thrown by value
+    public(xml_TY) Variable *globalVar = NULL;
+    custom debugPrint { ind(os,indent) << "globalVar: " << refersTo(globalVar) << "\n"; }
+
+    public(field,xml_AST,owner) Statement *globalCtorStatement=NULL;
+
+    public bool elaborate(ElabVisitor &env);
+  }
+}
+
+
+class Initializer {
+  // [cppstd 1.9 para 12 and 13] "A full-expression is an expression
+  // that is not a subexpression of another expression.  If a language
+  // construct is defined to produce an implicit call of a function, a
+  // use of the language construct is considered to be an expression
+  // for the purposes of this definition.
+
+  // [Note: certain contexts in C++ cause the evaluation of a
+  // full-expression that results from a syntactic construct other
+  // than expression (5.18).  For example, in 8.5, another syntax for
+  // initializer is '( expression-list )' but the resulting construct
+  // is a function call upon a constructor function with
+  // expression-list as an argument list; such a function call is a
+  // full-expression.  For example, in 8.5, another syntax for
+  // initializer is '= initializer-clause' but again the resulting
+  // construct might be a function call upon a constructor function
+  // with one assignment-expression as an argument; again, the
+  // function call is a full-expression. ]
+
+  // Therefore, the arguments to IN_ctor and IN_expr are *not*
+  // FullExpressions because the whole of Initializer is.  I think the
+  // FullExpressionAnnot is redundant in the case of IN_compound, but
+  // I like sharing it in Initializer and an extra layer doesn't hurt.
+
+  // TODO: sm: Currently, we associate a FullExpressionAnnot with
+  // Initializer, which means we get one for every element of a
+  // compound initializer.  This wastes a lot of space, and doesn't
+  // make sense for IN_compound.  I think we should say that (only)
+  // the entire initializer is a single Full Expression, but that
+  // requires adding another layer, like:
+  //
+  //   Initializer                   // has FullExpressionAnnot
+  //     -> IN_cinit(CInitializer)
+  //     -> IN_ctor(..)
+  //   CInitializer                  // "C" for compound
+  //     -> CI_expr
+  //     -> CI_compound(..)
+  //
+  // But I'll leave it for now.
+
+  private(xml_AST) FullExpressionAnnot *annot = NULL;
+  public bool hasAnnot();
+  public FullExpressionAnnot *getAnnot();
+}
+
+
+// EOF

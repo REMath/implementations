@@ -1,0 +1,138 @@
+#!/usr/bin/perl -w
+# see usage string for description
+
+use strict 'subs';
+
+if (@ARGV == 0) {
+  print(<<"EOF");
+usage: $0 file1.d [file2.d [...]]
+
+Given a bunch of .d files after compilation is complete, this script
+yields dependencies where the dependee is *not* checked into CVS.
+This is then the dependencies which need to appear explicitly in
+Makefile.in.
+EOF
+  exit(0);
+}
+
+
+for my $fname (@ARGV) {
+  # open the file
+  open(IN, "<$fname") or die("cannot open $fname: $!\n");
+
+  # dependency target is listed first
+  my $line = <IN>;
+  if (!defined($line)) {
+    # empty file, skip it
+  }
+  else {
+    my ($target) = ($line =~ m/^([^:]+):/);
+    die if (!$target);
+
+    # now search for the command-less, prerequisite-less rules
+    # where the dependees are listed
+    while (defined($line = <IN>)) {
+      my ($dependee) = ($line =~ m/^([^:]+):$/);
+      if (!defined($dependee)) {
+        # line is not of right form
+        next;
+      }
+
+      if ($dependee =~ m,^\.\./,) {
+        # it begins with "../", suggesting the file is in another
+        # repository; I'll just assume cross-repository dependencies
+        # don't need to influence the build order of the current
+        # directory
+        next;
+      }
+
+      # is this file checked into CVS?
+      if (isCheckedIn($dependee)) {
+        # no need to include this in the Makefile since the file
+        # will always exist
+        next;
+      }
+      
+      # is the dependee something the Makefile would already
+      # know about?  for example, we don't need to explicitly
+      # say that grampar.tab.o depends on grampar.tab.cc, because
+      # the pattern rule which makes the former already includes
+      # the dependency on the latter
+      if (isPattern($target, ".o", $dependee, ".cc") ||
+          isPattern($target, ".ast.gen.o", $dependee, ".ast.gen.h") ||
+          isPattern($target, ".gr.gen.o", $dependee, ".gr.gen.h")) {
+        # Makefile already knows
+        next;
+      }
+
+      print("$target: $dependee\n");
+    }
+  }
+
+  close(IN) or die;
+}
+
+exit(0);
+
+
+# check whether a given file is checked in, by looking for it
+# in the CVS/Entries file
+sub isCheckedIn {
+  my ($fname) = @_;
+
+  # split into directory and file
+  my ($dir, $file) = ($fname =~ m|^(.*)/([^/]+)$|);
+  if (!defined($file)) {
+    $dir = ".";
+    $file = $fname;
+  }
+
+  # debugging
+  #print("dir: $dir\n");
+  #print("file: $file\n");
+
+  # open the Entries file
+  if (!open(ENTRIES, "<$dir/CVS/Entries")) {
+    # the Entries file doesn't exist, so the file in question
+    # is not checked in to CVS
+    return 0;
+  }
+
+  # look for the file in question among the lines of Entries
+  my $line;
+  while (defined($line = <ENTRIES>)) {
+    if ($line =~ m|^/$file/|) {
+      # found the file, it's checked in
+      close(ENTRIES) or die;
+      return 1;
+    }
+  }
+  
+  close(ENTRIES) or die;
+  
+  # didn't find the file, it's not checked in
+  return 0;
+}
+
+
+# check whether a target and dependee are related by being
+# the same base with two given extensions
+sub isPattern {
+  my ($name1, $ext1, $name2, $ext2) = @_;
+
+  # separate $name1 into a prefix and a suffix
+  my $name1len = length($name1);
+  my $ext1len = length($ext1);
+  if ($name1len < $ext1len) {
+    return 0;
+  }
+  my ($prefix1) = substr($name1, 0, $name1len - $ext1len);
+  #print("prefix1: $prefix1\n");
+
+  # we have a match if the suffix matches $ext1, and if $name2
+  # is exactly the concatenation of $prefix1 and $ext2
+  return ($name1 eq "$prefix1$ext1") &&
+         ($name2 eq "$prefix1$ext2");
+}
+
+

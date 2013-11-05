@@ -1,0 +1,81 @@
+#!/usr/bin/perl -w
+# given a header file with an enumeration that specifies all
+# of the token codes, create a file suitable for inclusion
+# into an Elkhound grammar that contains the same tokens
+# and codes
+
+use strict 'subs';
+
+if (@ARGV != 1) {
+  print(<<"EOF");
+usage: $0 enum-name <tokens.h >tokens.tok
+
+This script reads a C/C++ header file as input, finds the named
+enumeration, and extracts token names and codes.  The output is
+a list of tokens suitable for inclusion in an Elkhound grammar.
+EOF
+  exit(2);
+}
+
+$enumName = $ARGV[0];
+
+# scan for the beginning of the enum
+while (defined($line = <STDIN>)) {
+  if ($line =~ m"enum\s+$enumName\b") {
+    last;   # found it
+  }
+}
+
+if (!defined($line)) {
+  print STDERR ("error: did not find the beginning of $enumName\n");
+  exit(2);
+}
+
+# interpret lines of the enum; assume they are at most one per line
+$nextCode = 0;
+while (defined($line = <STDIN>)) {
+  # skip comments, blank lines
+  chomp($line);
+  if ($line =~ m,^\s*(//.*)?$,) { next; }
+
+  # is this the end of the enum?
+  if ($line =~ m"^\s*};") {
+    exit(0);    # all done
+  }
+
+  ($name, $code, $trailing) =
+    $line =~ m/^\s*([A-Za-z0-9_]+)([^,]*),(.*)$/;
+  if (!defined($name)) {
+    print STDERR ("warning: unrecognized line: $line\n");
+    next;
+  }
+
+  # does the code say anything?
+  if ($code !~ m/^\s*$/) {
+    ($num) =
+      $code =~ m/^\s*=\s*(\d+)$/;
+    if (!defined($num)) {
+      print STDERR ("warning: unrecognized token number: $code\n");
+    }
+    else {
+      $nextCode = $num;
+    }
+  }
+
+  # does the trailing part of the line contain a quoted string?
+  # if so, that will be taken as the alias
+  ($alias) =
+    $trailing =~ m/(".*")/;
+  if (!defined($alias)) {
+    $alias = "";    # no alias
+  }
+
+  # emit the token for Elkhound
+  printf("  %3d : %-30s %s;\n", $nextCode, $name, $alias);
+  
+  # automatic increment, as in C
+  $nextCode++;
+}
+
+print STDERR ("error: did not find end of $enumName");
+exit(2);

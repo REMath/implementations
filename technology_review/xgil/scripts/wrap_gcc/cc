@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+
+$0 =~ /(.*)\/(.*)/ or die "Unexpected: $0\n";
+
+my $cmd = "$1/basecc $2";
+while (my $arg = shift) {
+    $cmd .= " '$arg'";
+}
+
+exec($cmd);

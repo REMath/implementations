@@ -1,0 +1,31 @@
+# define YYTOKENTYPE
+#define TOK_INTEGER 258
+#define TOK_NAME 259
+#define TOK_STRING 260
+#define TOK_LIT_CODE 261
+#define TOK_LBRACE 262
+#define TOK_RBRACE 263
+#define TOK_COLON 264
+#define TOK_SEMICOLON 265
+#define TOK_ARROW 266
+#define TOK_LPAREN 267
+#define TOK_RPAREN 268
+#define TOK_COMMA 269
+#define TOK_TERMINALS 270
+#define TOK_TOKEN 271
+#define TOK_NONTERM 272
+#define TOK_FUN 273
+#define TOK_VERBATIM 274
+#define TOK_IMPL_VERBATIM 275
+#define TOK_PRECEDENCE 276
+#define TOK_OPTION 277
+#define TOK_EXPECT 278
+#define TOK_CONTEXT_CLASS 279
+#define TOK_SUBSETS 280
+#define TOK_DELETE 281
+#define TOK_REPLACE 282
+#define TOK_FORBID_NEXT 283
+#define TOK_ERROR 284
+# define yystype YYSTYPE /* obsolescent; will be withdrawn */
+# define YYSTYPE_IS_DECLARED 1
+# define YYSTYPE_IS_TRIVIAL 1

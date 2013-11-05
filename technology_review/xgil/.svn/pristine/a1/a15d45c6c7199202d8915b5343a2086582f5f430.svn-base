@@ -1,0 +1,97 @@
+// gramast.ast            see license.txt for copyright and terms of use
+// grammar AST, in a new experimental format
+
+verbatim {
+  #include "locstr.h"       // LocString
+  #include "asockind.h"     // AssocKind
+}
+
+// the entire grammar spec
+class GrammarAST (ASTList<TopForm> forms) {
+  // annotations, filled in during initial checking, pointing
+  // to some things that are supposed to exist and be unique
+  public TF_terminals *terms;
+  public TF_nonterm *firstNT;    // textually first nonterminal
+  
+  public bool allowContinuedNonterminals = false;
+  
+  ctor { terms=NULL; firstNT=NULL; };
+}
+
+
+// toplevel form
+class TopForm {
+  // definition of the parser context class; the first token
+  // in 'body' is the class name
+  -> TF_context(LocString body);
+  
+  // arbitrary verbatim section, emitted into either the interface
+  // (isImpl=false) or implementation (isImpl=true) file
+  -> TF_verbatim(bool isImpl, LocString code);
+
+  // declarative option; semantics vary based on 'name'
+  -> TF_option(LocString name, int value);
+
+  // definition of tokens
+  -> TF_terminals(ASTList<TermDecl> decls,     // ids and aliases
+                  ASTList<TermType> types,     // type annotations
+                  ASTList<PrecSpec> prec);     // precedence and associativity
+
+  // a nonterminal, with productions
+  -> TF_nonterm(
+    LocString name,                    // nonterm name
+    LocString type,                    // semantic value type
+    ASTList<SpecFunc> funcs,           // special situation action functions
+    ASTList<ProdDecl> productions,     // productions (right-hand side alternatives)
+    ASTList<LocString> subsets         // preference subset nonterminals (for scannerless)
+  );
+}
+
+
+
+// token with lexer code 'code' and grammar name 'name', with grammar
+// alias 'alias'
+class TermDecl (int code, LocString name, LocString alias);
+
+// declaration that token with grammar name 'name' has semantic
+// values with C type 'type'
+class TermType (LocString name, LocString type, ASTList<SpecFunc> funcs);
+
+// a set of equal-precedence tokens (named either by name or by alias),
+// and the 'kind' which tells how they associate; 'prec' is interpreted
+// such that larger values have higher precedence
+class PrecSpec (AssocKind kind, int prec, ASTList<LocString> tokens);
+
+
+// specification function: formals + code
+class SpecFunc (LocString name, ASTList<LocString> formals, LocString code)
+{
+  public LocString nthFormal(int i) const
+    { return *( formals.nthC(i) ); };
+}
+
+
+enum ProdDeclKind {
+  PDK_NEW,        // new production (most productions are new)
+  PDK_ERROR,      // error recovery production
+  PDK_DELETE,     // means to delete the production from the base spec
+  PDK_REPLACE,    // replace original production with this one
+};
+
+// production: rhs description, and code to execute upon recognition
+class ProdDecl (SourceLoc loc, ProdDeclKind kind, ASTList<RHSElt> rhs, LocString actionCode);
+
+// one of the things that appears after the '->', i.e. the
+// right-hand-side elements
+class RHSElt {
+  -> RH_name(LocString tag, LocString name);         // tagged terminal or nonterminal reference
+  -> RH_string(LocString tag, LocString str);        // tagged terminal reference by string alias
+
+  // assigns a specific precedence level to a rule
+  -> RH_prec(LocString tokName);                  
+
+  // forbids a rule from being used when a given token
+  // is next in the input
+  -> RH_forbid(LocString tokName);
+}
+

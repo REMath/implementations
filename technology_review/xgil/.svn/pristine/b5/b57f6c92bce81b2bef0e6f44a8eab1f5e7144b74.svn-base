@@ -1,0 +1,15 @@
+#!/bin/sh
+# config.summary
+
+echo "elkhound configuration summary:"
+echo "  command:     ./configure "
+echo ""
+echo "Compile flags:"
+echo "  CC:          gcc"
+echo "  CXX:         g++"
+echo "  CCFLAGS:     -g -Wall -Wno-deprecated -D__UNIX__ -O2 -DNDEBUG -D__LINUX__ -I."
+cat <<EOF
+  loc:         1
+  compression: <none>
+EOF
+echo ""

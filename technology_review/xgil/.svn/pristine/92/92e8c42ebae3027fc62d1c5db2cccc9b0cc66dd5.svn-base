@@ -1,0 +1,20 @@
+#!/bin/sh
+# parse my testcases suite
+
+cd testcases/good
+
+for fname in * ; do
+  echo "$fname ..."
+  ../../ccgr ../../cc.bin $fname > tmp || exit
+  if grep '^Error' tmp; then
+    echo "$fname has some errors"
+    exit
+  fi
+  if grep 'nodes:' tmp; then
+    echo "$fname has some leaks"
+    exit
+  fi
+done
+
+rm tmp
+

@@ -1,0 +1,55 @@
+// hex_float_lot.dot
+// automaton for recognizing hexadecimal floating-point literals
+
+digraph "Hex Floating Literals" {
+
+  rankdir = LR;
+  orientation = land;
+
+  node [ shape = doublecircle ]; i j;
+
+  node [ 
+//    label = ""
+    shape = circle
+  ];
+
+  a -> b  [ label = "0" ];
+
+  b -> c  [ label = "[xX]" ];
+
+  c -> d  [ label = "HEX" ];
+  c -> "e'" [ label = "\".\"" 
+              //constraint = false 
+              ];
+
+  d -> d  [ label = "HEX" ];
+
+  d -> e  [ label = "\".\"" ];
+  d -> g  [ label = "[pP]" 
+            constraint = false 
+          ];
+
+  e -> f  [ label = "HEX" ];
+  e -> g  [ label = "[pP]" 
+            constraint = false ];
+
+  "e'" -> f [ label = "HEX"
+              constraint = false ];
+
+  f -> f  [ label = "HEX" ];
+
+  f -> g  [ label = "[pP]" ];
+
+  g -> h  [ label = "\"+\"" ];
+  g -> h  [ label = "\"-\"" ];
+
+  h -> i  [ label = "[0-9]" ];
+
+  i -> i  [ label = "[0-9]" ];
+
+  i -> j  [ label = "[fFlL]" ];
+
+
+
+
+}

@@ -1,0 +1,7 @@
+module EEb
+
+exports
+  sorts E
+  context-free syntax
+    "B" -> E
+    E "P" E -> E

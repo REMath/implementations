@@ -1,0 +1,7 @@
+module SSx
+
+exports
+  sorts S
+  context-free syntax
+    "X" -> S
+    S S "X" -> S

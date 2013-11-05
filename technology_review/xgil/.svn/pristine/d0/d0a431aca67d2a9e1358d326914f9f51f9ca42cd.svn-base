@@ -1,0 +1,6 @@
+#!/bin/sh
+# run test-ver on every date on stdin
+
+while read; do
+  ./test-ver "$REPLY" | tee -a results
+done

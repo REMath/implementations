@@ -1,0 +1,48 @@
+Building and Installing sixgill
+
+sixgill has a GNU-style configure script, which checks for support elements
+and enables additional features if they are available. The easiest way
+to build sixgill is:
+
+1. Unpack the distribution tarball
+2. Run "./configure" and check the output
+3. Run "make" to build the various parts of sixgill
+
+There are three key dependencies - GCC, CVC3 and Yices
+
+A. GCC front end support
+
+sixgill includes a frontend plugin for GCC version 4.5. Currently,
+GCC 4.5 is not released, so you will need to build it from SVN.
+
+If you get a configure summary that includes a line like:
+           * GCC Plugin:                no
+then you need to make sure that the gcc executable in your path really is
+GCC 4.5, for example by using "gcc --version" on the command line.
+
+If your build fails with an error about PLUGIN_FINISH_DECL not being found,
+then you need to patch your GCC and rebuild it. The patch is at
+http://gcc.gnu.org/ml/gcc-patches/2009-12/msg01032.html
+
+B. CVC3
+
+CVC3 is packaged on many modern distributions, and you can just use the 
+distribution packages if they are available. Note that you will need the 
+-devel packages if your distribution splits things up that way.
+If CVC3 is not available as packages, you can obtain CVC3 from:
+http://cs.nyu.edu/acsys/cvc3/download.html
+
+If you install CVC3 into a non-standard location, then you may need to
+adjust the CFLAGS and LDFLAGS provided to the "configure" script to 
+ensure it is found.
+
+C. Yices
+
+Yices is not Free software, so it is unlikely your distribution has it.
+If you want to use it, you can obtain it from:
+http://yices.csl.sri.com/download.shtml
+(note: Yices, not Yices2, is required)
+
+You need to tell the configure script where the unpacked tree is, using:
+./configure --with-yices=/path/to/yices-1.0.26
+(using the actual path where you unpacked yices).

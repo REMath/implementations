@@ -1,0 +1,17 @@
+// parser_build.dot
+// information flow for building the Elsa parser
+
+digraph "Elsa Parser Build Process" {
+
+  "cc_tokens.ids" -> "Elkhound";
+  "cc.gr" -> "Elkhound";
+  "gnu.gr" -> "Elkhound";
+  
+  "Elkhound" [
+    shape = rectangle
+  ];
+
+  "Elkhound" -> "cc.gr.gen.h";
+  "Elkhound" -> "cc.gr.gen.cc";
+  "Elkhound" -> "cc.gr.gen.out\n(optional)";
+}

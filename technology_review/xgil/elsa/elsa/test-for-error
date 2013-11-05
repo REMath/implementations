@@ -1,0 +1,103 @@
+#!/bin/sh
+# test an input to see if it exhibits a given error message
+
+
+# ---------------------- setup --------------------
+usage() {
+  echo "usage: msg=message_fragment $0 [-v]"
+  echo "  This script tests tmp.i to see if it:"
+  echo "    - goes through gcc, and"
+  echo "    - provokes an error from ccparse, where"
+  echo "    - the error message matches the fragment regexp"
+  echo "  Use the special msg \"segfault\" to test for a segfault (SIGSEGV),"
+  echo "  and \"abort\" to test for a SIGABRT."
+}
+
+# verbose operation?
+verbose=false
+if [ "$1" = "-v" ]; then
+  verbose=true
+  shift
+fi
+
+# gcc to use
+if [ "$GCC" = "" ]; then
+  GCC=$HOME/opt/gcc-3.4.3/bin/g++
+fi
+
+# input file
+input=tmp.i
+if [ ! -f "$input" ]; then
+  echo "error: $input does not exist"
+  exit 2
+fi
+
+# error message fragment
+if [ "$msg" = "" ]; then
+  echo "error: must set \$msg to a message fragment regexp"
+  usage
+  exit 2
+fi
+
+
+# ---------------------- execution --------------------
+if $verbose; then
+  # leave outputs as they are
+  true
+else
+  # trash all output
+  exec >/dev/null 2>&1
+fi
+
+# limit resources; this is important because sometimes delta creates
+# inputs that cause gcc to go into infinite loops
+#   virtual memory: 500MB
+#   time: 30s
+ulimit -v 500000
+ulimit -t 30
+
+if [ "$DELTA_REQUIRED_STRING" != "" ]; then
+  if grep "$DELTA_REQUIRED_STRING" tmp.i >/dev/null 2>&1; then
+    echo "required string ($DELTA_REQUIRED_STRING) is present"
+  else
+    echo "required string ($DELTA_REQUIRED_STRING) is missing"
+    exit 2
+  fi
+fi
+
+# integrity check
+if $GCC $ARGS -o /dev/null -c tmp.i; then
+  echo "gcc ok"
+else
+  echo "did not pass gcc test"
+  exit 2
+fi
+
+# ccparse
+if [ "$msg" = "segfault" ]; then
+  ./ccparse -tr permissive $ARGS tmp.i >/dev/null 2>&1
+  if [ "$?" = "139" ]; then
+    echo "got the segfault I am looking for"
+    exit 0
+  else
+    echo "did not get a segfault"
+    exit 4
+  fi
+elif [ "$msg" = "abort" ]; then
+  ./ccparse -tr permissive $ARGS tmp.i >/dev/null 2>&1
+  if [ "$?" = "134" ]; then
+    echo "got the SIGABRT I am looking for"
+    exit 0
+  else
+    echo "did not get a SIGABRT"
+    exit 4
+  fi
+else
+  if ./ccparse -tr permissive $ARGS tmp.i 2>&1 | grep "$msg"; then
+    echo "found the error message I am looking for"
+    exit 0
+  else
+    echo "didn't get the error I want"
+    exit 4
+  fi
+fi

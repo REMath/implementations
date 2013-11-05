@@ -1,0 +1,43 @@
+// DeclExpr.gr.in    -*- c++ -*-
+// declarations vs expressions ambiguity kernel
+
+terminals {
+  a      // identifier
+  b      // another identifier
+  l      // left paren
+  r      // right paren       
+  s      // semicolon
+}
+
+nonterm Body {
+  -> empty;
+  -> Body Stmt;
+}
+
+nonterm Stmt {
+  merge(L,R)  [ cout << "merging Stmt\n"; return L; ]
+  dup(v)      [ return v; ]
+  del(v)      []
+
+  -> Decl s;
+  -> Expr s;
+}
+
+nonterm Decl {
+  -> Id/*type*/ Declarator;
+}
+
+nonterm Id {
+  -> a;
+  -> b;
+}
+
+nonterm Declarator {
+  -> Id;
+  -> l Declarator r;
+}
+
+nonterm Expr {
+  -> Id;
+  -> Expr l Expr r;   // function call
+}

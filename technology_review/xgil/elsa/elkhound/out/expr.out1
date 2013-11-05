@@ -1,0 +1,28 @@
+%%% parse-tree: 
+  2 ALTERNATIVE PARSES for nonterminal E:
+    ---- alternative 1 ----
+    E -> E Op E
+      E -> x
+        x
+      Op -> +
+        +
+      E -> E Op E
+        E -> x
+          x
+        Op -> *
+          *
+        E -> x
+          x
+    ---- alternative 2 ----
+    E -> E Op E
+      E -> E Op E
+        E -> x
+          x
+        Op -> +
+          +
+        E -> x
+          x
+      Op -> *
+        *
+      E -> x
+        x

@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>Elkhound Overview</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+</HEAD>
+
+<body>
+
+<center><h2>
+Elkhound Overview
+</h2></center>
+
+<p>
+Elkhound is a parser generator, similar to <a
+href="http://www.gnu.org/software/bison/bison.html">Bison</a>.  The
+parsers it generates use the Generalized LR (GLR) parsing algorithm.
+GLR works with <em>any</em> context-free grammar, whereas LR parsers
+(such as Bison) require grammars to be LALR(1).
+
+<p>
+This page is an overview of the implementation.  Additional documentation
+is available:
+<ul>
+<li><a href="manual.html">Elkhound manual</a>
+<li><a href="tutorial.html">Elkhound tutorial</a>
+<li><a href="faq.html">Frequently Asked Questions</a>
+<li><a href="algorithm.html">Overview of the algorithm and its history</a>
+</ul>
+
+<p>
+To download Elkhound and Elsa, see the
+<a href="http://www.cs.berkeley.edu/~smcpeak/elkhound/">Elkhound distribution page</a>.
+
+<p>
+Elkhound requires the following external software:
+<ul>
+<li><a href="../ast/index.html">ast</a>, a system for making abstract syntax trees.
+<li><a href="../smbase/index.html">smbase</a>, my utility library.
+<li><a href="http://www.gnu.org/software/flex/flex.html">Flex</a>,
+    a lexical analyzer generator.
+<li><a href="http://www.gnu.org/software/bison/bison.html">Bison</a>,
+    a parser generator.  (Elkhound does not need Bison once it has been compiled.)
+</ul>
+
+<p>
+Build instructions:
+<pre>
+  $ ./configure
+  $ make
+  $ make check
+</pre>
+<a href="configure"><tt>./configure</tt></a> understands
+<a href="gendoc/configure.txt">these options</a>.  You can also
+look at the <a href="Makefile.in">Makefile</a>.
+
+<p>
+Module List:
+<ul>
+
+<li><a href="asockind.h">asockind.h</a>,
+    <a href="asockind.cc">asockind.cc</a>:
+AssocKind, an enumeration of the kinds of associativity.
+
+<li><a href="cyctimer.h">cyctimer.h</a>,
+    <a href="cyctimer.cc">cyctimer.cc</a>:
+CycleTimer, which times a section of code in cycles and milliseconds.
+
+<li><a href="emitcode.h">emitcode.h</a>,
+    <a href="emitcode.cc">emitcode.cc</a>:
+EmitCode, a class to manage the printing of generated code.  Its
+main contribution is knowledge of how to insert #line directives.
+
+<li><a href="flatutil.h">flatutil.h</a>:
+A few utilities on top of the Flatten interface
+(<a href="../smbase/flatten.h">smbase/flatten.h</a>).
+
+<li><a href="genml.h">genml.h</a>, 
+    <a href="genml.cc">genml.cc</a>:
+This module generates parse tables as ML syntax, for when Elkhound is
+running in ML mode.
+
+<li><a href="glr.h">glr.h</a>,
+    <a href="glr.cc">glr.cc</a>:
+Core module for the Elkhound parser (the on-line component, not the
+offline parser generator).  Implements a variant of the GLR
+parsing algorithm.  See <a href="glr.h">glr.h</a> for
+more info.
+
+<li><a href="gramanl.h">gramanl.h</a>,
+    <a href="gramanl.cc">gramanl.cc</a>:
+Grammar analysis module.  Includes algorithms for computing parse
+tables.  Also includes the main() for the parser generator program,
+called 'elkhound'.
+
+<li><a href="gramast.ast">gramast.ast</a>:
+Grammar AST.  The input grammar is initially parsed into an AST,
+before a corresponding Grammar (<a href="grammar.h">grammar.h</a>)
+object is created.
+
+<li><a href="gramexpl.cc">gramexpl.cc</a>:
+Aborted attempt to make an interactive grammar analyzer/explorer/modifier.
+
+<li><a href="gramlex.lex">gramlex.lex</a>:
+Lexical analyzer for grammar input files.  Uses
+<a href="../ast/gramlex.h">ast/gramlex.h</a> and
+<a href="../ast/gramlex.cc">ast/gramlex.cc</a>.
+
+<li><a href="grammar.h">grammar.h</a>,
+    <a href="grammar.cc">grammar.cc</a>:
+Analysis-time representation of a grammar.  Stores symbols,
+productions, etc.  Note that the grammar is distilled down to parse
+tables for the parser itself; this representation is not normally
+available during parsing.
+
+<li><a href="grampar.y">grampar.y</a>,
+    <a href="grampar.h">grampar.h</a>,
+    <a href="grampar.cc">grampar.cc</a>:
+Grammar parser module.
+
+<li><a href="lexerint.h">lexerint.h</a>:
+LexerInterface, the interface the parser uses to access the
+lexical analyzer.
+
+<li><a href="mlsstr.h">mlsstr.h</a>,
+    <a href="mlsstr.cc">mlsstr.cc</a>:
+Module for parsing embedded fragments of ML in reduction actions.
+
+<li><a href="parsetables.h">parsetables.h</a>,
+    <a href="parsetables.cc">parsetables.cc</a>,
+    <a href="emittables.cc">emittables.cc</a>:
+ParseTables, a container class for the parse tables of a grammar.
+The parser generator creates the tables, then
+<a href="emittables.cc">emittables.cc</a> renders the tables out
+as code for use by the parser during parsing.
+
+<li><a href="ptreeact.h">ptreeact.h</a>,
+    <a href="ptreeact.cc">ptreeact.cc</a>:
+A generic set of user actions that build parse trees for any grammar.
+By making a ParseTreeLexer and ParseTreeActions, you can have a
+version of your parser which just makes (and optionally prints) a
+parse tree.  This is very useful for debugging grammars.
+
+<li><a href="ptreenode.h">ptreenode.h</a>,
+    <a href="ptreenode.cc">ptreenode.cc</a>:
+PTreeNode, a generic parse tree node.  Forms the basis for the
+parse trees constructed by <a href="ptreeact.cc">ptreeact.cc</a>.
+
+<li><a href="rcptr.h">rcptr.h</a>:
+RCPtr, a reference-counting pointer.  Used by the parser core
+to maintain the stack node reference counts.
+
+<li><a href="trivlex.h">trivlex.h</a>,
+    <a href="trivlex.cc">trivlex.cc</a>,
+    <a href="trivmain.cc">trivmain.cc</a>:
+Lexer and driver program for experimental grammars.
+
+<li><a href="useract.h">useract.h</a>,
+    <a href="useract.cc">useract.cc</a>:
+UserActions interface, used by the parser core to invoke the
+actions associated with reductions (and other events).
+
+<li><a href="util.h">util.h</a>:
+Some random macros.
+
+</ul>
+
+
+<p>
+I used <a href="../smbase/scan-depends.pl">smbase/scan-depends.pl</a>
+to make dependency diagrams of the parser generator, and the run-time
+parser.
+
+<p>
+The parser generator:<br>
+<img src="gendoc/elkhound_dep.png" alt="Elkhound dependencies"><br>
+Or as <a href="gendoc/elkhound_dep.ps">Postscript</a>.
+
+<p>
+The run-time parser:<br>
+<img src="gendoc/glr.png" alt="GLR Parser dependencies"><br>
+Or as <a href="gendoc/glr.ps">Postscript</a>.
+   
+
+<p>
+Miscellanous files:
+<p>
+<ul>
+
+<li><a href="find-extra-deps">find-extra-deps</a>:
+This script finds dependencies among automatically-generated
+source files.  Output is <a href="extradep.mk">extradep.mk</a>.
+
+<a href="make-lrtable-graph">make-lrtable-graph</a>:
+Given the <tt>.out</tt> file from a run of Elkhound with the
+<tt>-tr lrtable</tt> option, produce a Dot-format graph of the
+parsing automaton.
+
+<li><a href="make-tok">make-tok</a>:
+Read a C++ header file containing a token code enumeration
+declaration, and produce a corresponding <tt>.tok</tt> file for 
+Elkhound.
+
+<li><a href="make-trivparser.pl">make-trivparser.pl</a>:
+This script makes an Elkhound .gr file from a more-compact
+description of an experimental grammar.
+
+<li><a href="perf">perf</a>:
+Run some performance tests.
+
+<li><a href="regrtest">regrtest</a>:
+Run the regression tests.
+
+</ul>
+
+
+<p>
+Interesting subdirectories:
+<p>
+<ul>
+
+<li><a href="asfsdf">asfsdf</a>:
+Contains a few examples written for the ASF+SDF meta-framework, for
+performance comparison with Elkhound.
+
+<li><a href="c">c</a>:                          
+
+Contains a C parser written in Elkhound.  The grammar is almost free
+of shift/reduce conflicts.  It uses the lexer hack (feedback from the
+symbol table into the lexer) to distinguish variables from types.  The
+lexer itself is very slow (just bad engineering).  This parser could
+be evolved into something useful in its own right, but at this time
+it's mostly just a test of Elkhound's deterministic parser.
+
+<li><a href="cc2">cc2</a>:
+This is a C++ parser that uses the C++ Standard's grammar without
+modification.  Consequently, it has many shift/reduce and
+reduce/reduce conflicts, and also many true ambiguities.  This grammar
+is not a very good grammar to use for parsing C++ input; rather, it's
+essentially the skeleton on which the standard's English description
+hangs.  Nevertheless, it's useful because it will output exactly the
+parse tree (ambiguities and all) that the standard grammar induces,
+and this can then be compared to similar output from Elsa
+
+<li><a href="examples">examples</a>:
+Contains some example parsers written with Elkhound:
+
+  <ul>
+
+  <li><a href="examples/arith">examples/arith</a>:
+  Simple parser for arithmetic expressions.  This example was intended
+  to introduce a new user to some of Elkhound's syntax and semantics.
+
+  <li><a href="examples/cdecl">examples/cdecl</a>:
+  This contains an abstracted fragment of the C grammar, demonstrating the
+  ambiguity between variable and type names.  The accompanying code
+  resolves the ambiguity using reduction cancellation.
+
+  <li><a href="examples/cexp">examples/cexp</a>:
+  This has two examples of parsing C expressions.  The examples are
+  old and don't show much; I used them to test Elkhound during early
+  development.
+  
+  <li><a href="examples/gcom">examples/gcom</a>:
+  One of several directories of files used in the
+  <a href="tutorial.html">tutorial</a>.
+  
+  </ul>
+  
+<li><a href="in">in</a>:
+This has a bunch of inputs for various testing grammars.
+
+<li><a href="triv">triv</a>:
+This is a collection of micro-grammars for performance and correctness
+testing.  The name "triv" comes from the fact that they all use the
+trival lexer, i.e. a lexer that yields every character as a separate
+token.
+
+</ul>
+
+
+<p>
+  <a href="http://validator.w3.org/check/referer"><img border="0"
+      src="http://www.w3.org/Icons/valid-html401"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+
+</body>
+
+</HTML>

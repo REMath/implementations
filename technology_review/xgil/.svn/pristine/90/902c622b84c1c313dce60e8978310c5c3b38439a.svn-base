@@ -1,0 +1,214 @@
+todo.txt    -*- outline -*-
+
+* Introduction
+
+This is a list of incomplete aspects of the Elsa C++ front end.
+
+See also the various places in the sources marked "TODO" and "BUG".
+This list is meant to be a summary of the major things not done, but
+there are plenty of little things not mentioned here.
+
+** Emacs outline-mode keybindings
+
+There are here as a reminder:
+  M-x show-all         Show all text
+  (keypad) +           Expand by one level
+  (keypad) -           Collapse
+  (keypad) *           Expand completely
+  (keypad) /           Make all non-heading text invisible
+  C-h m                Help for current mode (outline-mode)
+
+* Language recognition
+
+Generally, language recognition (distinguishing valid from invalid
+C++) is incomplete.  This front end is currently envisioned working in
+an environment where the programs in question are already known to be
+valid, for example by checking with gcc.  As Elsa intended to be a
+research tool, isn't seen as a problem for now.
+
+** Type checking
+
+We don't check type correspondences.
+
+*** arguments vs. parameters
+*** initializers vs. initialized variable
+
+** Access control
+
+Nothing is done with "public", "private", etc., besides writing that
+information down.
+
+** Undefined behavior
+
+Many sources of undefined behavior, like multiple interacting
+side effects between sequence points, are not diagnosed.  As the
+standard does not require a diagnostic, this isn't a standards
+conformance problem, but it would be nice to detect as many of
+these as possible.
+
+** Default arguments
+
+Some of the rules for when default arguments can be supplied are
+not implemented.
+
+** Casts
+
+All casts are currently taken at face value, ignoring the possibility
+that the requested conversion can't be performed (e.g. dynamic_cast
+of a non-polymorphic type).
+
+** Error messages
+
+I think there's an opportunity to greatly improve the way compilers
+report error messages, by having it generate error *objects* that have
+e.g. pointers to the relevant items.  The user could then ask for
+varying levels of detail, or even explore the errors interactively for
+complicated situations like overload resolution failures.  But all
+this is just an idea for now; I build strings like everyone else.
+
+** Deprecated features
+
+A number of language features, like the automatic conversion from
+string literal to char* (as opposed to char const*) are marked
+"deprecated" by the standard (Annex D).  It would be nice to have
+a flag to diagnose use of deprecated features.
+
+** Exception specs
+
+No checking is done w.r.t. exception specs.
+
+** Globals without initializers
+
+At least according to the sixth example in section 7.3.3, C++ allows
+"int i; int i;" at toplevel.  We currently reject this.
+
+* Types of literals
+
+A few literals get the wrong type.  For example, 1U should be
+unsigned, but it isn't.
+
+* String concatenation
+
+Nothing is properly interpreting concatenated strings, though the
+AST does record them.
+
+* Overload resolution
+
+** Conversions for control flow contexts
+
+For example, when a class that can convert to bool is used as the
+guard of an "if", we need to recognize that the conversion is
+happening.
+
+** Operator overloading
+
+Several overloadable operators do not have overload resolution
+being performed.
+
+*** operator->
+*** operator[]
+*** operator new/delete
+
+*** operator?
+
+The ?: operator needs to have resolution performed as if it
+could be overloaded, to determine what conversions to perform on
+the arguments.
+
+** Greatest lower bound for pointer-to-member conversions
+
+See the notes in convertibility.txt.  Elsa does not implement the
+GLB analysis, and quite possibly never will.
+
+* Qualified name lookup
+
+There's a bug in D_name_tcheck that doesn't allow class members inside
+the class body to use qualified names.  It's an indicator that there
+are more serious problems in handling of qualified names.
+
+* Compiler-supplied functions
+
+Each class automatically gets default (no-arg) and copy constructors,
+an operator=, and a destructor, depending on various conditions.
+
+** We need operator=
+
+** Rules for argument type
+
+The argument type for operator= and the copy ctor are not correct
+in all cases.
+
+* Implicit function call
+
+A general goal is to make all function calls explicit in the AST, even
+if they were implicit in the original syntax.  That's not done in
+some cases.
+
+** Conversions for function call arguments
+
+** Implicit constructors and destructors
+
+This is now done by the 'elaborate' module.
+
+* Namespaces
+
+** Synthesized calls
+
+In a few places, I synthesize e.g. "::operator~(a)", intending to get
+a non-member operator~, but it might not be in the global scope if
+namespaces are present.
+
+** Grammar
+
+In at least one place, cc.gr doesn't allow leading "::"s where it should.
+
+** std namespace
+
+None of the language-defined entities, e.g. the "typeid" class, are
+in the "std" namespace as they should be.
+
+** friend declarations
+
+I haven't done anything with friends, esp. 7.3.1.2 para 3.
+
+** using-directive overload sets
+
+To implement 3.4.3.2 para 2 and 7.3.4 para 5, name lookup and overload
+resolution in the presence of "using directives", I need my lookup
+functions to be capable of returning sets of declarations that are not
+all in the same scope.  Currently that is impossible, requiring
+significant design changes to accomodate.  :(
+
+* Templates
+
+The template implementation is still evolving.
+
+** Grammar
+
+The standard grammar has a number of places where the keyword
+"template" is allowed, and has some meaning, but currently our grammar
+(cc.gr) does not allow it.
+
+* Single-pass design
+
+In principle, it should be possible to parse, typecheck, and analyze
+each function one at a time, and then deallocate the storage used
+while processing that function.  But there are a few things standing
+in the way of actually doing that.
+
+** Region-based AST allocation
+
+Put the AST for each function into a region, so it can be deallocated
+as a group despite the internal sharing
+
+** Hash-consing for types
+
+Reduce storage requirements for types by implementing hash-consing.
+
+** Do something about variables
+
+The Variable class is has a mixture of AST and type aspects.
+Variables that correspond to locals could go away with the AST, but
+variables in function parameters are needed for longer.  Perhaps a
+systematic way of deciding when to deallocate variables can be found.
+

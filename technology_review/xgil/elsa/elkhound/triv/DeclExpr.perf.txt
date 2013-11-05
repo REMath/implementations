@@ -1,0 +1,50 @@
+1: %%% progress: 0ms: lexing...
+1: %%% progress: 0ms: reading parse tables file triv/DeclExpr.bin
+1: %%% progress: 1ms: parsing...
+1: %%% progress: 1ms: done parsing (0 ms, 0_511808 cycles)
+1: stack nodes: 0, max stack nodes: 15
+1: detShift=5, detReduce=11, nondetShift=9, nondetReduce=11
+1: yieldThenMergeCt = 0
+1: totalExtracts = 0
+1: multipleDelayedExtracts = 0
+1: tree nodes: 0
+10: %%% progress: 0ms: lexing...
+10: %%% progress: 0ms: reading parse tables file triv/DeclExpr.bin
+10: %%% progress: 0ms: parsing...
+10: %%% progress: 1ms: done parsing (1 ms, 0_202477 cycles)
+10: stack nodes: 0, max stack nodes: 15
+10: detShift=41, detReduce=101, nondetShift=90, nondetReduce=110
+10: yieldThenMergeCt = 0
+10: totalExtracts = 0
+10: multipleDelayedExtracts = 0
+10: tree nodes: 0
+100: %%% progress: 0ms: lexing...
+100: %%% progress: 1ms: reading parse tables file triv/DeclExpr.bin
+100: %%% progress: 1ms: parsing...
+100: %%% progress: 3ms: done parsing (2 ms, 1_502390 cycles)
+100: stack nodes: 0, max stack nodes: 15
+100: detShift=401, detReduce=1001, nondetShift=900, nondetReduce=1100
+100: yieldThenMergeCt = 0
+100: totalExtracts = 0
+100: multipleDelayedExtracts = 0
+100: tree nodes: 0
+1000: %%% progress: 0ms: lexing...
+1000: %%% progress: 5ms: reading parse tables file triv/DeclExpr.bin
+1000: %%% progress: 5ms: parsing...
+1000: %%% progress: 21ms: done parsing (16 ms, 15_946412 cycles)
+1000: stack nodes: 0, max stack nodes: 15
+1000: detShift=4001, detReduce=10001, nondetShift=9000, nondetReduce=11000
+1000: yieldThenMergeCt = 0
+1000: totalExtracts = 0
+1000: multipleDelayedExtracts = 0
+1000: tree nodes: 0
+10000: %%% progress: 0ms: lexing...
+10000: %%% progress: 60ms: reading parse tables file triv/DeclExpr.bin
+10000: %%% progress: 61ms: parsing...
+10000: %%% progress: 220ms: done parsing (159 ms, 158_793112 cycles)
+10000: stack nodes: 0, max stack nodes: 15
+10000: detShift=40001, detReduce=100001, nondetShift=90000, nondetReduce=110000
+10000: yieldThenMergeCt = 0
+10000: totalExtracts = 0
+10000: multipleDelayedExtracts = 0
+10000: tree nodes: 0

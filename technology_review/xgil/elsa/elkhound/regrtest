@@ -1,0 +1,271 @@
+#!/bin/sh
+# regression tests
+
+# default values for user parameters
+skip=0
+big=0
+contin=0
+
+# counters
+curtest=0
+success=0
+failure=0
+unexSuccess=0
+unexFailure=0
+runOneTest=false
+
+usage() {
+cat <<EOF
+usage: $0 [options]
+  -skip <n>    skip the first <n> tests
+  -one <n>     run only test <n>
+  -big         run the big, timeconsuming tests
+  -contin      keep going even after a test fails (or succeeds) unexpectedly
+  -help        print this message
+EOF
+}
+
+# process args
+while [ "$1" != "" ]; do
+  case "$1" in
+    -skip)
+      shift
+      skip="$1"
+      ;;
+
+    -one)
+      shift
+      skip="$1"
+      runOneTest=true
+      ;;
+
+    -big)
+      big=1
+      ;;
+
+    -contin)
+      contin=1
+      ;;
+
+    -help)
+      usage
+      exit 0
+      ;;
+
+    *)
+      echo "unknown arg: $1"
+      usage
+      exit 2
+      ;;
+  esac
+
+  shift
+done
+
+# allow 'gmake' or whatever to be used instead of 'make'
+MAKE=${MAKE:-make}
+
+# clear the logfile
+logfile=regrtest.log
+rm -f $logfile
+
+# write something to terminal and log
+log() {
+  echo "$@"
+  echo "$@" >> $logfile
+}
+
+
+# run a single test, and bail if it fails
+runTest() {
+  if runTestInternal "$@"; then
+    true
+  else
+    if [ $contin = 0 ]; then
+      exit 2
+    fi
+  fi
+}
+
+# run a single test, and return 0 if it succeeds
+runTestInternal() {
+  result=0
+
+  if [ "$curtest" -lt "$skip" ]; then
+    echo "[$curtest]: skipping $*"
+  else
+    # print a visually distinct banner
+    echo "------------ [$curtest] $* ------------"
+    ("$@")
+    result=$?
+    if [ $result -ne 0 ]; then
+      unexFailure=`expr $unexFailure + 1`
+      echo ""
+      log  "[$curtest] A regression test command failed:"
+      log  "  $*"
+    else
+      success=`expr $success + 1`
+    fi
+
+    if $runOneTest; then
+      # exit with code 0 if the test succeeded
+      exit `expr 1 - $success`
+    fi
+  fi
+
+  curtest=`expr $curtest + 1`
+  return $result
+}
+
+# run a big test, only if the user wants to
+bigTest() {
+  if [ $big = 1 ]; then
+    runTest "$@"
+  fi
+}
+
+# run a test that is expected to fail
+failTest() {
+  reason="$1"
+  shift
+  if [ "$curtest" -lt "$skip" ]; then
+    echo "[$curtest]: (fail) skipping $*"
+  else
+    echo "------------ [$curtest] (fail) $* ------------"
+    if "$@"; then
+      unexSuccess=`expr $unexSuccess + 1`
+      echo ""
+      log  "[$curtest] A regression test that used to fail ($reason) now succeeds:"
+      log  "  $*"
+      if [ $contin = 0 ]; then
+        exit 2
+      fi
+    else
+      failure=`expr $failure + 1`
+      echo "Failed as expected: $reason"
+    fi
+
+    if $runOneTest; then
+      # exit with code 0 if the test failed
+      exit `expr 1 - $failure`
+    fi
+  fi
+
+  curtest=`expr $curtest + 1`
+}
+
+# run a failing big test
+bigFail() {
+  if [ $big = 1 ]; then
+    failTest "$@"
+  fi
+}
+
+# grep for lines containing both words, in first argument source file
+grepBoth() {
+  grep -w $2 $1 | grep -w $3
+}
+
+
+# ------------- small test grammars ----------
+# usage: testTrivGrammar <name> [<inputSuffix1> [<inputSuffix2> ...]]
+testTrivGrammar() {
+  name="$1"
+  shift
+  runTest $MAKE "triv/${name}.gr.exe" TRGRAMANL=,lrtable
+
+  while [ "$1" != "" ]; do
+    suffix="$1"
+    shift
+
+    runTest "triv/${name}.gr.exe" "triv/${name}.in${suffix}"
+  done
+}
+
+testTrivGrammar aSEb 1
+testTrivGrammar ite 1 2 3 4
+testTrivGrammar AdB 1
+testTrivGrammar CNI 1
+testTrivGrammar ESb 1
+testTrivGrammar CAdB 1
+testTrivGrammar EEb 1 2 3
+testTrivGrammar angle 1 2 3 4 5
+testTrivGrammar testRR 1 2
+
+#runTest $MAKE aSEb.gr.exe
+#runTest ./aSEb.gr.exe aSEb.in1
+
+#  runTest $MAKE ite.gr.exe
+#  for n in 1 2 3 4; do
+#    runTest ./ite.gr.exe ite.in$n
+#  done
+
+
+# this is a test of the delete/replace feature; it uses a script that
+# (for now) is only in Elsa, so don't try it unless that script is 
+# in a usual place
+if [ -x ../elsa/multitest.pl ]; then
+  runTest perl ../elsa/multitest.pl ./elkhound ffollow.gr ffollow_ext.gr
+fi
+
+
+# make sure Elkhound doesn't segfault on the following
+runTest ./elkhound examples/crash1.gr
+
+
+# ------------ test the C grammar and parser -------------
+for n in 1 2 3 4 5 6 7 8 9 10 11 12; do
+  runTest c/cparse -tr stopAfterTCheck,suppressAddrOfError c.in/c.in$n
+done
+
+
+tcheck() {
+  runTest ./test-bad c/cparse tcheck/$1 -tr stopAfterTCheck
+}
+
+tcheck init.c
+tcheck addrglob.c
+tcheck loops.c
+tcheck exprpath.c
+runTest c/cparse -tr printAnalysisPath tcheck/morepaths.c
+
+
+# --------- test C++ parser using standard grammar ------------
+# no '4' because that uses thmprv_attr ...
+for n in 1 2 3   5 6 7 8 9 10 11 12; do
+  runTest cc2/cc2.exe c.in/c.in$n
+done
+
+
+runTest $MAKE examples
+
+
+# print config info
+runTest c/cparse -tr trivialActions,stopAfterParse,glrConfig,yieldVariableName \
+  c.in/c.in4b
+
+# bison performance test
+runTest $MAKE c.in/c.in4d
+
+# I've disable this one because I don't want to build bcparse
+# in my Elkhound distribution, since that is a dependency on
+# Bison
+#runTest c/bcparse c.in/c.in4d
+
+# this one is my main performance tester for comparison to bison
+runTest c/cparse -tr trivialActions,stopAfterParse,yieldVariableName \
+  c.in/c.in4d
+
+
+# final arithmetic to report result
+echo ""
+echo "Successful tests:      $success"
+echo "Failed as expected:    $failure"
+if [ $contin = 1 ]; then
+  echo "Unexpected success:    $unexSuccess"
+  echo "Unexpected failure:    $unexFailure"
+  if [ -f "$logfile" ]; then
+    cat "$logfile"
+  fi
+fi
+

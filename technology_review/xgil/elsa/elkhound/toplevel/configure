@@ -1,0 +1,5 @@
+#!/bin/sh
+# configure script for toplevel of Elkhound
+
+cd parsgen
+./configure

@@ -1,0 +1,849 @@
+// cc.ast            see license.txt for copyright and terms of use
+// C++ abstract syntax
+
+// The main documentation is in cc.ast.html.
+
+
+// Note that the description in this file is not the whole AST, just
+// the base level of it.  Other files, such as cc_tcheck.ast and
+// gnu.ast, extend the description here by adding additional fields,
+// methods and even AST node types.  The astgen tool (driven by a
+// Makefile rule) combines the various descriptions into one before
+// generating cc.ast.gen.h and cc.ast.gen.cc.  The purpose of this
+// organization is to keep related concepts together, and allow the
+// user to mix+match features by selecting which extensions are used.
+
+
+// note: wherever ASTList or FakeList is used, its elements are listed
+// in the order they appear lexically in the input file, i.e. left to
+// right and then top to bottom
+
+// How do I decide between ASTList and FakeList?  Creating ASTLists
+// can be done with left recursion, which saves stack space, whereas
+// FakeLists require right recursion.  But, ASTLists cannot safely
+// be yielded as semantic values if there's any chance they'll be
+// yielded more than once.
+//
+// So, I use FakeList everywhere I can accept the stack growth.  The
+// only places I cannot accept this growth are places where it is
+// relatively common for the list to have >100 elements.  Those
+// places are:
+//   - toplevel forms (including namespace members)
+//   - statement lists in compound statements
+//   - class/struct members
+//   - compound initializers
+//
+// In these places where I use ASTList, I encapsulate it in another
+// class if necessary to avoid yielding it as a semantic value.
+
+
+// emitted verbatim into generated header (cc.ast.gen.h)
+verbatim {
+  #include "cc_flags.h"         // CVFlags, DeclFlags, etc. (r)
+  
+  class CCLang;                 // cc_lang.h
+}
+
+// use a new astgen feature: make a visitor!
+option visitor ASTVisitor;
+option dvisitor DelegatorASTVisitor;
+// dsw: these turn on incomplete experimental ast xml serialization
+// and de-serialization code
+option xmlVisitor ToXmlASTVisitor;
+option xmlParser astxml;
+
+// emit gdb() methods for debugging
+option gdb;
+
+
+// ---------------- file -------------
+// an entire file (with #included stuff) of toplevel forms; I use
+// an ASTList here because I want to use left recursion, and
+// there's never a multiple-yield problem with toplevel forms
+class TranslationUnit (ASTList<TopForm> topForms);
+
+// a toplevel form
+class TopForm (SourceLoc loc) {
+  // represent ambiguous topforms by forming a linked list of
+  // alternatives; the only reason topforms might be ambiguous is
+  // because of implicit int (for old-style C)
+  public TopForm * ambiguity = NULL;
+  public void addAmbiguity(TopForm *alt);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  // top form we could not parse
+  -> TF_error();
+
+  // includes function prototypes
+  -> TF_decl(Declaration decl);
+
+  // functions with bodies
+  -> TF_func(Function f);
+
+  // template functions or template classes
+  -> TF_template(TemplateDeclaration td);
+
+  // explicit instantiation request; 'instFlags' is for the GNU
+  // "extern template" extension, and is always DF_NONE for ANSI C++
+  -> TF_explicitInst(DeclFlags instFlags, Declaration d);
+
+  // linkage specification enclosing a bunch of forms, e.g.
+  // extern "C" { /*...*/ }
+  -> TF_linkage(StringRef linkageType, TranslationUnit forms);
+
+  // linkage spec with one form and no braces; it turns out this has
+  // different semantics [cppstd 7.5 para 7]
+  -> TF_one_linkage(StringRef linkageType, TopForm form);
+
+  // assembly directive at toplevel
+  -> TF_asm(E_stringLit text);
+  
+  // namespace definition [cppstd 7.3.1]
+  -> TF_namespaceDefn(StringRef /*nullable*/ name, ASTList<TopForm> forms);
+  
+  // one of three namespace-related declarations that can occur
+  // at toplevel or as a function statement
+  -> TF_namespaceDecl(NamespaceDecl decl);
+}
+
+
+// ----------------------- function -------------------------
+// a function definition (toplevel or class member)
+class Function (
+  DeclFlags dflags,             // static, extern, etc.
+
+  TypeSpecifier retspec,        // type specifier for return value
+
+  Declarator nameAndParams,     // 1. remainder of return value type
+                                // 2. name of function
+                                // 3. names/types of parameters
+
+  FakeList<MemberInit> *inits,  // (for ctors only) member initialization list
+
+  S_compound body,              // body of function
+
+  FakeList<Handler> *handlers   // handlers for ctor "try" block
+) {
+  public SourceLoc getLoc() const;
+}
+
+class MemberInit (
+  PQName name,                    // name of member or base class
+  FakeList<ArgExpression> *args   // arguments to its constructor
+) {
+  // standard way to make it possible to include something
+  // in a FakeList; this line is repeated below in several places
+  public MemberInit *next=NULL;   // FakeList link
+}
+
+
+// --------------- types and declarators ---------------
+// variable declaration or definition, or function declaration
+class Declaration (
+  DeclFlags dflags,                    // typedef, virtual, extern, etc.
+  TypeSpecifier spec,                  // e.g. "int"
+  FakeList<Declarator> *decllist       // e.g. "x=3, y"
+);
+
+
+// just one complete type; appears in parameter decls and in casts; the
+// main difference between an ASTTypeId and a Declaration is that the
+// former can have only one declarator, while the latter can have several
+class ASTTypeId (
+  TypeSpecifier spec,        // "int"
+  Declarator decl            // this will be abstract sometimes (e.g. casts)
+) {
+  // FakeList link; use setNext
+  public ASTTypeId *next = NULL;
+  public void setNext(ASTTypeId *newNext);
+
+  // ambiguity representation
+  public ASTTypeId *ambiguity = NULL;
+  public void addAmbiguity(ASTTypeId *alternative);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+}
+
+// a name with optional class qualifiers (PQ: "possibly qualified");
+// if the first qualifier's 'qualifier' name is NULL, then it means
+// there was a leading "::" symbol; each level of qualification has a
+// 'loc' because each level is a remote reference to some entity, and
+// that lookup might fail
+class PQName(SourceLoc loc) {
+  public bool hasQualifiers() const { return isPQ_qualifier(); };
+
+  public string qualifierString() const;
+  public string toString() const;
+  public string toString_noTemplArgs() const;
+  public friend stringBuilder& operator<< (stringBuilder &sb, PQName const &obj);
+  public friend ostream& operator<< (ostream &os, PQName const &obj) { return os << obj.toString(); };
+
+  // retrieve a StringRef for the underlying name, be it a PQ_name or
+  // a PQ_operator
+  pure_virtual StringRef getName() const;
+  
+  // just this component; as if last in chain
+  pure_virtual string toComponentString() const;
+
+  // get the PQName at the bottom of any qualifiers
+  public PQName const *getUnqualifiedNameC() const;
+  public PQName *getUnqualifiedName()
+    { return const_cast<PQName*>(getUnqualifiedNameC()); };
+
+  // true if the 'template' keyword was used in this part of the name
+  public bool templateUsed() const;
+  
+  // merge two ambiguous PQNames ('this' and 'obj')
+  public PQName *mergeAmbiguous(PQName *obj);
+
+  // The reason for the "/*fakelist*/TemplateArgument" stuff is that
+  // those fields are treated like lists, but I want to hide their
+  // fake-list-ness from astgen.  Instead, astgen will print and
+  // traverse using the 'next' fields in the TemplateArguments
+  // directly (and if I did not hide the fake-list-ness, these things
+  // would be done twice).
+
+  // outer qualifier applied to some inner PQName, plus an optional
+  // list of template arguments to the qualifier
+  -> PQ_qualifier(StringRef /*nullable*/qualifier,
+                  /*fakelist*/TemplateArgument templArgs,
+                  PQName rest)
+     {
+       // PQNames can be ambiguous; e.g., in/t0455.cc.  However, the
+       // ambiguity always involves a PQ_qualifier, so I will just
+       // attach the ambiguity link to it.
+       public PQName *ambiguity = NULL;
+       custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+       // print ambiguities
+       public void printAmbiguities(ostream &os, int indent) const;
+       custom preemptDebugPrint {
+         if (ambiguity) {
+           printAmbiguities(os, indent);
+           return;     // skip the normal, unambiguous-node print code
+         }
+       }
+     }
+
+  // final name, when it's an ordinary identifier
+  // NOTE: 'name' here is *never* NULL--instead, I use NULL
+  // PQName pointers in abstract declarators
+  -> PQ_name(StringRef name);
+
+  // "operator" names; 'o' has the full info, while 'fakeName' is
+  // for getName(), which is sometimes used for string maps
+  -> PQ_operator(OperatorName o, StringRef fakeName);
+
+  // template instances: a template function or class name, plus
+  // some template arguments
+  -> PQ_template(StringRef name, /*fakelist*/TemplateArgument templArgs);
+}
+
+
+// a name of an "atomic" type--one to which type constructors
+// (e.g. '*') can be applied, but which itself is not syntactically
+// built with type constructors (typedef'd types may have been built
+// with type constructors when the name was defined, but a
+// TypeSpecifier refers only to the name)
+class TypeSpecifier(SourceLoc loc, SourceLoc end_loc) {
+  public(field,xml) CVFlags cv = CV_NONE;
+  custom clone { ret->cv = cv; }
+
+  public void printExtras(ostream &os, int indent) const;
+  custom debugPrint { printExtras(os, indent); }
+
+  public bool canBeTypeParam() const;
+
+  // a typedef'd name (typedef might be implicit, as for classes);
+  // if 'typenamedUsed' is true, then the user said "typename", so
+  // we don't regard an error as disambiguating
+  -> TS_name(PQName name, bool typenameUsed);
+
+  -> TS_simple(SimpleTypeId id);           // int or char or float or ..
+
+  -> TS_elaborated(                        // "class Foo"
+       TypeIntr keyword,
+       PQName name
+     );
+
+  // class/struct/union definition
+  -> TS_classSpec(                         // "class { ... }"
+       TypeIntr keyword,                     // "class", "struct", "union"
+
+       // 'name' is the user-provided name, if any.
+       // Why is this a PQName instead of just a StringRef?
+       //   - it could be a template specialization, and therefore
+       //     has template arguments
+       //   - it could be a definition or specialization of a class
+       //     declared in another namespace
+       // See cppstd 14.5.4 para 6 for an example of both at once.
+       PQName /*nullable*/ name,
+
+       FakeList<BaseClassSpec> *bases,       // base classes
+       MemberList members                    // field and methods of the class
+     );
+
+  -> TS_enumSpec(                          // "enum { ... }"
+       StringRef /*nullable*/ name,          // name of enum, if any
+       FakeList<Enumerator> *elts            // elements of the enumeration
+     );
+}
+
+// base class specification
+class BaseClassSpec (
+  bool isVirtual,                       // true for virtual base classes
+  AccessKeyword access,                 // public/protected/private
+  PQName name                           // name of base class
+) {
+  public BaseClassSpec *next=NULL;     // FakeList link
+}
+
+// a binding of a name to a constant value
+class Enumerator (
+  SourceLoc loc,                        // location
+  StringRef name,                       // name of this constant
+  Expression /*nullable*/ expr          // constant expr, or NULL for "next"
+) {
+  public Enumerator *next=NULL;     // FakeList link
+}
+
+
+// list of class members; this is encapsulated so I can use
+// ASTList without yielding ASTLists in cc.gr
+class MemberList (ASTList<Member> list);
+
+// member of a class
+class Member (SourceLoc loc) {
+  -> MR_decl(Declaration d);            // data members or functions w/o bodies
+  -> MR_func(Function f);               // function with body
+  -> MR_access(AccessKeyword k);        // section header
+  -> MR_usingDecl(ND_usingDecl decl);   // namespace "using" declaration
+  -> MR_template(TemplateDeclaration d);// member template...
+}
+
+
+// Syntactically, a Declarator introduces a name of a declared thing,
+// and also optionally adds type constructors to the base type of the
+// specifier.  It may have an initializing expression, depending on
+// the context.
+class Declarator (
+  IDeclarator decl,                    // syntax of type designation
+  Initializer init                     // (nullable) optional data initializer
+) {
+  // FakeList link; use 'setNext' to set 'next'
+  public Declarator *next = NULL;
+  public void setNext(Declarator *newNext);
+
+  // ambiguity representation
+  public Declarator *ambiguity = NULL;
+  public void addAmbiguity(Declarator *alternative);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  // dig down and find the name being declared; may return NULL
+  public PQName const *getDeclaratorIdC() const;
+  public PQName *getDeclaratorId()
+    { return const_cast<PQName*>(getDeclaratorIdC()); };
+  public void setDeclaratorId(PQName *n);
+
+  public SourceLoc getLoc() const;
+}
+
+
+// inner declarator; things *recursively* buried inside declarators;
+// cannot have initializers; the internal structure can be ignored
+// once typechecking determines what type is denoted
+class IDeclarator(SourceLoc loc) {
+  // dig down and find the name being declared; may return NULL
+  pure_virtual PQName const *getDeclaratorIdC() const;
+  public PQName *getDeclaratorId()
+    { return const_cast<PQName*>(getDeclaratorIdC()); };
+
+  // dig down one IDeclarator level, yielding the 'base' field,
+  // unless this is a leaf (in which case return NULL)
+  pure_virtual IDeclarator const *getBaseC() const;
+  public IDeclarator *getBase()
+    { return const_cast<IDeclarator*>(getBaseC()); };
+
+  // skip any toplevel grouping operators
+  public IDeclarator *skipGroups();
+
+  // true if this declarator is "obviously" declaring a function type,
+  // i.e. the innermost non-D_name, non-D_grouping constructor is
+  // D_func
+  public bool bottomIsDfunc() const;
+
+  // "x" (NULL means abstract declarator or anonymous parameter);
+  // this is used for ctors and dtors as well as ordinary names
+  // (dtor names start with "~"); it's also used for operator names
+  -> D_name(PQName /*nullable*/ name);
+
+  // "*x" (as in "int *x")
+  -> D_pointer(CVFlags cv,  // optional qualifiers applied to ptr type
+               IDeclarator base);
+
+  // "&x"
+  -> D_reference(IDeclarator base);
+
+  // "f(int)"
+  -> D_func(IDeclarator base,                       // D_name of function, typically
+            FakeList<ASTTypeId> *params,            // params with optional default values
+            CVFlags cv,                             // optional "const" for member functions
+            ExceptionSpec /*nullable*/ exnSpec);    // throwable exceptions
+
+  // "a[5]" or "b[]"
+  -> D_array(IDeclarator base, Expression /*nullable*/ size);
+
+  // "c : 2"
+  //
+  // I use a PQName here instead of a StringRef for uniformity
+  // (so every IDeclarator ends with a PQName); there are never
+  // qualifiers on a bitfield name
+  -> D_bitfield(PQName /*nullable*/ name, Expression bits);
+
+  // "X::*p"
+  -> D_ptrToMember(PQName nestedName, CVFlags cv, IDeclarator base);
+
+  // declarator grouping operator: it's semantically irrelevant
+  // (i.e. equivalent to just 'base' alone), but plays a role in
+  // disambiguation
+  -> D_grouping(IDeclarator base);
+}
+
+// specification of what a function can throw; if an ExceptionSpec
+// pointer is NULL, it means there is no specification, i.e. anything
+// can be thrown
+class ExceptionSpec (
+  FakeList<ASTTypeId> *types       // list of allowable types; might be empty (NULL)
+);
+
+// names for operator and conversion functions
+class OperatorName {
+  // render the operator as a string, for use with string-based maps
+  pure_virtual char const *getOperatorName() const;
+
+  // operator new & delete
+  -> ON_newDel(bool isNew, bool isArray);
+
+  // arithmetic-type operator
+  -> ON_operator(OverloadableOp op);
+
+  // conversion operator to convert to 'type'; type will always have an
+  // abstract declarator, with only pointer-type constructors (if any)
+  -> ON_conversion(ASTTypeId type);
+}
+
+
+// ------------------- statements -----------------
+class Statement (SourceLoc loc, SourceLoc end_loc) {
+  // represent ambiguous statements by forming a linked list of alternatives
+  public Statement * ambiguity = NULL;
+  public void addAmbiguity(Statement *alt);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  public string lineColString() const;      // e.g. "4:5"
+  public string kindLocString() const;      // e.g. "S_if@4:5"
+
+  -> S_skip();      // no-op; used whenever optional Statement is not present
+  -> S_label(StringRef name, Statement s);
+  -> S_case(Expression expr, Statement s);
+  -> S_default(Statement s);
+  -> S_expr(FullExpression expr);   // expression evaluated for side effect
+  -> S_compound(ASTList<Statement> stmts);        // using ASTList for performance, I never yield it in cc.gr
+  -> S_if(Condition cond, Statement thenBranch, Statement elseBranch);
+  -> S_switch(Condition cond, Statement branches);
+  -> S_while(Condition cond, Statement body);
+  -> S_doWhile(Statement body, FullExpression expr); // note: 'expr' is not a Condition
+  -> S_for(Statement init, Condition cond,
+           FullExpression after, Statement body);
+  -> S_break();
+  -> S_continue();
+  -> S_return(FullExpression /*nullable*/ expr);
+  -> S_goto(StringRef target);
+  -> S_decl(Declaration decl);
+  -> S_try(Statement body, FakeList<Handler> *handlers);
+  -> S_asm(E_stringLit text);
+  -> S_namespaceDecl(NamespaceDecl decl);
+}
+
+// condition expression in a control-flow statement; it's allowed
+// to declare a variable that will hold the condition's value for
+// the duration of the substatement(s)
+class Condition {
+  // ambiguity representation
+  public Condition *ambiguity = NULL;
+  public void addAmbiguity(Condition *alternative);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  -> CN_expr(FullExpression expr);  // simple expression
+  -> CN_decl(ASTTypeId typeId);     // type, name, & initializer (must all be present)
+}
+
+// exception handler
+class Handler (
+  // type of exception objects this handler catches; note that it
+  // might be ST_ELLIPSIS, which corresponds to the "..." syntax
+  ASTTypeId typeId,
+
+  // code to run when handler catches an exception
+  Statement body
+) {
+  public Handler *next = NULL;      // FakeList link
+  
+  // test whether this is the "..." handler; in this case, at the
+  // moment, the type checker will make a type with ST_ELLIPSIS in
+  // it, but ideally an analysis should not rely on this, and instead
+  // check and handle 'isEllipsis' directly without looking further
+  // at 'typeId' (because ST_ELLIPSIS is a hack)
+  public bool isEllipsis() const;
+}
+
+
+// ----------------- expressions -----------------
+// C expressions
+class Expression {
+  // NOTE: we never make lists of Expressions, only of ArgExpressions
+
+  // same as we do for statements
+  public Expression *ambiguity = NULL;
+  public void addAmbiguity(Expression *alternative);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+  custom clone {
+    // don't clone something that is still ambiguous (usually means
+    // hasn't been tchecked)
+    xassert(!ambiguity);
+  }
+
+  // expression that was replaced during operator overload resolution.
+  public Expression *replaceExpr = NULL;
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  // true if this expression is an E_binary with the given operator
+  public bool isBinary(BinaryOp op) const;
+
+  // dig down past any E_grouping nodes; this is sometimes necessary
+  // when a node needs to examine the syntax of subexpressions
+  public Expression *skipGroups();
+  public Expression const *skipGroupsC() const;
+
+  -> E_boolLit(bool b);
+  
+  // most of the literals are handled by simply storing the textual
+  // representation the user typed in, including delimiters like
+  // quotes; the tcheck pass could interpret those if desired (and
+  // does in some cases); concatenation of string literals is handled
+  // by making a continuation list
+  -> E_intLit(StringRef text);
+  -> E_floatLit(StringRef text);
+  -> E_stringLit(StringRef text, E_stringLit continuation = NULL);
+  -> E_charLit(StringRef text);
+
+  // reference to 'this', the address of the receiver object
+  -> E_this();
+
+  // variable reference
+  // 5/19/03: 'loc' field removed because 'name' has a location
+  // 1/30/04: split E_this off so now 'name' is never "this"
+  -> E_variable(PQName name);
+
+  -> E_funCall(Expression func, FakeList<ArgExpression> *args);
+
+  // call to constructor as an expression; the expression's overall
+  // type says which type is being constructed
+  -> E_constructor(TypeSpecifier spec, FakeList<ArgExpression> *args);
+
+  // field within an object; as a special case, fieldName might begin
+  // with "~", meaning we're naming the destructor
+  -> E_fieldAcc(Expression obj, PQName fieldName);
+
+  -> E_sizeof(Expression expr);
+
+  -> E_unary(UnaryOp op, Expression expr);
+  -> E_effect(EffectOp op, Expression expr);
+  -> E_binary(Expression e1, BinaryOp op, Expression e2);
+
+  -> E_addrOf(Expression expr);
+  -> E_deref(Expression ptr);
+
+  -> E_cast(ASTTypeId ctype, Expression expr);
+  -> E_cond(Expression cond, Expression th, Expression el);
+  -> E_sizeofType(ASTTypeId atype);
+
+  // this is a simple assignment if op==BIN_ASSIGN, otherwise it's an
+  // incremental assignment, like a += 3 (e.g. for op==BIN_PLUS)
+  -> E_assign(Expression target, BinaryOp op, Expression src);
+
+  -> E_new(bool colonColon,                        // true if "::" preceeds "new"
+           FakeList<ArgExpression> *placementArgs, // arguments to placement-new (empty/NULL if no placement syntax)
+           ASTTypeId atype,                        // type to allocate
+           ArgExpressionListOpt ctorArgs);         // arguments to type's constructor (NULL if no ctor call syntax)
+
+  -> E_delete(bool colonColon,                     // true if "::" preceeds "delete"
+              bool array,                          // true if "[]" follows "delete"
+              Expression expr);                    // address of obj to deallocate
+
+  -> E_throw(Expression /*nullable*/ expr);
+
+  -> E_keywordCast(CastKeyword key,              // dynamic_cast, static_cast, etc.
+                   ASTTypeId ctype,              // type to cast to
+                   Expression expr);             // expression being cast
+
+  -> E_typeidExpr(Expression expr);
+  -> E_typeidType(ASTTypeId ttype);
+
+  // Both of the following exist only between parsing and
+  // type-checking.  The type checker discards them.
+
+  // an E_grouping is a pair of grouping parentheses; it's present in
+  // the AST for syntactic disambiguation of angle brackets, and an
+  // obscure rule about pointer-to-member
+  -> E_grouping(Expression expr);
+
+  // retained explicitly for possible operator overloading
+  -> E_arrow(Expression obj, PQName fieldName);         // e.g. p->f
+}
+
+
+// maximal expressions: the parent is not an expression
+// (cppstd 1.9 para 12)
+class FullExpression (Expression expr) {
+  // We do not make lists of FullExpressions.
+  
+  // nothing is needed here beyond the 'expr'; cc_elaborate.cc adds
+  // a FullExpressionAnnot object, however
+}
+
+
+// In the original version of cc.ast, Expressions had both a FakeList
+// link and an ambiguity link.  All expressions in a given ambiguity
+// list were supposed to have the same FakeList link, and this was
+// a bit of a pain.  Then we added ICExpression (implicit conversion
+// expression), which separated the ambiguity representation and the
+// list representation, which simplified things.  Then we removed
+// ICExpression, because we handled implicit conversions differently,
+// re-introducing the ambiguity/FakeList complications.  I'm now
+// going to add that separation layer back in, just for the purpose
+// of separation, to get back the simplicity we had before.
+class ArgExpression(Expression expr) {   // expression in an argument list
+  // FakeList link
+  public ArgExpression *next = NULL;
+  public void setNext(ArgExpression *newNext);
+  
+  // argh.. t0182.cc demonstrates I need ambiguity links at this
+  // level too!  but at least these aren't the matrix-style links
+  // I had before; the 'next' links among ambiguous alternatives
+  // are independent
+  public ArgExpression *ambiguity = NULL;
+  public void addAmbiguity(ArgExpression *alternative);
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+}
+
+
+// this is used for cases where there is a difference between a list
+// with no elements, and no list at all (the latter is represented by
+// a NULL pointer to an ArgExpressionListOpt, while the former is a valid
+// ArgExpressionListOpt with a NULL 'list' field)
+class ArgExpressionListOpt (
+  FakeList<ArgExpression> *list
+);
+
+
+// things that appear after declarations to assign initial values
+class Initializer (SourceLoc loc, SourceLoc end_loc) {
+  public Initializer *next = NULL;       // FakeList link
+
+  // simple initializer, like "int x = 3"
+  -> IN_expr(Expression e);
+
+  // compound initializer, like "int x[4] = { 1,2,3,4 };
+  // using ASTList for performance; some files have initializers
+  // with thousands of elements
+  -> IN_compound(ASTList<Initializer> inits);
+
+  // constructor initializer, like "int x(3);"
+  -> IN_ctor(FakeList<ArgExpression> *args);
+}
+
+
+// ------------------- templates -------------------
+// wrap some template parameters on a declaration or function
+class TemplateDeclaration (/*fakelist*/TemplateParameter params) {
+  // define a template function
+  -> TD_func(Function f);
+
+  // declare a template function prototype, or declare or define a
+  // template class
+  -> TD_decl(Declaration d);
+  
+  // wrap another set of parameters around a template decl;
+  // this is for template members of template classes (14.5.2)
+  -> TD_tmember(TemplateDeclaration d);
+
+  // ambiguity link. bhackett: apparently we can get ambiguity at the top
+  // level declaration as well, but I'm not sure yet as to why.
+  // for now just keep the ambiguity around, but ignore it.
+  public TemplateDeclaration *ambiguity = NULL;
+  public void addAmbiguity(TemplateDeclaration *alternative);
+}
+
+// one of the parameters to a template declaration
+class TemplateParameter (SourceLoc loc)(TemplateParameter /*nullable*/ next) {
+  // true if this parameter has a default arg
+  pure_virtual bool hasDefaultArg() const;
+
+  // ambiguity link
+  public TemplateParameter *ambiguity = NULL;
+  public void addAmbiguity(TemplateParameter *alternative);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  // type parameter; when present, 'name' is what the template code
+  // will use to refer to the actual argument type; when present,
+  // 'defaultType' provides a default argument
+  -> TP_type(StringRef /*nullable*/ name,
+             ASTTypeId /*nullable*/ defaultType);
+
+  // non-type paramters
+  -> TP_nontype(ASTTypeId param);
+}
+
+verbatim {
+  // true if any of the parameters have default values
+  bool anyHaveDefaultArgs(TemplateParameter const *list);
+}
+
+
+// one of the arguments to a template instantiation
+class TemplateArgument(/*first*/)(/*last*/ TemplateArgument next) {
+  // NOTE: At one point TemplateArguments were connected with a
+  // FakeList, but it turns out that interacts badly with failing
+  // parses (in/t0179.cc), and the fix is to use ASTLists instead.
+  //
+  // 2005-03-13: Trying again with FakeLists... as an experiment, I
+  // will make 'next' a ctor parameter.  Ok, this is working.  I have
+  // made it a 'last' parameter, meaning it is printed and traversed
+  // *after* everything else.
+
+  // ambiguity link
+  public TemplateArgument *ambiguity = NULL;
+  public void addAmbiguity(TemplateArgument *alternative);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  // return a canonical string for this template argument,
+  // such that different arguments get different strings
+  pure_virtual string argString() const;
+
+  // type argument, corresponds to a TP_type parameter
+  -> TA_type(ASTTypeId type);
+
+  // non-type arguments, corresponds to a TP_nontype parameter
+  -> TA_nontype(Expression expr);
+  
+  // This is a special element that, when found in the template
+  // argument list of a PQ_qualifier or PQ_template, signals that
+  // those names were prefixed by the "template" keyword (14.2 para
+  // 4).  Doing it this way, instead of adding a boolean to the PQ_*
+  // classes, saves a little space in the common case, and avoids
+  // cluttering creation sites with "false /*templateUsed*/".
+  -> TA_templateUsed();
+}
+
+
+// -------------------- namespace declarations ----------------------
+// since each of these three forms can appear either at toplevel
+// (or in a namespace) or inside a function, I've collected them
+// together; also, ND_usingDecl can appear as a class member
+class NamespaceDecl {
+  // [cppstd 7.3.2] namespace alias definition: defines 'alias'
+  // to refer to the same namespace as 'original'
+  -> ND_alias(StringRef alias, PQName original);
+
+  // [cppstd 7.3.3] using declaration: the given name's unqualified
+  // form is imported into the current scope as an alias for the named
+  // entity; 'name' must be qualified
+  -> ND_usingDecl(PQName name);
+
+  // [cppstd 7.3.4] using directive: names from the given namespace
+  // are accessible in the current scope without qualification, among
+  // other effects (of the three NamespaceDecls, this is the most
+  // complicated)
+  -> ND_usingDir(PQName name);
+}
+
+
+// EOF

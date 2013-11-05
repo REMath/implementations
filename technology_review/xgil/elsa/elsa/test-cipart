@@ -1,0 +1,21 @@
+#!/bin/sh
+# run cipart then make sure the tree is ok
+
+if [ "$1" = "" ]; then
+  echo "usage: $0 foo.c"
+  exit 2
+fi
+
+while [ "$1" != "" ]; do
+  echo "---- $1 ----"
+
+  ./cipart "$1" || exit
+
+  ./smin -tr checktree "$1" "$1".str || exit
+
+  rm "$1".str
+  
+  shift
+done
+
+exit 0

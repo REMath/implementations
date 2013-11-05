@@ -1,0 +1,20 @@
+#!/bin/sh
+# test performance on ambiguous input
+
+#for fn in bb10.c bb20.c bb50.c bb100.c bb200.c bb500.c bb1000.c; do
+for fn in bb300.c bb400.c; do
+  echo "$fn"
+  results=""
+  #for n in 1 2 3 4 5; do
+  for n in 1; do
+    cycles=`./ccgr -tr trivialActions,stopAfterParse cc.bin $fn \
+              | grep cycles | awk '{ print $8 }' | sed 's/(//'`
+    results="$results $cycles"
+    echo "  $n: $cycles"
+  done
+
+  median=`echo $results | fmt -1 | sort | head -3 | tail -1`
+  echo "  median: $median"
+done
+
+

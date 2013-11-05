@@ -1,0 +1,13 @@
+#!/bin/sh
+# run icc on an input to see if it accepts it
+
+if [ "$1" = "" ]; then
+  echo "usage: $0 input.cc"
+  exit 0
+fi
+
+echo source /opt/intel/bin/iccvars.sh
+source /opt/intel/bin/iccvars.sh
+
+echo /opt/intel/bin/icpc -o /dev/null -c -xc++ -w "$@"
+exec /opt/intel/bin/icpc -o /dev/null -c -xc++ -w "$@"

@@ -1,0 +1,45 @@
+// cfg.ast
+// AST extension to cc.ast for storing and computing a CFG
+
+// the methods declared here are defined in cfg.cc
+
+verbatim {
+  #define CFG_EXTENSION   // this extension module is active
+
+  #include "cfg.h"        // NextPtr
+}
+
+class Statement {
+  // control flow successor edge; interpretation depends on the exact
+  // kind of statement this is, however, so that's best left to
+  // 'getSuccessors()', and this is therefore protected
+  protected NextPtr next;
+  public friend class CFGEnv;     // allow CFGEnv to write 'next'
+  
+  // retrieve all successors of this node, given how we got to this
+  // node ('isContinue'), and put them into 'dest'; this can only
+  // be called after 'computeCFG' has finished; if this returns an
+  // empty set, it means that after the statement, the function returns
+  public void getSuccessors(NextPtrList &dest, bool isContinue);
+  public string successorsToString() const;
+  custom debugPrint {
+    ind(os, indent) << "succ=" << successorsToString() << endl;
+  }
+
+  // compute the CFG within this statement (e.g. a compound statement that
+  // is a function body)
+  public void computeCFG(CFGEnv &env);
+  pure_virtual void icfg(CFGEnv &env);    // TODO: make this private (must modify astgen)
+  
+  // switch has many outgoing edges, so it needs more than just 'next'
+  -> S_switch {
+       // pointers to all of the cases (& default) in this switch; when
+       // interpreted as a NextPtr, all 'continue' flags are false
+       private SObjList<Statement> cases;
+       public friend class CFGEnv;     // allow CFGEnv to write 'cases'
+       public friend class Statement;  // for Statement::getSuccessors
+     }
+}
+
+
+// EOF

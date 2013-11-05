@@ -1,0 +1,27 @@
+// EFa.gr.in   -*- c++ -*-
+// deterministic grammar from even-faster
+
+// S -> E
+// E -> E + F | F
+// F -> a | ( E )
+
+terminals {
+  a     // a
+  p     // +
+  l     // (
+  r     // )
+}
+
+nonterm S {
+  -> e:E;
+}
+
+nonterm E {
+  -> e:E p f:F;
+  -> f:F;
+}
+
+nonterm F {
+  -> a;
+  -> l e:E r;
+}

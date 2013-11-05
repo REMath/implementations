@@ -1,0 +1,1478 @@
+#!/bin/sh
+# regression tests
+
+# This file contains a list of tests that should be run in Elsa (via
+# ./ccparse) before each commit.  With the exception of a few stored
+# in the elsa/in/big directory, they should be short tests that can be
+# parsed and typechecked quickly.  When a big test fails (either one
+# that is in elsa/in/big, or some other external package), the failing
+# syntax should be isolated and added to this file.
+#
+# The basic procedure for adding tests is to find the section that has
+# tests for the language (C++, C, GNU extensions, etc.) the test uses,
+# and append a line of the form
+#
+#   testparse foo.cc
+#
+# where the name 'testparse' will depend on the section the test
+# appears in (because it selects the language).
+#
+# If the test is currently failing, but is intended to be fixed and
+# therefore eventually succeed, use
+#
+#   failparse foo.cc "give reason here"
+#
+# The "reason" string, ideally, should include (1) what response
+# ccparse gives (segfault, assertion failure, error message) and (2)
+# what kind of syntax characterizes the input (e.g., "template with
+# reference parameter").  The purpose of this string is to help me
+# prioritize which tests to fix first.
+#
+# If the test includes deliberately invalid syntax that elsa is
+# supposed to detect and reject, then include lines in the test case
+# of the form
+#
+#   //ERROR(n): some bad code;
+#
+# where 'n' is some number (like 1).  See multitest.pl for more
+# details.
+
+
+# default values for user parameters
+skip=0
+big=0
+contin=0
+
+# counters
+curtest=0
+success=0
+failure=0
+unexSuccess=0
+unexFailure=0
+skipdiagnose=0
+runOneTest=false
+
+usage() {
+cat <<EOF
+usage: $0 [options]
+  -skip <n>    skip the first <n> tests
+  -one <n>     run only test <n>
+  -big         run the big, timeconsuming tests
+  -contin      keep going even after a test fails (or succeeds) unexpectedly
+  -help        print this message
+EOF
+}
+
+# process args
+while [ "$1" != "" ]; do
+  case "$1" in
+    -skip)
+      shift
+      skip="$1"
+      ;;
+
+    -one)
+      shift
+      skip="$1"
+      runOneTest=true
+      ;;
+
+    -big)
+      big=1
+      ;;
+
+    -contin)
+      contin=1
+      ;;
+
+    -help)
+      usage
+      exit 0
+      ;;
+
+    *)
+      echo "unknown arg: $1"
+      usage
+      exit 2
+      ;;
+  esac
+
+  shift
+done
+
+# allow 'gmake' or whatever to be used instead of 'make'
+MAKE=${MAKE:-make}
+
+# clear the logfile
+logfile=regrtest.log
+rm -f $logfile
+
+# write something to terminal and log
+log() {
+  echo "$@"
+  echo "$@" >> $logfile
+}
+
+
+# run a single test, and bail if it fails
+runTest() {
+  if runTestInternal "$@"; then
+    true
+  else
+    if [ $contin = 0 ]; then
+      exit 2
+    fi
+  fi
+}
+
+# run a single test, and return 0 if it succeeds
+runTestInternal() {
+  result=0
+
+  if [ "$curtest" -lt "$skip" ]; then
+    echo "[$curtest]: skipping $*"
+  else
+    # print a visually distinctive banner
+    echo "------------ [$curtest] $* ------------"
+    ("$@")
+    result=$?
+    if [ $result -ne 0 ]; then
+      unexFailure=`expr $unexFailure + 1`
+      echo ""
+      log  "[$curtest] A regression test command failed:"
+      log  "  $*"
+    else
+      success=`expr $success + 1`
+    fi
+
+    if $runOneTest; then
+      # exit with code 0 if the test succeeded
+      exit `expr 1 - $success`
+    fi
+  fi
+
+  curtest=`expr $curtest + 1`
+  return $result
+}
+
+# run a big test, only if the user wants to
+bigTest() {
+  if [ $big = 1 ]; then
+    runTest "$@"
+  fi
+}
+
+# run a test that is expected to fail
+#
+# This is *not* intended for "here's a test that should fail", but
+# rather "here's a test that does fail right now, but we want to
+# eventually fix it".  The former can be handled using multitest.pl,
+# or a similar mechanism for inverting the test sense.
+failTest() {
+  reason="$1"
+  shift
+
+  if [ "$reason" = "" ]; then
+    echo "failTest $*: must supply a failure reason"
+    exit 4
+  fi
+
+  if [ "$curtest" -lt "$skip" ]; then
+    echo "[$curtest]: (fail) skipping $*"
+  else
+    echo "------------ [$curtest] (fail) $* ------------"
+    if "$@"; then
+      unexSuccess=`expr $unexSuccess + 1`
+      echo ""
+      log  "[$curtest] GOOD NEWS: A regression test that used to fail ($reason) now succeeds:"
+      log  "  $*"
+      if [ $contin = 0 ]; then
+        exit 2
+      fi
+    else
+      failure=`expr $failure + 1`
+      echo "Failed as expected: $reason"
+    fi
+
+    if $runOneTest; then
+      # exit with code 0 if the test failed
+      exit `expr 1 - $failure`
+    fi
+  fi
+
+  curtest=`expr $curtest + 1`
+}
+
+# run a failing big test
+bigFail() {
+  if [ $big = 1 ]; then
+    failTest "$@"
+  fi
+}
+
+# grep for lines containing both words, in first argument source file
+grepBoth() {
+  grep -w $2 $1 | grep -w $3
+}
+
+
+# ---------- test C++ parser ------------
+
+# by using shell functions we can make it easy to comment-out
+# or change to 'fail' status those tests that are not working at
+# some given time
+testparse() {
+  runTest perl ./multitest.pl ./ccparse in/$1
+}
+testparse_strict() {
+  # this is for tests that include things that should be diagnosed
+  # as errors, but (for the moment) require the "strict" flag for
+  # that to occur
+  #
+  # 2005-03-05: I am trying to move towards a state where 'strict'
+  # processing is *always* performed, so I am gradually adding
+  # _strict to certain tests that are or have been problematic;
+  # eventually I will remove _strict altogether and make that behavior
+  # be the default.
+  #
+  # 2005-03-09: The flag that "strict" used to control is now on
+  # by default, though it can be disabled with "-tr permissive".
+  # I will leave "testparse_strict", but not use it anymore.
+  runTest perl ./multitest.pl ./ccparse -tr strict in/$1
+}
+
+# run the parser with some specific tracing flag(s) added
+testparse_special() {
+  runTest perl ./multitest.pl ./ccparse -tr $1 in/$2
+}
+
+failparse() {
+  if [ "$2" = "" ]; then
+    echo "failparse $1: failparse takes two arguments"
+    exit 4
+  fi
+  failTest "$2" perl ./multitest.pl ./ccparse in/$1
+}
+
+failparse_special() {
+  if [ "$3" = "" ]; then
+    echo "failparse_special $2: failparse_special takes three arguments"
+    exit 4
+  fi
+  failTest "$3" perl ./multitest.pl ./ccparse -tr $1 in/$2
+}
+
+# ---- BEGIN: lots of tests ----
+# (this block of tests is parsed by another program, so should stick to
+# the uniform syntax below)
+testparse t0001.cc
+testparse t0002.cc
+testparse t0003.cc
+testparse t0004.cc
+testparse t0005.cc
+testparse t0006.cc
+testparse t0007.cc
+testparse t0008.cc
+testparse t0009.cc
+testparse t0010.cc
+testparse t0011.cc
+testparse t0012.cc
+testparse t0013.cc
+testparse t0014.cc
+testparse t0014a.cc
+testparse t0015.cc
+testparse t0016.cc
+testparse t0017.cc
+testparse t0018.cc
+testparse t0019.cc
+testparse t0020.cc
+testparse t0021.cc
+testparse t0022.cc
+testparse t0023.cc
+testparse t0024.cc
+testparse t0025.cc
+testparse t0026.cc
+testparse t0027.cc
+testparse t0028.cc
+testparse t0029.cc
+testparse t0030.cc
+testparse t0030a.cc
+testparse t0030b.cc
+testparse t0031.cc
+testparse t0032.cc
+testparse t0033.cc
+testparse t0034.cc
+testparse t0035.cc
+testparse t0036.cc
+testparse t0037.cc
+testparse t0038.cc
+testparse t0039.cc
+testparse t0040.cc
+testparse t0041.cc
+testparse t0042.cc
+testparse t0043.cc
+testparse t0044.cc
+testparse t0045.cc
+testparse t0046.cc
+testparse t0047.cc
+testparse t0048.cc
+testparse t0049.cc
+testparse t0050.cc
+testparse t0051.cc
+testparse t0052.cc
+testparse t0053.cc
+testparse t0054.cc
+testparse t0055.cc
+testparse t0056.cc
+testparse t0057.cc
+testparse t0058.cc
+testparse t0059.cc
+testparse t0060.cc
+testparse t0061.cc
+testparse t0062.cc
+testparse t0063.cc
+testparse t0064.cc
+testparse t0065.cc
+testparse t0066.cc
+testparse t0067.cc
+testparse t0068.cc
+testparse t0069.cc
+testparse t0070.cc
+testparse t0071.cc
+testparse t0072.cc
+testparse t0073.cc
+testparse t0074.cc
+testparse t0075.cc
+testparse t0076.cc
+testparse t0077.cc
+testparse t0078.cc
+testparse t0079.cc
+testparse t0080.cc
+testparse t0081.cc
+testparse t0082.cc
+testparse t0083.cc
+testparse t0084.cc
+testparse t0085.cc
+testparse t0086.cc
+testparse t0087.cc
+testparse t0088.cc
+testparse t0089.cc
+testparse t0090.cc
+testparse t0091.cc
+testparse t0092.cc
+testparse t0093.cc
+testparse t0094.cc
+testparse t0095.cc
+testparse t0096.cc
+testparse t0097.cc
+testparse t0098.cc
+testparse t0099.cc
+testparse t0100.cc
+testparse t0101.cc
+testparse t0102.cc
+testparse t0103.cc
+testparse t0104.cc
+testparse t0105.cc
+testparse t0106.cc
+testparse t0107.cc
+testparse t0108.cc
+testparse t0108b.cc
+testparse t0109.cc
+testparse t0110.cc
+testparse t0111.cc
+testparse t0112.cc
+testparse t0113.cc
+testparse t0114.cc
+testparse t0115.cc
+testparse t0116.cc
+testparse t0117.cc
+testparse t0118.cc
+testparse t0119.cc
+testparse t0120.cc
+testparse t0121.cc
+testparse t0122.cc
+testparse t0123.cc
+testparse t0124.cc
+testparse t0125.cc
+testparse t0126.cc
+testparse t0127.cc
+testparse t0128.cc
+testparse t0129.cc
+testparse t0130.cc
+testparse t0131.cc
+testparse t0132.cc
+testparse t0133.cc
+testparse t0134.cc
+testparse t0135.cc
+testparse t0136.cc
+testparse t0137.cc
+testparse t0138.cc
+testparse t0139.cc
+testparse t0140.cc
+testparse t0141.cc
+testparse t0142.cc
+testparse t0143.cc
+testparse t0144.cc
+testparse t0145.cc
+testparse t0146.cc
+testparse t0147.cc
+testparse t0148.cc
+testparse t0149.cc
+testparse t0150.cc
+testparse t0151.cc
+testparse t0152.cc
+testparse t0153.cc
+testparse t0154.cc
+testparse t0155.cc
+testparse t0156.cc
+testparse t0157.cc
+testparse t0158.cc
+testparse t0159.cc
+testparse t0160.cc
+testparse t0161.cc
+testparse t0162.cc
+testparse t0163.cc
+testparse t0164.cc
+testparse t0165.cc
+testparse t0166.cc
+testparse t0167.cc
+testparse t0168.cc
+testparse t0169.cc
+testparse t0170.cc
+testparse t0171.cc
+testparse t0172.cc
+testparse t0173.cc
+testparse t0174.cc
+testparse t0175.cc
+testparse t0176.cc
+testparse t0177.cc
+testparse t0178.cc
+testparse t0179.cc
+testparse t0180.cc
+testparse t0181.cc
+testparse t0182.cc
+testparse t0183.cc
+testparse t0184.cc
+testparse t0185.cc
+testparse t0186.cc
+testparse t0187.cc
+testparse t0188.cc
+testparse t0189.cc
+testparse t0190.cc
+testparse t0191.cc
+testparse t0192.cc # used to fail due to "forward template function"
+testparse t0193.cc
+testparse t0194.cc
+testparse t0195.cc
+testparse t0196.cc
+testparse t0197.cc
+testparse t0198.cc
+failparse t0199.cc "unimplemented: alpha conv + default arg"
+testparse t0200.cc
+testparse t0201.cc
+testparse t0202.cc
+testparse t0203.cc
+testparse t0204.cc
+testparse t0205.cc
+testparse t0206.cc
+testparse t0207.cc
+testparse t0208.cc
+testparse t0209.cc
+testparse t0210.cc
+testparse t0211.cc
+testparse t0212.cc
+testparse t0213.cc
+testparse t0214.cc
+# even g++ won't compile this; I'll bet not legal C++, so no point in testing it
+#failparse t0215.cc "(fill in a reason here)"
+testparse t0216.cc
+testparse t0217.cc
+testparse t0218.cc
+testparse t0219.cc
+testparse t0220.cc
+testparse t0221.cc
+testparse t0222.cc
+testparse t0223.cc
+testparse t0224.cc
+testparse t0225.cc
+testparse t0226.cc
+testparse t0227.cc
+testparse t0228.cc
+# tested below after I can query the gnu flag
+#testparse t0228b.cc
+testparse t0229.cc
+testparse t0230.cc
+testparse t0231.cc
+testparse t0232.cc
+testparse t0233.cc
+testparse t0234.cc
+testparse t0235.cc
+testparse t0236.cc
+testparse t0237.cc
+testparse t0238.cc
+testparse t0239.cc
+testparse t0240.cc
+testparse t0241.cc
+testparse t0242.cc
+testparse t0243.cc
+testparse t0244.cc
+testparse t0245.cc
+testparse t0246.cc
+testparse t0247.cc
+testparse t0248.cc
+testparse t0249.cc
+testparse t0250.cc
+testparse t0251.cc
+testparse t0252.cc
+testparse t0253.cc
+testparse t0254.cc
+testparse t0255.cc
+testparse t0256.cc
+testparse t0257.cc
+testparse t0258.cc
+testparse t0259.cc
+testparse t0260.cc
+testparse t0261.cc
+testparse t0262.cc
+testparse t0263.cc
+testparse t0264.cc
+testparse t0265.cc
+testparse t0266.cc
+# it's not clear whether t0267.cc is valid C++ or not, no point in testing it here
+testparse t0268a.cc
+testparse t0268.cc
+testparse t0269.cc
+testparse t0270.cc
+testparse t0271.cc
+testparse t0272.cc
+testparse t0273.cc
+testparse t0274.cc
+testparse t0275.cc
+testparse t0276.cc
+testparse t0277.cc
+testparse t0278.cc
+testparse_special eagerFBodyInst t0279.cc
+testparse t0280.cc
+testparse t0281.cc
+testparse t0282.cc
+testparse t0283.cc
+testparse t0284.cc
+testparse t0285.cc
+testparse t0286.cc
+testparse t0287.cc
+testparse t0288.cc
+testparse t0289.cc # "repeated using declarations"
+testparse t0290.cc
+testparse t0290a.cc
+testparse t0291.cc
+testparse t0292.cc
+testparse t0293.cc
+testparse t0294.cc
+testparse t0295.cc
+testparse t0296.cc
+testparse t0297.cc
+testparse t0298.cc
+testparse t0299.cc
+testparse t0300.cc
+testparse t0301.cc
+testparse t0302.cc
+testparse t0303.cc
+testparse t0304.cc
+testparse t0305.cc
+testparse t0306.cc
+testparse t0307.cc
+testparse t0308.cc
+testparse t0309.cc
+testparse t0310.cc
+testparse t0311.cc
+testparse t0312.cc
+testparse t0313.cc
+testparse t0314.cc
+testparse t0315.cc
+testparse t0316.cc
+testparse t0317.cc
+testparse t0318.cc
+testparse t0319.cc
+testparse t0320.cc
+testparse t0321.cc
+testparse t0322.cc
+testparse t0323.cc
+testparse t0324.cc
+testparse t0325.cc
+testparse t0326.cc
+testparse t0327.cc
+testparse t0328.cc
+testparse t0329.cc
+testparse t0330.cc
+testparse t0331.cc
+testparse t0332.cc
+testparse t0333.cc
+testparse t0334.cc
+testparse t0335.cc
+testparse t0336.cc
+testparse t0337.cc
+testparse t0338.cc
+testparse t0339.cc
+testparse t0340.cc
+testparse t0341.cc
+testparse t0342.cc
+testparse t0343.cc
+testparse t0344.cc
+testparse t0345.cc
+testparse t0346.cc
+testparse t0347.cc
+testparse t0348.cc
+testparse t0349.cc
+testparse t0350.cc
+testparse t0351.cc
+testparse t0352.cc
+testparse t0353.cc
+testparse t0354.cc
+testparse t0355.cc
+testparse t0356.cc
+testparse t0357.cc
+testparse t0358.cc
+testparse t0359.cc
+testparse t0360.cc
+
+# this tests that Elsa diagnoses erroneous input, but gcc accepts it,
+# so Elsa only rejects in ANSI mode
+testparse_special ansi t0361.cc
+
+testparse t0362.cc
+testparse t0363.cc
+testparse t0364.cc
+testparse t0365.cc
+testparse t0366.cc
+testparse t0367.cc
+testparse t0368.cc
+testparse t0369.cc
+testparse t0370.cc
+testparse t0371.cc
+testparse t0372.cc
+testparse t0373.cc
+testparse t0374.cc
+testparse t0375.cc
+testparse t0376.cc
+testparse t0377.cc
+testparse t0378.cc
+testparse t0379.cc
+testparse t0380.cc
+testparse t0381.cc
+testparse t0382.cc
+testparse t0383.cc
+testparse t0384.cc
+testparse t0385.cc
+testparse t0386.cc
+testparse t0387.cc
+testparse t0388.cc
+testparse t0389.cc
+testparse t0390.cc
+testparse t0391.cc
+testparse t0392.cc
+testparse t0393.cc
+testparse t0394.cc
+testparse t0395.cc
+testparse t0396.cc
+testparse t0397.cc
+testparse t0398.cc
+testparse t0399.cc
+testparse t0400.cc
+testparse t0401.cc
+testparse t0402.cc
+testparse t0403.cc
+testparse t0404.cc
+testparse t0405.cc
+testparse t0406.cc
+testparse t0407.cc
+testparse t0408.cc
+testparse t0409.cc
+testparse t0410.cc
+testparse t0411.cc
+testparse t0412.cc
+testparse t0413.cc
+testparse t0414.cc
+testparse t0415.cc
+testparse t0416.cc
+failparse t0417.cc "invalid template declarations are not rejected"
+testparse t0418.cc
+testparse t0419.cc
+testparse t0420.cc
+testparse t0421.cc
+testparse t0422a.cc
+testparse t0422.cc
+testparse t0423.cc
+testparse t0424.cc
+testparse t0425.cc
+testparse t0426.cc
+testparse t0427.cc
+testparse t0428.cc
+testparse t0429.cc
+testparse t0430.cc
+testparse t0431.cc
+testparse t0432.cc
+testparse t0433.cc
+testparse t0434.cc
+failparse t0435.cc "need for ArrayType with dependent size"
+failparse t0436.cc "pointer-to-member names processed in wrong order"
+testparse t0437.cc
+testparse t0438a.cc
+testparse t0438.cc
+failparse t0439.cc "default args in explicit spec"
+failparse t0440.cc "default args in explicit spec + DQTs"
+testparse t0441a.cc
+testparse t0441.cc
+testparse t0442.cc
+testparse t0443.cc
+testparse t0444.cc
+testparse t0445.cc
+testparse t0446.cc
+testparse t0447.cc
+testparse t0448.cc
+testparse t0449.cc
+testparse t0450.cc
+testparse t0451.cc
+testparse t0452.cc
+testparse t0453.cc
+testparse t0454.cc
+testparse t0455.cc
+testparse t0456.cc
+testparse t0457.cc
+testparse t0458.cc
+testparse t0459.cc
+testparse t0460.cc
+testparse t0461.cc
+testparse t0462.cc
+testparse t0463.cc
+failparse t0464.cc "ambiguous ExpressionList not disambiguated"
+failparse t0465.cc "ambiguous TemplateParameter, problem disambiguation declarations"
+failparse t0466.cc "ambiguous declaration"
+testparse t0467.cc
+testparse t0468.cc
+testparse t0469.cc
+testparse t0470.cc
+testparse t0471.cc
+failparse t0472.cc "failure to reject invalid code: friend name injection"
+testparse t0473.cc
+testparse t0474.cc
+testparse t0475.cc
+testparse t0476.cc
+testparse t0477.cc
+testparse t0478.cc
+testparse t0479.cc
+testparse t0480.cc
+testparse t0481.cc
+testparse t0482.cc
+testparse t0483.cc
+testparse t0484.cc
+testparse t0485.cc
+testparse t0486.cc
+testparse t0487.cc
+testparse t0487b.cc
+testparse t0488.cc
+testparse t0489.cc
+testparse t0490.cc
+testparse t0491.cc
+testparse t0492.cc
+testparse t0493.cc
+testparse t0494.cc
+testparse t0495.cc
+testparse t0496.cc
+testparse t0497.cc
+testparse t0498.cc
+testparse t0499.cc
+failparse t0500.cc "template template parameter"
+testparse t0501.cc
+testparse t0502.cc
+testparse t0503.cc
+testparse t0504.cc
+testparse t0505.cc
+testparse t0506.cc
+testparse t0507.cc
+testparse t0508.cc
+failparse t0509.cc "const-eval'able variable is actually reference templ arg"
+testparse t0510.cc
+testparse t0511.cc
+testparse t0512.cc
+testparse t0513.cc
+testparse t0514.cc
+testparse t0515.cc
+testparse t0516.cc
+testparse t0517.cc
+# t0518 through t0521 are tested below, outside the lots-of-tests section
+testparse t0522.cc
+testparse t0523.cc
+testparse t0524.cc
+testparse t0525.cc
+testparse t0526.cc
+testparse t0527.cc
+testparse t0528.cc
+testparse t0529.cc
+testparse t0530.cc
+testparse t0531.cc
+testparse t0532.cc
+testparse t0533.cc
+testparse t0534.cc
+testparse t0535.cc
+testparse t0536.cc
+testparse t0537.cc
+testparse t0538.cc
+# t0539 is more complicated, and is handled below
+testparse t0540.cc
+testparse t0541.cc
+testparse t0542.cc
+testparse t0543.cc
+testparse t0544.cc
+testparse t0545.cc
+testparse t0546.cc
+testparse t0547.cc
+testparse t0548.cc
+testparse t0549.cc
+testparse t0550.cc
+testparse t0551.cc
+testparse t0552.cc
+testparse t0553.cc
+failparse t0554.cc "instantiation of static data template members not implemented"
+testparse_special ansi t0555.cc
+failparse t0556.cc "problem parsing elaborated type of static data member template"
+testparse t0557.cc
+testparse t0558.cc
+testparse t0559.cc
+testparse t0560.cc
+testparse t0561.cc
+testparse t0562.cc
+testparse t0563.cc
+testparse t0564.cc
+failparse t0565.cc "unhandled MemberDeclaration ambiguity"
+testparse t0566.cc
+testparse t0567.cc
+testparse t0568.cc
+testparse t0569.cc
+testparse t0570.cc
+testparse t0571.cc
+testparse t0572.cc
+testparse t0573.cc
+testparse t0574.cc
+testparse t0575.cc
+testparse t0576.cc
+failparse t0577.cc "flawed abstract enumerator value processing"
+# t0578.cc is arguably valid code, but nobody can handle it
+
+# another set of tests, generally isolated by Daniel
+testparse d0001.cc
+testparse d0002.cc
+testparse d0003.cc
+testparse d0004.cc
+testparse d0005.cc
+testparse d0006.cc
+testparse d0007.cc
+testparse d0008.cc
+testparse d0009.cc
+testparse d0010.cc
+testparse d0011.cc
+testparse d0012.cc
+testparse d0013.cc
+testparse d0014.cc
+testparse d0015.cc
+testparse d0016.cc
+testparse d0017.cc
+testparse d0018.cc
+testparse d0019.cc
+testparse d0020.cc
+testparse d0021.cc
+testparse d0022.cc
+testparse d0023.cc
+testparse d0024.cc
+testparse d0025.cc
+testparse d0026.cc
+testparse d0027.cc
+testparse d0028.cc
+testparse d0029.cc
+# break
+testparse d0032.cc
+# break
+testparse d0034.cc
+testparse d0035.cc
+testparse d0036.cc
+testparse d0037.cc
+testparse d0038.cc
+testparse d0039.cc
+# d0040.cc and d0041.cc are illegal C++
+# d0042.cc through d0045.cc were less cleaned up versions of d0046.cc
+testparse d0046.cc
+testparse d0046elab.cc
+testparse d0047.cc
+testparse d0048.cc
+testparse d0048elab.cc
+testparse d0049.cc
+testparse d0050.cc
+testparse d0050elab.cc
+testparse d0051.cc
+testparse d0051elab.cc
+testparse d0052.cc
+testparse d0053.cc
+testparse d0054.cc
+testparse d0055.cc
+testparse d0056.cc
+testparse d0057.cc
+testparse d0058.cc
+testparse d0059.cc
+testparse d0060.cc
+testparse d0061.cc
+# these aren't valid C++, no point in testing
+#failparse d0062.cc "during type matching, recursion depth exceeded the limit"
+#failparse d0063.cc "during type matching, recursion depth exceeded the limit"
+testparse d0064.cc
+testparse d0065.cc
+testparse d0066.cc
+testparse d0067.cc
+testparse d0068.cc
+testparse d0069.cc
+testparse d0070.cc
+testparse d0071.cc
+testparse d0072.cc
+testparse d0073.cc
+testparse d0074.cc
+testparse d0075.cc
+testparse d0079.cc
+testparse d0080.cc # "inheriting from dependent qualified type"
+testparse d0084.cc
+
+# tests a rule enforced only in ANSI mode
+runTest perl ./multitest.pl ./ccparse -tr ansi in/d0087.cc
+
+testparse d0088.cc
+testparse d0089.cc
+testparse d0090.cc
+testparse d0091.cc
+testparse d0097.cc
+testparse d0098.cc
+testparse d0099.cc
+testparse d0100.cc
+testparse d0101.cc
+testparse d0102.cc
+testparse d0103.cc
+testparse d0104.cc
+testparse d0105.cc
+testparse d0106.cc
+testparse d0107.cc
+testparse d0108.cc
+testparse d0109.cc # "duplicate 'using' declaration"
+testparse d0110.cc # "class specialization without 'template' prefix?"
+testparse d0111.cc
+testparse d0112.cc # "gcc-2 bug"
+testparse d0113.cc
+testparse d0114.cc
+# sm: this is invalid input
+#failparse d0115.cc "gcc-2 bug: cannot find standard namespace"
+testparse d0116.cc
+testparse d0117.cc
+testparse d0118.cc
+testparse d0119.cc
+testparse d0120.cc
+testparse_special ansi d0121.cc
+# sm: this is invalid C++
+#failparse d0123.cc "from the kernel; works in C mode but in C++ mode can't convert void* to function pointer"
+testparse d0124.cc
+
+testparse k0001.cc #"left side of .* must be a class or reference to a class"
+testparse k0002.cc #"template function declared in another class (as a friend)"
+testparse k0003.cc #"template argument from static const member of template class"
+testparse k0004.cc #"non-typename template argument"
+testparse k0005.cc #"declaring a constructor with class name"
+testparse k0005a.cc #"declaring variables and member functions with class name"
+testparse k0006.cc #"error: E_alignofType is not constEval'able"
+testparse k0007.cc
+# renamed k0008.cc to gnu/g0022.cc because it is a GNU feature
+testparse k0009.cc #"clash between function and instantiated template parameter member"
+testparse_special only_works_on_32bit k0010.cc
+testparse k0011.cc
+testparse k0012.cc
+testparse k0013.cc #"cannot convert argument type `float (*)[4]' to parameter 1 type `float const (*)[4]'"
+testparse k0014.cc #"ambiguous lookup of base class constructor with constructor of same class with different template argument"
+testparse k0015.cc #"catch namespace_qualified::class_name"
+testparse k0016.cc #"explicit instantiation of template member function"
+testparse k0017.cc #"using namespace std' before 'namespace std"
+testparse k0018.cc #"member function taking an array argument with default value __null"
+testparse k0019.cc #"template parameters named for ctor/dtor"
+testparse k0020.cc #"deleting pointers of template-type"
+testparse k0021.cc #"calling a templated function pointer"
+testparse k0022.cc #"explicit instantiation of template loses original template parameter names"
+testparse k0023.cc #"typedef pointer to member function in template"
+testparse k0024.cc #"overloaded function resolution in an array"
+testparse k0025.cc #"fully-namespace-qualified base class initialization"
+testparse k0026.cc #"template argument default value from another template class"
+testparse k0027.cc #"reprSize of a sizeless array"
+
+# invalid
+#failparse k0028.cc "definition of member function declared in another namespace"
+
+testparse k0029.cc #'ambiguous overload "char* const*" vs "char const* const*"'
+testparse k0030.cc #'"and" and "or" keywords'
+testparse k0031.cc #"typedef used to declare a member function"
+testparse k0032.cc #"converting <integral>& to integral"
+testparse k0033.cc #"casting function pointer with throw() to/from no throw"
+
+# sm: invalid, strange gcc bug (not worth supporting, icc does not)
+#failparse k0034.cc "undefined instanceless unions repeating members"
+
+testparse k0035.cc #"ambiguous int+sizeof(struct{})"
+testparse k0036.cc #"taking the address of a string (?!)"
+testparse k0037.cc #"new array of pointers"
+testparse k0038.cc #"templatized struct as template parameter to function"
+testparse k0039.cc #"funky namespace resolution after 'using namespace'"
+testparse k0040.cc #"instantiating a template with unnamed template parameter"
+testparse k0041.cc #"inner struct defined inline in an inner struct not defined inline"
+testparse k0042.cc #"computed array size expression as an assignment"
+testparse k0043.cc #"voiding the result of a member call"
+
+# sm: this is not valid C++; perhaps we should keep a separate
+# set of tests of "legacy" C++ that worked in older gcc, just
+# in case we decide to support it at some point?
+#failparse k0044.cc "template super class member variable"
+
+testparse k0045.cc #"'operator delete' redeclared without throw()"
+testparse k0046.cc #"anonymous inline struct fields"
+testparse k0046a.cc #"anonymous struct fields in a union"
+testparse_special ansi k0046b.cc
+testparse k0047.cc #"template<T> operator T*"
+testparse k0048.cc #"re-declaration of template base-class member"
+testparse k0049.cc #"'restrict' as name"
+testparse k0050.cc #"definition of a function without 'const' on a basic type"
+testparse k0051.cc #"defining static-member array without array size"
+testparse k0052.cc #"operator& returning other pointer type"
+testparse k0053.cc #"calling a function with a pointer to an undefined template class"
+testparse k0054.cc #"constructor member initialization without namespace qualifier"
+
+# original was invalid; I have inverted the test's sense
+testparse k0055.cc #"using 'class' instead of 'typename' for template-class typedefs"
+
+testparse k0056.cc #"template friend function"
+testparse k0057.cc #"template friend function (2)"
+testparse k0058.cc #"converting to types from parameter templates"
+
+### </quarl-testcases-c++>
+
+# Simon sfg@cs
+testparse sg0001.cc # invoke dtor on const object
+
+# ---- END: lots of tests ----
+
+# this hacky variation of t0151.cc *does* work
+runTest perl ./multitest.pl ./five-errors in/t0151.cc
+
+# test some specialized error handling
+testparse_special expect_xfailure      t0518.cc
+testparse_special expect_confused_bail t0519.cc
+testparse_special expect_xfailure      t0520.cc
+testparse_special expect_confused_bail t0521.cc
+
+# test permissive-mode error diagnosis
+testparse_special permissive gnu/bugs/gb0005.cc
+testparse_special permissive gnu/bugs/gb0006.cc
+
+# t0539 has many variants; build them, then run them
+${MAKE:-make} -C in t0539 || exit
+testparse t0539_1.cc
+testparse t0539_2.cc
+testparse t0539_3.cc
+testparse t0539_4.cc
+testparse t0539_5.cc
+testparse t0539_6.cc
+testparse t0539_7.cc
+testparse t0539_8.cc
+testparse t0539_9.cc
+testparse t0539_10.cc
+testparse t0539_11.cc
+
+
+# examples from C++ standard
+#
+# a few examples have parts commented-out:
+#   7.3.3c.cc: nerfed because member templates aren't implemented
+#   7.3.3f.cc: "int i; int i;" is supposed to be allowed
+#   7.3.3k.cc: I don't detect a purported ambiguity
+#   7.3.4e.cc: major design flaw: cannot return sets from lookup functions
+#   (plus more from before I started maintaining this list ...)
+rm -f in/std/*.error*.cc
+for fn in in/std/*.cc; do
+  runTest perl ./multitest.pl ./ccparse -tr ansi "$fn"
+done
+
+# for the benefit of gcov
+runTest ./ccparse -tr printHierarchies,ansi in/std/3.4.5.cc
+
+# more in another (private) repository, if present
+if [ -f ../cppstdex/regrtest_inner ]; then
+  source ../cppstdex/regrtest_inner
+fi
+
+# is the gnu extension built?
+use_gnu=false
+if egrep "USE_GNU: +1" config.summary >/dev/null; then
+  use_gnu=true
+  echo "gnu extensions are enabled"
+else
+  echo "gnu extensions are not enabled"
+fi
+
+if $use_gnu; then
+  # test gnu extensions
+  testparse gnu/g0001.cc
+  testparse gnu/g0002.cc
+  testparse gnu/g0003.cc
+  testparse gnu/g0004.cc
+  testparse gnu/g0005.cc
+  testparse gnu/g0006.cc
+  testparse gnu/g0007.cc
+  testparse gnu/g0008.cc
+  # g0009.c is a C test
+  testparse gnu/g0010.cc
+  testparse gnu/g0011.cc
+  testparse gnu/g0012.cc
+  testparse gnu/g0013.cc
+  testparse gnu/g0014.cc
+  testparse gnu/g0015.cc
+  # g0016.cc is documentation, not a test
+  testparse gnu/g0017.cc
+  testparse gnu/g0018.cc
+  testparse gnu/g0019.cc
+  # g0020.cc is documentation
+  testparse gnu/g0021.cc
+  testparse gnu/g0022.cc #"addresses of labels and computed goto"
+  testparse gnu/g0023.cc
+  testparse gnu/g0024.cc
+  testparse gnu/g0025.cc
+  testparse gnu/g0026.cc
+  testparse gnu/g0027.cc
+  testparse gnu/g0028.cc
+  testparse gnu/g0029.cc
+  testparse gnu/g0030.cc
+  testparse gnu/g0031.cc
+  testparse gnu/g0032.cc
+  failparse gnu/g0033.cc "wrong typeof(array[]) semantics"
+
+  testparse gnu/t0124.cc
+  testparse gnu/t0125.cc
+  testparse gnu/t0127.cc
+  testparse gnu/t0128.cc
+  testparse gnu/t0129.cc
+  testparse gnu/t0130.cc
+  testparse gnu/t0131.cc
+  testparse gnu/t0132.cc
+
+  testparse gnu/d0076.cc
+  testparse gnu/d0078.cc
+  testparse gnu/d0081.cc
+  testparse gnu/d0082.cc
+  testparse gnu/d0085.cc
+  testparse gnu/d0086.cc
+  testparse gnu/d0089.cc
+  testparse gnu/d0092.cc
+  testparse gnu/d0093.cc
+  testparse gnu/d0094.cc
+
+  testparse gnu/bugs/gb0008.cc
+  testparse gnu/bugs/gb0009.cc
+  # gnu/bugs/gb0010.cc not supported
+  testparse gnu/bugs/gb0011.cc
+  testparse gnu/bugs/gb0012.cc
+
+  # test c99 extensions
+  for fn in in/c99/*.c; do
+    runTest ./ccparse -tr c_lang "$fn"
+  done
+
+  testparse gnu/k0001.cc #"({...}) cannot be empty"
+  testparse gnu/k0002.cc #"__builtin_va_*"
+  testparse gnu/k0003.cc #"gcc 3.4 __builtin_* math functions"
+  testparse gnu/k0004.cc #"operator <?"
+  testparse gnu/k0005.cc #"comparing long long to enum value"
+
+else # tests that only pass when not in gnu mode
+  testparse t0228b.cc
+
+fi   # end of 'if $use_gnu; then'
+
+# idempotency checks; known problems:
+#   25: Scope operator not being printed before using type.
+#   27, 28: Templates not being printed correctly when the template
+#           arguments are used within the template.
+#   30: scope not printing.
+#   34: template arguments to a class, such as "A<T>", get printed as
+#       "template <class T> class A" instead
+#   35, 36: template <class ...> gets dropped
+#   t0033, t0105: trivial whitespace error prob due to elaboration modifying the ast
+# note that the 'sed' command includes a literal tab character..
+
+# template modifications broke pretty printing having to do with
+# templates
+#   26: "template<...>" prefix to function not printing, I think
+# UPDATE: seems to work now except that the instantiated function gets
+# printed which is not idempotent
+
+list=`echo " \
+  t0001.cc   t0002.cc  t0003.cc  t0004.cc   t0005.cc   t0006.cc  t0007.cc
+  t0008.cc   t0009.cc  t0010.cc  t0011.cc   t0012.cc   t0013.cc  t0014.cc
+  t0014a.cc  t0015.cc  t0016.cc  t0017.cc   t0018.cc   t0019.cc  t0020.cc
+  t0021.cc   t0022.cc  t0023.cc  t0024.cc              t0026.cc
+             t0029.cc            t0030a.cc  t0030b.cc  t0031.cc  t0032.cc
+                                            t0037.cc   t0038.cc  t0039.cc
+  t0040.cc   t0041.cc  t0042.cc  t0043.cc
+                                            t0100.cc   t0101.cc  t0102.cc
+                                 t0106.cc
+                                                                 t0123.cc \
+  " | fmt -1 | sed 's|^[ 	]*|in/|'`
+
+runTest perl ./idemcheck -d outdir $list
+
+# 2005-08-11: nerfed the GNU idemchecks.  They are failing now that I
+# have implemented the aggregate-type restriction for initializers,
+# and there's no easy solution.
+
+
+# test the parser in C mode
+testCparse() {
+  runTest perl ./multitest.pl ./ccparse -tr c_lang in/$1
+}
+testCparse_special() {
+  runTest perl ./multitest.pl ./ccparse -tr c_lang,$1 in/$2
+}
+failCparse() {
+  if [ "$2" = "" ]; then
+    echo "failparse $1: failparse takes two arguments"
+    exit 4
+  fi
+  failTest "$2" perl ./multitest.pl ./ccparse -tr c_lang in/$1
+}
+testCparse c/t0001.c
+testCparse c/t0002.c
+testCparse c/t0003.c
+testCparse c/t0004.c
+testCparse c/t0005.c
+testCparse c/t0006.c
+testCparse c/t0007.c
+testCparse c/t0008.c
+testCparse c/t0009.c
+testCparse c/t0010.c
+testCparse c/t0011.c
+testCparse c/t0012.c
+testCparse c/t0013.c
+testCparse c/t0014.c
+testCparse c/t0015.c
+testCparse c/t0016.c
+testCparse c/t0017.c
+testCparse c/t0018.c
+testCparse c/t0019.c
+
+# for gcov
+runTest perl ./multitest.pl ./ccparse -tr ansi_c99 in/c/t0020.c
+runTest perl ./multitest.pl ./ccparse -tr ansi_c,warnings in/c/t0021.c
+
+testCparse c/t0022.c
+failCparse c/t0023.c "unhandled KandRSimpleDeclaration ambiguity"
+testCparse c/t0024.c
+testCparse c/t0025.c
+testCparse c/t0026.c
+
+testCparse gnu/d0096.c
+testCparse c/dC0010.c #"f(u8 register) doesn't parse"
+testCparse c/dC0011.c #"((size_t) &((struct scsi_cmnd *)0)->q) doesn't const eval"
+testCparse c/dC0012.c
+testCparse c/dC0013.c #"in C, a member with the same name as a type doesn't shadow the type"
+testCparse c/dC0017.c
+testCparse gnu/d0122.c
+testCparse c/d0124b.c
+
+# dsw: fix these
+testCparse c/dC0018.c # const-eval ambiguous expr
+testCparse c/dC0019.c # define a type in a 'sizeof' expression
+testCparse c/dC0020.c # define a type in a cast
+testCparse c/dC0021.c # C99 dynamic parameter array
+
+# dsw: perhaps we should change the implementation of reprSize()
+testCparse c/dC0022.c # sizeof dynamically-sized multidimensional array
+
+testCparse c/dC0023.c # "in gcc, in C mode, a foo and a struct foo are unrelated"
+
+# this is invalid code                                              
+#
+# 2005-08-04: but if people keep feeding me this bug, I guess I will
+# shut up and accept it
+testCparse c/dC0024.c # "bizarreness with redundant and useless typedefs"
+
+testCparse c/dC0025.c # no-info-prototype of main(), then defn
+testCparse c/dC0026.c # implicit int in K&R decl
+testCparse_special gnu_c89 c/dC0027.c # "restrict in non-keyword role"
+testCparse c/dC0028.c # compound lit in ambiguous context
+testCparse_special gnu_c89 c/dC0029.c # "restrict in non-keyword role"
+
+testCparse gnu/dC0017.c # "__alignof__ arguments can be full expressions ??"
+testCparse c/dC0030.c # "template disambiguation code??"
+testCparse c/dC0031.c # "can't const-eval size of type that is an array with a dynamic size"
+testCparse c/dC0032.c # "open arrays not handled right"
+
+testparse_special ansi_c c/k0001.c #"typedef int fooint; typedef fooint long;"
+testCparse c/k0002.c #"attempt to create an object of incomplete class `S'"
+testCparse c/k0003.c #"old-style function decl with parentheses around func name"
+testCparse c/k0003a.c #"old-style function decl with parentheses around func name, returning a struct-typedef"
+testCparse c/k0004.c #'"merge nonterm MemberDeclaration"
+testCparse c/k0005.c #"multiply defined enum 'option'"
+testCparse c/k0006.c #"static inline function implicitly returning int"
+testCparse c/k0006a.c #"static inline function implicitly returning int, old-style param decl"
+testCparse c/k0011.c #"ambiguous s->z < 1 || 2 > (3)"
+testCparse c/k0007.c #"duplicate modifiers in C as warning, not error (?)"
+testCparse c/k0008.c #"function call vs type-cast ambiguity"
+testCparse c/k0009.c #"func returning array of function pointers with old-style parm list"
+testCparse c/k0010.c #"'and' keyword"
+
+### </quarl-testcases-c>
+
+# is K&R built?
+use_kandr=false
+if egrep "USE_KANDR: +1" config.summary >/dev/null; then
+  use_kandr=true
+  echo "K&R extensions are enabled"
+else
+  echo "K&R extensions are not enabled"
+fi
+
+if $use_kandr; then
+  # test the parser in C + K&R mode
+  testKANDRparse() {
+    runTest perl ./multitest.pl ./ccparse -tr gnu_kandr_c_lang in/$1
+  }
+  testKANDRparse kandr/t0001.c
+  testKANDRparse kandr/t0002.c
+  testKANDRparse kandr/t0003.c
+  testKANDRparse kandr/t0004.c
+fi
+
+
+# test GNU C
+if $use_gnu; then
+  testCparse gnu/g0009.c
+  testCparse gnu/d0083.c
+  testCparse gnu/t0126.c
+  testCparse gnu/d0095.c
+  testCparse gnu/c0001.c
+  testCparse gnu/c0002.c
+
+  testCparse gnu/dC0001.c # hex floating-point literals
+  testCparse gnu/dC0002.c # arrays of no length are assumed to have one element
+  testCparse gnu/dC0003.c # noInnerClasses: use a struct then define it but inside another
+  testCparse gnu/dC0004.c # can take address of const E_compoundLit
+  testCparse gnu/dC0005.c # extern inline functions
+  testCparse gnu/dC0006.c # more places where 0-length arrays are allowed
+  testCparse gnu/dC0007.c # case 1 ... 3:
+  testCparse gnu/dC0008.c # int a[] = { [1] 0 }; struct A a = { .x 8 };
+  testCparse gnu/dC0009.c # UCHAR8 SampleResolution:2 __attribute__ ((packed));
+  testCparse gnu/dC0014.c # "'u32 long off' doesn't parse"
+  testCparse gnu/dC0015.c # function scope structs can contain arrays of dynamic size
+  testCparse gnu/dC0016.c
+
+  # attribute tests
+  testCparse gnu/attr01.c
+  testCparse gnu/attr02.c
+  testCparse gnu/d0099.c
+
+  # asm tests
+  testCparse gnu/asm01.c
+
+  # gcc C-mode bugs
+  testCparse gnu/bugs/gb0001.c
+
+  # tests (primarily for __attribute__) from CIL
+  testcil() {
+    runTest ./ccparse -tr c_lang in/gnu/cil/$1
+  }
+  failcil() {
+    failTest "$2" ./ccparse -tr c_lang in/gnu/cil/$1
+  }
+
+  testcil align1.i
+  testcil align2.i
+  testcil attr2.i
+  testcil attr3.i
+  testcil attr4.i
+  testcil attr5.i
+  testcil attr6.i
+  testcil bind-zero.i
+  testcil combine_samefn_1.i
+
+  # I haven't researched the standard's opinion on this one, but
+  # I think it should be considered invalid input, because to do
+  # otherwise would be type-unsound!
+  failcil decl1.i "can add volatile later"
+
+  testcil enumattr.i
+  testcil globalprob.i
+  testcil init8.i
+  testcil invalredef.i
+  testcil mode_sizes.i
+  testcil regparm0.i
+  testcil rmtmps-attr.i
+  testcil rmtmps2.i
+  testcil sockaddr.i
+  testcil structattr.i
+  testcil structattr2.i
+  testcil structattr3.i
+  testcil transpunion.i
+  failcil typeof1.i "ambiguous E_sizeofType"
+  testcil warnings-noreturn.i
+fi
+
+
+# msvc
+runTest ./ccparse -tr msvcBugs in/msvc/m0001.cc
+
+
+# final parser checks against the big files, since they've now become
+# my performance measurement files
+if $MAKE in/big; then
+
+testnsparse() {
+  runTest ./ccparse "$1"
+}
+failnsparse() {
+  failTest "$2" ./ccparse "$1"
+}
+
+if [ "$DISABLE_BIG_TESTS" = "" ]; then
+  # put shorter tests first
+  testnsparse in/big/nonport.i
+
+  testnsparse in/big/nsUnicodeToTeXCMRt1.i
+  testnsparse in/big/nsAtomTable.i
+  testnsparse in/big/nsSOAPPropertyBag.i
+  testnsparse in/big/nsCLiveconnectFactory.i
+  testnsparse in/big/nsHTMLEditRules.i
+  testnsparse in/big/nsMsgServiceProvider.i
+fi
+
+else
+  # Even though my in/big/gz/nsAtomTable.i.gz has the right md5sum,
+  # I can't convince gunzip to uncompress it under cygwin with text
+  # mounts (which it should be ignoring since it's getting the file
+  # contents via pipe, and ought to use O_BINARY anyway).
+  echo "Skipping large file tests because could not uncompress them."
+  echo "This may be due to a buggy cygwin gunzip."
+fi
+
+# final arithmetic to report result
+echo ""
+echo "use_gnu: $use_gnu"
+echo "use_kandr: $use_kandr"
+echo "Successful tests               :    $success"
+echo "Failed as expected (known bugs):    $failure"
+if [ $skipdiagnose -ne 0 ]; then
+  echo "Fail to diag. cppstdex errors  :    $skipdiagnose"
+fi
+if [ $contin = 1 ]; then
+  echo "Unexpected success:    $unexSuccess"
+  echo "Unexpected failure:    $unexFailure"
+  if [ -f "$logfile" ]; then
+    cat "$logfile"
+  fi
+fi
+

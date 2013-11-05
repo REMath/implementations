@@ -1,0 +1,19 @@
+  // ---- symbol access ----
+  #define SYMBOL_ACCESS(Thing)                              \
+    /* retrieve, return NULL if not there */                \
+    Thing const *find##Thing##C(char const *name) const;    \
+    Thing *find##Thing(char const *name)                    \
+      { return const_cast<Thing*>(find##Thing##C(name)); }  \
+                                                            \
+    /* retrieve, or create it if not already there */       \
+    Thing *getOrMake##Thing(char const *name);
+
+  SYMBOL_ACCESS(Symbol)        // findSymbolC, findSymbol, getOrMakeSymbol
+  SYMBOL_ACCESS(Terminal)      //   likewise
+  SYMBOL_ACCESS(Nonterminal)   //   ..
+  #undef SYMBOL_ACCESS
+
+  // the inverse of transition: map a target state to the symbol that
+  // would transition to that state (from the given source state)
+  Symbol const *inverseTransitionC(ItemSet const *source,
+                                   ItemSet const *target) const;

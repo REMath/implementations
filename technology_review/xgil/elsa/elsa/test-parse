@@ -1,0 +1,67 @@
+#!/bin/sh
+# parse a preprocessed file, and verify it
+# can parse it and leave no ambiguities
+               
+if [ "$1" = "" ]; then
+  echo "usage: $0 [-tr flag] file.i [file2.i [...]]"
+  exit 0
+fi
+
+extra=""
+if [ "$1" = "-tr" ]; then
+  extra="-tr $2"
+  shift
+  shift
+fi
+
+if [ "$KEEP_GOING" = "2" ]; then
+  # arrange to send status reports (only) to stderr
+  exec 3>&2
+  exec 2>&1
+fi
+
+while [ "$1" != "" ]; do
+  fname="$1"
+  shift
+
+  echo "--------- $fname --------"
+
+  case $fname in
+    *.gz)
+      inputFname=tmp.i
+      echo "gunzip -c $fname >$inputFname"
+      gunzip -c "$fname" >"$inputFname" || exit
+      ;;
+
+    *)
+      inputFname="$fname"
+      ;;
+  esac
+
+  # try to parse it
+  echo "./ccparse $extra $inputFname"
+  if ./ccparse -tr nohashline,permissive $extra "$inputFname"; then
+    # ok
+    if [ "$KEEP_GOING" = "2" ]; then
+      echo -n . >&3
+    fi
+  else
+    code=$?
+    echo "$fname: had errors"
+    if [ "$KEEP_GOING" = "" ]; then
+      exit $code
+    elif [ "$KEEP_GOING" = "2" ]; then
+      echo -n e >&3
+    fi
+  fi
+done
+
+if [ "$KEEP_GOING" = "2" ]; then
+  # final newline
+  echo "" >&3
+fi
+
+exit 0
+
+
+

@@ -1,0 +1,23 @@
+// SSSx.gr.in   -*- c++ -*-
+// second nondeterministic grammar from even-faster
+
+// S -> S S S x | S x | x
+
+// number of parse trees:
+//
+//
+//   C(n) = C(n-1) +  SUM   C(m) * C(p) * C(q)
+//                  0<m,p,q
+//                s.t. m+p+q=n-1
+//   C(1) = 1
+
+
+terminals {
+  x
+}
+
+nonterm S {
+  -> a:S b:S c:S x;
+  -> a:S x;
+  -> x;
+}

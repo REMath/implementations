@@ -1,0 +1,45 @@
+2005-04-16 12:12
+
+in/k0046a.cc is an example of an anonymous struct:
+
+  union U1 {
+      struct {
+          int foo1;
+          int foo2;
+      };
+  };
+
+My reading of the standard is that this is invalid.
+
+I did some googling, and found:
+
+  http://cpptips.hyperformix.com/cpptips/anon_union_struct
+    -> says same as above, namely that anon structs do not work
+    
+  http://docs.sun.com/source/816-2460/Language_Extensions.html
+    -> documents Sun C++ extension that allows anon structs in unions
+    
+  http://www.alegsa.com.ar/Visitas/i38/Union%20with%20anonymous%20struct.php
+    -> some discussion of anon structs and an alternative to them
+    
+  http://gcc.gnu.org/ml/gcc-patches/1999-11n/msg00128.html
+    -> patch to gcc to improve pre-existing support for anon structs
+    
+  http://gcc.gnu.org/ml/gcc-bugs/1999-08n/msg00914.html
+    -> mentions patches that add anon struct support
+    
+  http://gcc.gnu.org/ml/gcc-help/2004-04/msg00002.html
+    -> says gcc-3.3.3 will allow only with -fms-extensions; this of course
+       suggests that this is an MSVC feature that got ported
+       
+  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=10225
+    -> discusses -fms-extensions and the fact that a linux driver uses it
+
+  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=13286
+    -> dup of 10225, "microsoft extension"
+    
+Bottom line: this bug/extension originated with microsoft and/or
+DEC/Sun, and is now implemented in gcc and icc (though some versions
+of gcc require a special flag to enable), an apparently has semantics
+similar anon unions; I will implement in Elsa with warning, with flag
+in CCLang to disable.

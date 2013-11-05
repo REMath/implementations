@@ -1,0 +1,9 @@
+usage: ./configure [options]
+options:
+  -h:                print this message
+  -debug,-nodebug:   enable/disable debugging options [disabled]
+  -prof              enable profiling
+  -devel             add options useful while developing
+  <op>:              add a given option to the gcc command line,
+                       including forms: -W*, -pg, -D*, -O*
+  -smbase=<dir>:     specify where the smbase library is [../smbase]
