@@ -25,7 +25,7 @@
 * http://www.cs.indiana.edu/l/www/classes/b621/abiall.pdf 
 * http://web.mit.edu/afs/athena.mit.edu/course/16/16.399/www/ 
 * http://www.hexblog.com/?p=42 
-* https://www.openrce.org/repositories/users/RolfRolles/BitwiseAI.ml
+* https://www.openrce.org/blog/view/1672/Control_Flow_Deobfuscation_via_Abstract_Interpretation ( code: https://www.openrce.org/repositories/users/RolfRolles/BitwiseAI.ml )
 * http://www.irisa.fr/celtique/teaching/PAS/
 
 ## General Solvers
@@ -49,6 +49,7 @@
 * https://github.com/enferex/GOAT-Plugs﻿
 * https://github.com/0vercl0k/stuffz/blob/master/llvm-funz/kryptonite/llvm-functionpass-kryptonite-obfuscater.cpp
 * http://code.google.com/p/pescrambler/
+* http://www.phrack.org/issues.html?id=13&issue=63
 
 # Decompilers 
 * http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf <- This is really where you should start. I include the others for the sake of prosperity.  
@@ -60,6 +61,7 @@
 ## Symbolic Virtual Machines
 * http://klee.llvm.org/
 * https://s2e.epfl.ch/
+* https://github.com/turnersr/pysymemu
 
 ## Model Checkers 
 * http://nusmv.fbk.eu/ 
@@ -71,6 +73,7 @@
 ## Debuggers
 * https://bitbucket.org/khooyp/expositor 
 * http://www.eresi-project.org/
+* http://redmine.corelan.be/projects/mona
 
 ## C Code 
 * http://why3.lri.fr/
@@ -102,7 +105,6 @@
 * https://github.com/pdasilva/vtrace_scripts
 * https://github.com/rapid7/metasploit-framework/tree/master/external/source/byakugan
 * https://github.com/trailofbits/bisc
-* http://redmine.corelan.be/projects/mona
 * https://code.google.com/p/narly/
 * https://code.google.com/p/viscope/
 * https://github.com/jirislaby/stanse

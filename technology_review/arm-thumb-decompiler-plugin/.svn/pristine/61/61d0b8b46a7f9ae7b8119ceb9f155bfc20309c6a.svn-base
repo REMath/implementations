@@ -1,0 +1,23 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "arm", "arm.vcxproj", "{2C730ABE-F904-435B-B505-ED4F83C22DD2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "decomp", "decomp.vcxproj", "{44AE9135-1148-CEB9-EAF6-47AF4A21881F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C730ABE-F904-435B-B505-ED4F83C22DD2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2C730ABE-F904-435B-B505-ED4F83C22DD2}.Release|Win32.ActiveCfg = Release|Win32
+		{2C730ABE-F904-435B-B505-ED4F83C22DD2}.Release|Win32.Build.0 = Release|Win32
+		{44AE9135-1148-CEB9-EAF6-47AF4A21881F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{44AE9135-1148-CEB9-EAF6-47AF4A21881F}.Release|Win32.ActiveCfg = Release|Win32
+		{44AE9135-1148-CEB9-EAF6-47AF4A21881F}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
