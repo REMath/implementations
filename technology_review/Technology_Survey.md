@@ -53,7 +53,7 @@
 * http://research.microsoft.com/en-us/projects/slam/
 * https://bitbucket.org/arieg/ufo/wiki/Home
 
-## Debugger
+## Debuggers
 * https://bitbucket.org/khooyp/expositor 
 * http://www.eresi-project.org/
 
