@@ -1,6 +1,5 @@
 # Introduction 
 
-
 ## Binary Analysis 
 * http://bap.ece.cmu.edu/
 * http://insight.labri.fr/trac
@@ -44,12 +43,19 @@
 * http://www.debian.org/distrib/packages
 
 ## Obfuscators 
-* cansecwest.com/core03/shiva.ppt
+* http://cansecwest.com/core03/shiva.ppt
 * http://diablo.elis.ugent.be/obf_deobfuscation_byhand
 * http://blog.yurichev.com/node/58
 * https://github.com/enferex/GOAT-Plugs﻿
 * https://github.com/0vercl0k/stuffz/blob/master/llvm-funz/kryptonite/llvm-functionpass-kryptonite-obfuscater.cpp
 * http://code.google.com/p/pescrambler/
+
+# Decompilers 
+* http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
+* http://code.google.com/p/arm-thumb-decompiler-plugin/
+* https://github.com/EiNSTeiN-/ida-decompiler
+* http://boomerang.sourceforge.net/ 
+
 
 ## Symbolic Virtual Machines
 * http://klee.llvm.org/
@@ -84,10 +90,9 @@
 * http://software.imdea.org/projects/cacheaudit/
 * http://www-verimag.imag.fr/~tripakis/openkronos.html
 
-
-
 ## Assisted Exploit Engineering
 ### Return-oriented Programming, really this should be under Abstract Interpretation :P 
+* http://users.ece.cmu.edu/~ejschwar/papers/usenix11.pdf
 * https://github.com/programa-stic/ropc-llvm
 * https://github.com/pakt/ropc
 * https://github.com/JonathanSalwan/ROPgadget
