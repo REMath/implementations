@@ -2,6 +2,7 @@
 
 ## Binary Analysis 
 * http://bap.ece.cmu.edu/
+* http://www.jakstab.org/
 * http://insight.labri.fr/trac
 * https://github.com/neuromancer/SEA
 * http://security.ece.cmu.edu/aeg/index.html
