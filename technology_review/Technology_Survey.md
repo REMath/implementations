@@ -96,6 +96,7 @@
 ## Interactive Theorem Provers
 * http://research.microsoft.com/en-us/um/people/akenn/coq/LOLA2012.pdf
 * http://research.microsoft.com/en-us/um/people/nick/coqasm.pdf
+* http://research.microsoft.com/en-us/um/people/akenn/coq/HLSL.pdf
 * http://dream.inf.ed.ac.uk/
 * http://www.cs.chalmers.se/%7Ehallgren/Alfa/
 * http://coq.inria.fr/
