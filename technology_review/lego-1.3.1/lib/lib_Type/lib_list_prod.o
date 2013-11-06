@@ -1,0 +1,13 @@
+Module lib_list_prod Import "lib_list_length" "lib_list_bool" "lib_prod";
+[assoc : {A|Type}{B|Type}{eq:A->bool}{dummy:B}{abs:list (prod A B)}B
+  = [A|Type][B|Type][eq:A->bool][dummy:B][abs:list (prod A B)]foldright%%B%%(prod A B) ([x:prod A B][rest:B]if%%B (eq (Fst%%A%%B x)) (Snd%%A%%B x) rest) abs dummy];
+[lib_list_dom : {A|Type}{B|Type}(list (prod A B))->list A
+  = [A|Type][B|Type]map%%(prod A B)%%A (Fst|A|B)];
+[cod : {A|Type}{B|Type}(list (prod A B))->list B
+  = [A|Type][B|Type]map%%(prod A B)%%B (Snd|A|B)];
+[zip : {A|Type}{B|Type}{as:list A}{bs:list B}list (prod A B)
+  = [A|Type][B|Type][as:list A][bs:list B]foldright%%((list B)->list (prod A B))%%A ([a:A][_:(list B)->list (prod A B)]map%%B%%(prod A B) (Pair%%A%%B a)) as ([_:list B]nil (prod A B)) bs];
+[prod_list : {s|Type}{t|Type}(list s)->(list t)->list (prod s t)
+  = [s|Type][t|Type][l1:list s][l2:list t]list_iter%%s%%(list (prod s t)) (nil (prod s t)) ([a:s]append%%(prod s t) (map%%t%%(prod s t) (Pair%%s%%t a) l2)) l1];
+[length_prod : {s|Type}{t|Type}{l1:list s}{l2:list t}Eq%%nat (length%%(prod s t) (prod_list%%s%%t l1 l2)) (times (length%%s l1) (length%%t l2))
+  = [s|Type][t|Type][l1:list s][l2:list t]list_ind%%s ([l1'5:list s]Eq%%nat (length%%(prod s t) (prod_list%%s%%t l1'5 l2)) (times (length%%s l1'5) (length%%t l2))) (Eq_refl%%nat (length%%(prod s t) (prod_list%%s%%t (nil s) l2))) ([x:s][l:list s]Eq_subst%%nat%%(plus (length%%(prod s t) (map%%t%%(prod s t) (Pair%%s%%t x) l2)) (length%%(prod s t) (prod_list%%s%%t l l2)))%%(length%%(prod s t) (append%%(prod s t) (map%%t%%(prod s t) (Pair%%s%%t x) l2) (prod_list%%s%%t l l2))) (Eq_sym%%nat%%(length%%(prod s t) (append%%(prod s t) (map%%t%%(prod s t) (Pair%%s%%t x) l2) (prod_list%%s%%t l l2)))%%(plus (length%%(prod s t) (map%%t%%(prod s t) (Pair%%s%%t x) l2)) (length%%(prod s t) (prod_list%%s%%t l l2))) (length_append%%(prod s t) (map%%t%%(prod s t) (Pair%%s%%t x) l2) (prod_list%%s%%t l l2))) ([z:nat](Eq%%nat (length%%(prod s t) (prod_list%%s%%t l l2)) (times (length%%s l) (length%%t l2)))->Eq%%nat z (times (length%%s (cons%%s x l)) (length%%t l2))) (Eq_subst%%nat%%(length%%t l2)%%(length%%(prod s t) (map%%t%%(prod s t) (Pair%%s%%t x) l2)) (Eq_sym%%nat%%(length%%(prod s t) (map%%t%%(prod s t) (Pair%%s%%t x) l2))%%(length%%t l2) (length_map%%t%%(prod s t) l2 (Pair%%s%%t x))) ([z:nat](Eq%%nat (length%%(prod s t) (prod_list%%s%%t l l2)) (times (length%%s l) (length%%t l2)))->Eq%%nat (plus z (length%%(prod s t) (prod_list%%s%%t l l2))) (times (length%%s (cons%%s x l)) (length%%t l2))) (Eq_resp%%nat%%nat (plus (length%%t l2))%%(length%%(prod s t) (prod_list%%s%%t l l2))%%(times (length%%s l) (length%%t l2))))) l1];

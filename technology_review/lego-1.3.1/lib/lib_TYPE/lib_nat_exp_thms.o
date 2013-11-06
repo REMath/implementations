@@ -1,0 +1,3 @@
+Module lib_nat_exp_thms Import "lib_nat_times_thms";
+[exp_one : {n:nat}Eq%%nat (exp n one) n
+  = [n:nat]Eq_trans%%nat%%(exp n one)%%(times (nat_elim ([_:nat]nat) one ([_:nat]times n) zero) n)%%n (times_commutes%%n%%(nat_elim ([_:nat]nat) one ([_:nat]times n) zero)) (Eq_sym%%nat%%n%%(times (nat_elim ([_:nat]nat) one ([_:nat]times n) zero) n) (times_one%%n))];

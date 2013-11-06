@@ -1,0 +1,33 @@
+Module lib_int_basics Import "lib_int_nat_lemmas" "lib_nat_minus_thms" "lib_sets_ccmj";
+[zed : Type
+  = nat#nat];
+[Eq_zed : zed->zed->Prop
+  = [mm,nn:zed]Eq%%nat (plus mm.1 nn.2) (plus nn.1 mm.2)];
+[Eq_refl_zed : refl%%zed Eq_zed
+  = [t:zed]Eq_refl%%nat (plus t.1 t.2)];
+[Eq_sym_zed : sym%%zed Eq_zed
+  = [mm,nn|zed][eq1:Eq_zed mm nn]Eq_sym%%nat%%(plus mm.1 nn.2)%%(plus nn.1 mm.2) eq1];
+[Eq_trans_zed : trans%%zed Eq_zed
+  = [mm,nn,pp|zed][n1=nn.1][eql:Eq_zed mm nn][eqr:Eq_zed nn pp]cancel_plus n1 (plus mm.1 pp.2) (plus pp.1 mm.2) (Eq_trans%%nat%%(plus n1 (plus mm.1 pp.2))%%(plus (plus zero mm.1) (plus n1 pp.2))%%(plus n1 (plus pp.1 mm.2)) (middle_four_plus|zero|mm.1|n1|pp.2) (Eq_subst%%nat%%(plus pp.1 nn.2)%%(plus nn.1 pp.2) (Eq_sym%%nat%%(plus nn.1 pp.2)%%(plus pp.1 nn.2) eqr) ([z:nat]Eq|nat (plus (plus zero mm.1) z) (plus n1 (plus pp.1 mm.2))) (Eq_subst%%nat%%(plus (plus zero pp.1) (plus n1 mm.2))%%(plus (plus zero n1) (plus pp.1 mm.2)) (middle_four_plus|zero|n1|pp.1|mm.2) (Eq|nat (plus (plus zero mm.1) (plus pp.1 nn.2))) (Eq_sym%%nat%%(plus (plus zero pp.1) (plus n1 mm.2))%%(plus (plus zero mm.1) (plus pp.1 nn.2)) (Eq_subst%%nat%%(plus (plus zero pp.1) (plus mm.1 nn.2))%%(plus (plus zero mm.1) (plus pp.1 nn.2)) (middle_four_plus|zero|mm.1|pp.1|nn.2) (Eq|nat (plus (plus zero pp.1) (plus n1 mm.2))) (Eq_subst%%nat%%(plus nn.1 mm.2)%%(plus mm.1 nn.2) (Eq_sym%%nat%%(plus mm.1 nn.2)%%(plus nn.1 mm.2) eql) ([z:nat]Eq|nat (plus (plus zero pp.1) (plus n1 mm.2)) (plus (plus zero pp.1) z)) (Eq_refl%%nat (plus (plus zero pp.1) (plus n1 mm.2)))))))))];
+[int : set
+  = (zed,Eq_zed,pair3%%(eq_refl|zed|Eq_zed)%%(eq_sym|zed|Eq_zed)%%(eq_trans|zed|Eq_zed) Eq_refl_zed Eq_sym_zed Eq_trans_zed:<A:Type><eq:A->A->Prop>and3 (eq_refl|A|eq) (eq_sym|A|eq) (eq_trans|A|eq))];
+[zero_zed : int.1
+  = (zero,zero)];
+[one_zed : int.1
+  = (one,zero)];
+[two_zed : int.1
+  = (two,zero)];
+[three_zed : int.1
+  = (three,zero)];
+[four_zed : int.1
+  = (four,zero)];
+[minus_one_zed : int.1
+  = (zero,one)];
+[plus_zed : {mm,nn:int.1}int.1
+  = [mm,nn:int.1](plus mm.1 nn.1,plus mm.2 nn.2)];
+[times_zed : {mm,nn:int.1}int.1
+  = [mm,nn:int.1](plus (times mm.1 nn.1) (times mm.2 nn.2),plus (times mm.1 nn.2) (times mm.2 nn.1))];
+[minus_zed : {a,b:int.1}int.1
+  = [a,b:int.1](plus a.1 b.2,plus a.2 b.1)];
+[neg_zed : {a:int.1}int.1
+  = [a:int.1](a.2,a.1)];

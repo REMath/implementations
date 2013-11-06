@@ -1,0 +1,24 @@
+Module lib_sigma Import "lib_eq_basics";
+$[sigma : {A|SET}{B|A->SET}SET//dep_pair];
+$[dep_pair : {A|SET}{B|A->SET}{a:A}{b:B a}sigma%%A%%B];
+$[sigma_elim : {A|SET}{B|A->SET}{C_sigma:(sigma%%A%%B)->TYPE}({a:A}{b:B a}C_sigma (dep_pair%%A%%B a b))->{z:sigma%%A%%B}C_sigma z];
+Label (!sigma!) sigma;Label (!sigma elim!) sigma_elim;Label (!sigma dep_pair!) dep_pair;[[A|SET][B|A->SET][C_sigma:(sigma|A|B)->TYPE][f_dep_pair:{a:A}{b:B a}C_sigma (dep_pair a b)][a:A][b:B a]   sigma_elim C_sigma f_dep_pair (dep_pair a b)  ==>  f_dep_pair a b]
+;
+[sigma_rec : {A|SET}{B|A->SET}{T|TYPE}({a:A}{b:B a}T)->{z:sigma%%A%%B}T
+  = [A|SET][B|A->SET][T|TYPE]sigma_elim%%A%%B ([_:sigma%%A%%B]T)];
+[sigma_ind : {A|SET}{B|A->SET}{P:(sigma%%A%%B)->Prop}({a:A}{b:B a}P (dep_pair%%A%%B a b))->{z:sigma%%A%%B}P z
+  = [A|SET][B|A->SET][P:(sigma%%A%%B)->Prop]sigma_elim%%A%%B P];
+[sig_pi1 : {A|SET}{B|A->SET}{z:sigma%%A%%B}A
+  = [A|SET][B|A->SET]sigma_rec%%A%%B%%A ([a:A][_:B a]a)];
+[sig_pi2 : {A|SET}{B|A->SET}{z:sigma%%A%%B}B (sig_pi1%%A%%B z)
+  = [A|SET][B|A->SET]sigma_elim%%A%%B ([x:sigma%%A%%B]B (sig_pi1%%A%%B x)) ([a:A][b:B a]b)];
+[dep_pair_eta : {A|SET}{B|A->SET}{x:sigma%%A%%B}Eq%%(sigma%%A%%B) x (dep_pair%%A%%B (sig_pi1%%A%%B x) (sig_pi2%%A%%B x))
+  = [A|SET][B|A->SET][x:sigma%%A%%B]sigma_ind%%A%%B ([x'4:sigma%%A%%B]Eq%%(sigma%%A%%B) x'4 (dep_pair%%A%%B (sig_pi1%%A%%B x'4) (sig_pi2%%A%%B x'4))) ([a:A][b:B a]Eq_refl%%(sigma%%A%%B) (dep_pair%%A%%B a b)) x];
+[sig_pi1_inj : {A|SET}{B|A->SET}{x,y:sigma%%A%%B}(Eq%%(sigma%%A%%B) x y)->Eq%%A (sig_pi1%%A%%B x) (sig_pi1%%A%%B y)
+  = [A|SET][B|A->SET][x,y:sigma%%A%%B][H:Eq%%(sigma%%A%%B) x y]Eq_resp%%(sigma%%A%%B)%%A (sig_pi1%%A%%B)%%x%%y H];
+[Sigma : {A:SET}{B:A->SET}SET
+  = [A:SET][B:A->SET]sigma|A|B];
+[Prod : {A,B:SET}SET
+  = [A,B:SET]Sigma A ([_:A]B)];
+[Pr : {A,B|SET}{a:A}{b:B}sigma%%A%%([_:A]B)
+  = [A,B|SET]dep_pair|A|([_:A]B)];

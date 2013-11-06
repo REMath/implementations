@@ -1,0 +1,9 @@
+Module parameters;
+[SET : Type(0)
+  = Prop];
+[TYPE : Type(0)
+  = Prop];
+[TYPE_minus1 : Type(0)
+  = Prop];
+[TYPE_minus2 : Type(0)
+  = Prop];

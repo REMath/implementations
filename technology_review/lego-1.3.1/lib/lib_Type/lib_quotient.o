@@ -1,0 +1,17 @@
+Module lib_quotient Import "lib_eq_basics";
+$[ext_prop : {X,Y:Prop}(X->Y)->(Y->X)->Eq%%Prop X Y];
+$[QU : {A|Type(0)}{R:A->A->Prop}Type(0)];
+$[QU_class : {A|Type(0)}{R:A->A->Prop}A->QU%%A R];
+$[QU_cor : {A|Type(0)}{R:A->A->Prop}{a1,a2:A}(R a1 a2)->Eq%%(QU%%A R) (QU_class%%A R a1) (QU_class%%A R a2)];
+$[QU_it : {A|Type(0)}{R:A->A->Prop}{C|Type}{f:A->C}({a1,a2:A}(R a1 a2)->Eq%%C (f a1) (f a2))->(QU%%A R)->C];
+$[QU_ind : {A|Type(0)}{R:A->A->Prop}{P:(QU%%A R)->Prop}({a:A}P (QU_class%%A R a))->{q:QU%%A R}P q];
+[[A|Type(0)][R:A->A->Prop][C|Type][f:A->C][H:{a1,a2:A}(R a1 a2)->Eq (f a1) (f a2)][a:A]   QU_it R f H (QU_class R a)  ==>  f a]
+;
+[QU_xi : {A|Type(0)}{R:A->A->Prop}{C|Type}{f,g:A->C}{p:{a1,a2:A}(R a1 a2)->Eq%%C (f a1) (f a2)}{q:{a1,a2:A}(R a1 a2)->Eq%%C (g a1) (g a2)}({a:A}Eq%%C (f a) (g a))->{x:QU%%A R}Eq%%C (QU_it%%A R%%C f p x) (QU_it%%A R%%C g q x)
+  = [A|Type(0)][R:A->A->Prop][C|Type][f,g:A->C][p:{a1,a2:A}(R a1 a2)->Eq%%C (f a1) (f a2)][q:{a1,a2:A}(R a1 a2)->Eq%%C (g a1) (g a2)][H:{a:A}Eq%%C (f a) (g a)]QU_ind%%A R ([x:QU%%A R]Eq%%C (QU_it%%A R%%C f p x) (QU_it%%A R%%C g q x)) H];
+[QU_it_ind : {A|Type(0)}{R:A->A->Prop}{C|Type}{P:C->Prop}{f:A->C}{p:{a1,a2:A}(R a1 a2)->Eq%%C (f a1) (f a2)}({a:A}P (f a))->{x:QU%%A R}P (QU_it%%A R%%C f p x)
+  = [A|Type(0)][R:A->A->Prop][C|Type][P:C->Prop][f:A->C][p:{a1,a2:A}(R a1 a2)->Eq%%C (f a1) (f a2)][H:{a:A}P (f a)]QU_ind%%A R ([x:QU%%A R]P (QU_it%%A R%%C f p x)) H];
+[QU_in_class : {A|Type(0)}{R:A->A->Prop}{R_sym:sym%%A R}{R_trans:trans%%A R}{a:A}(QU%%A R)->Prop
+  = [A|Type(0)][R:A->A->Prop][R_sym:sym%%A R][R_trans:trans%%A R][a:A]QU_it%%A R%%Prop (R a) ([a1,a2:A][Ra1a2:R a1 a2]ext_prop (R a a1) (R a a2) ([Raa1:R a a1]R_trans%%a%%a1%%a2 Raa1 Ra1a2) ([Raa2:R a a2]R_trans%%a%%a2%%a1 Raa2 (R_sym%%a1%%a2 Ra1a2)))];
+[QU_cor_inv : {A|Type(0)}{R:A->A->Prop}{R_refl:refl%%A R}{R_sym:sym%%A R}{R_trans:trans%%A R}{a,b:A}{Hab:Eq%%(QU%%A R) (QU_class%%A R a) (QU_class%%A R b)}R a b
+  = [A|Type(0)][R:A->A->Prop][R_refl:refl%%A R][R_sym:sym%%A R][R_trans:trans%%A R][a,b:A][Hab:Eq%%(QU%%A R) (QU_class%%A R a) (QU_class%%A R b)]Eq_subst%%(QU%%A R)%%(QU_class%%A R a)%%(QU_class%%A R b) (Eq_sym%%(QU%%A R)%%(QU_class%%A R b)%%(QU_class%%A R a) (Eq_sym%%(QU%%A R)%%(QU_class%%A R a)%%(QU_class%%A R b) Hab)) ([z:QU%%A R]QU_in_class%%A R R_sym R_trans a z) (R_refl a)];

@@ -1,0 +1,9 @@
+This directory contains basic material relating to th datatype "fin" of 
+finite numbers.  Note that the variables SET, TYPE, TYPE_minus1 and
+TYPE_minus2 must be defined and a definition of equality loaded before 
+these files can be used.
+
+The files in this directory are:
+
+lib_finite.l  Definition, induction principles and some theorems.
+---------

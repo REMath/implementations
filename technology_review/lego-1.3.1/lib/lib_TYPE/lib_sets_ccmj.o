@@ -1,0 +1,53 @@
+Module lib_sets_ccmj Import "lib_logic";
+[eq_refl : {A|Type}{eq|A->A->Prop}Prop
+  = [A|Type][eq|A->A->Prop]{x|A}eq x x];
+[eq_sym : {A|Type}{eq|A->A->Prop}Prop
+  = [A|Type][eq|A->A->Prop]{x,y|A}(eq x y)->eq y x];
+[eq_trans : {A|Type}{eq|A->A->Prop}Prop
+  = [A|Type][eq|A->A->Prop]{x,y,z|A}(eq x y)->(eq y z)->eq x z];
+[eq_rel : {A|Type}Type
+  = [A|Type]<eq:A->A->Prop>and3 (eq_refl%%A|eq) (eq_sym%%A|eq) (eq_trans%%A|eq)];
+[set : Type
+  = <A:Type><eq:A->A->Prop>and3 (eq_refl|A|eq) (eq_sym|A|eq) (eq_trans|A|eq)];
+[eq : {A|set}A.1->A.1->Prop
+  = [A|set]A.2.1];
+[eq_refl_ax : {A|set}eq_refl|A.1|A.2.1
+  = [A|set]and3_out1%%(eq_refl|A.1|A.2.1)%%(eq_sym|A.1|A.2.1)%%(eq_trans|A.1|A.2.1) A.2.2];
+[eq_sym_ax : {A|set}{x,y|A.1}(eq%%A x y)->eq%%A y x
+  = [A|set][x,y|A.1]and3_out2%%(eq_refl|A.1|A.2.1)%%(eq_sym|A.1|A.2.1)%%(eq_trans|A.1|A.2.1) A.2.2%%x%%y];
+[eq_trans_ax : {A|set}{x,y,z|A.1}(eq%%A x y)->(eq%%A y z)->eq%%A x z
+  = [A|set][x,y,z|A.1]and3_out3%%(eq_refl|A.1|A.2.1)%%(eq_sym|A.1|A.2.1)%%(eq_trans|A.1|A.2.1) A.2.2%%x%%y%%z];
+[pres_eq : {A,B|set}{f:A.1->B.1}Prop
+  = [A,B|set][f:A.1->B.1]{x,y|A.1}(eq%%A x y)->eq%%B (f x) (f y)];
+[function : {A,B:set}Type
+  = [A,B:set]<f:A.1->B.1>pres_eq|A|B f];
+[pres_eq_ax : {A,B|set}{f|function A B}[f'4=f.1]pres_eq|A|B f'4
+  = [A,B|set][f|function A B]f.2];
+[pr : {A,B|set}{x:A.1}{y:B.1}A.1#B.1
+  = [A,B|set][x:A.1][y:B.1](x,y)];
+[cross_prod : {A,B:set}set
+  = [A,B:set](<a:A.1>B.1,[x,y:<a:A.1>B.1](eq%%A x.1 y.1 /\ eq%%B x.2 y.2),pair3%%(eq_refl|(<a:A.1>B.1)|([x,y:<a:A.1>B.1](eq%%A x.1 y.1 /\ eq%%B x.2 y.2)))%%(eq_sym|(<a:A.1>B.1)|([x,y:<a:A.1>B.1](eq%%A x.1 y.1 /\ eq%%B x.2 y.2)))%%(eq_trans|(<a:A.1>B.1)|([x,y:<a:A.1>B.1](eq%%A x.1 y.1 /\ eq%%B x.2 y.2))) ([x|<a:A.1>B.1]pair%%(eq%%A x.1 x.1)%%(eq%%B x.2 x.2) (eq_refl_ax%%A%%x.1) (eq_refl_ax%%B%%x.2)) ([x,y|<a:A.1>B.1][h1:([x'5,y'6:<a:A.1>B.1](eq%%A x'5.1 y'6.1 /\ eq%%B x'5.2 y'6.2)) x y]pair%%(eq%%A y.1 x.1)%%(eq%%B y.2 x.2) (eq_sym_ax%%A%%x.1%%y.1 (fst%%(eq%%A x.1 y.1)%%(eq%%B x.2 y.2) h1)) (eq_sym_ax%%B%%x.2%%y.2 (snd%%(eq%%A x.1 y.1)%%(eq%%B x.2 y.2) h1))) ([x,y,x1|<a:A.1>B.1][h1:([x'6,y'7:<a:A.1>B.1](eq%%A x'6.1 y'7.1 /\ eq%%B x'6.2 y'7.2)) x y][h2:([x'7,y'8:<a:A.1>B.1](eq%%A x'7.1 y'8.1 /\ eq%%B x'7.2 y'8.2)) y x1]pair%%(eq%%A x.1 x1.1)%%(eq%%B x.2 x1.2) (eq_trans_ax%%A%%x.1%%y.1%%x1.1 (fst%%(eq%%A x.1 y.1)%%(eq%%B x.2 y.2) h1) (fst%%(eq%%A y.1 x1.1)%%(eq%%B y.2 x1.2) h2)) (eq_trans_ax%%B%%x.2%%y.2%%x1.2 (snd%%(eq%%A x.1 y.1)%%(eq%%B x.2 y.2) h1) (snd%%(eq%%A y.1 x1.1)%%(eq%%B y.2 x1.2) h2))):<A'3:Type><eq:A'3->A'3->Prop>and3 (eq_refl|A'3|eq) (eq_sym|A'3|eq) (eq_trans|A'3|eq))];
+[curry : {A,B,C:set}{f:function|(cross_prod A B)|C}A.1->B.1->C.1
+  = [A,B,C:set][f:function|(cross_prod A B)|C][a:A.1][b:B.1]f.1 (pr%%A%%B a b)];
+[comp : {A,B,C|set}{f:function A B}{g:function B C}function A C
+  = [A,B,C|set][f:function A B][g:function B C]([a:A.1]g.1 (f.1 a),[x,y|A.1][h1:eq%%A x y]pres_eq_ax%%B%%C%%g%%(f.1 x)%%(f.1 y) (pres_eq_ax%%A%%B%%f%%x%%y h1):<f'6:A.1->C.1>pres_eq|A|C f'6)];
+[pres_l : {A:set}{Rel:A.1->A.1->Prop}Prop
+  = [A:set][Rel:A.1->A.1->Prop]{x,y,z:A.1}(eq%%A x y)->(Rel x z)->Rel y z];
+[pres_r : {A:set}{Rel:A.1->A.1->Prop}Prop
+  = [A:set][Rel:A.1->A.1->Prop]{x,y,z:A.1}(eq%%A x y)->(Rel z x)->Rel z y];
+[relation : {A:set}Type
+  = [A:set]<R:A.1->A.1->Prop>(pres_l A R /\ pres_r A R)];
+[rel_pres_eq_l : {A|set}{R|relation A}pres_l A R.1
+  = [A|set][R|relation A]fst%%(pres_l A R.1)%%(pres_r A R.1) R.2];
+[rel_pres_eq_r : {A|set}{R|relation A}pres_r A R.1
+  = [A|set][R|relation A]snd%%(pres_l A R.1)%%(pres_r A R.1) R.2];
+[subset : {A:set}Type
+  = [A:set]A.1->Prop];
+[pres_eq2 : {A,B:set}{f:A.1->A.1->B.1}Prop
+  = [A,B:set][f:A.1->A.1->B.1]{x,y,z|A.1}(eq%%A x y)->(eq%%B (f x z) (f y z) /\ eq%%B (f z x) (f z y))];
+[function2 : {A,B:set}Type
+  = [A,B:set]<f:A.1->A.1->B.1>pres_eq2 A B f];
+[pres_eq_l : {A,B|set}{f|function2 A B}{x,y,z:A.1}(eq%%A x y)->eq%%B (f.1 x z) (f.1 y z)
+  = [A,B|set][f|function2 A B][x,y,z:A.1][H:eq%%A x y]fst%%(eq%%B (f.1 x z) (f.1 y z))%%(eq%%B (f.1 z x) (f.1 z y)) (f.2%%x%%y%%z H)];
+[pres_eq_r : {A,B|set}{f|function2 A B}{x,y,z:A.1}(eq%%A x y)->eq%%B (f.1 z x) (f.1 z y)
+  = [A,B|set][f|function2 A B][x,y,z:A.1][H:eq%%A x y]snd%%(eq%%B (f.1 x z) (f.1 y z))%%(eq%%B (f.1 z x) (f.1 z y)) (f.2%%x%%y%%z H)];

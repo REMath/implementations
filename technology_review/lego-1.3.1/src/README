@@ -1,0 +1,22 @@
+To make a new instance, put /home/lego/bin/sun4-51 in your path
+and invoke
+
+   cml
+
+then type 
+
+  use "build.sml"
+
+finally type the command 
+
+  make_lego true "your favorite message"
+
+replace true by false if you only want legoML.
+
+For profiling, uncomment all sections relating to profiling, use
+
+   nj-sml -profile
+
+then type 
+
+   use "build.sml";

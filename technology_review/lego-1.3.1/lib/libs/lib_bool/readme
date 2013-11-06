@@ -1,0 +1,18 @@
+This directory contains basic material relating to the datatype "bool" of
+booleans.  Note that the variables SET and TYPE must be defined and a
+definition of equality loaded before these files can be used.
+
+The files in this directory are:
+
+lib_bool.l
+----------
+ o Definition and induction principles
+ o Constructor identifiers and characterizing theorems
+
+lib_bool_funs.l
+---------------
+ o Some basic functions operating on booleans
+
+lib_bool_thms.l
+---------------
+ o Various theorems about boolean functions.

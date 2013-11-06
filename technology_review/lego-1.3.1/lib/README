@@ -1,0 +1,15 @@
+Information for Lego Library directory
+=======================================
+
+/usr/lib/lego or /usr/local/lib/lego
+
+The directories lib_TYPE and lib_Type are automatically generated from
+the files in the libs directory.
+
+lib_Prop isn't automatically generated.
+
+The libs directory is obsolete and may be removed in a future release.
+You should import modules only from the directories lib_Prop,
+lib_TYPE or lib_Type.
+Please send a mail to lego@dcs.ed.ac.uk if this is a problem.
+

@@ -1,0 +1,15 @@
+Module lib_eq Import "lib_logic";
+$[Eq : {t|Type}t->t->Prop];
+$[Eqr : {t|Type}{x:t}Eq%%t x x];
+$[Eq_elim : {t|Type}{P:{x,y:t}(Eq%%t x y)->Type}({x:t}P x x (Eqr%%t x))->{x,y:t}{p:Eq%%t x y}P x y p];
+[[t:Type][P:{x,y:t}(Eq x y)->Type][h:{x:t}P x x (Eqr x)][x:t]   Eq_elim P h x x (Eqr x)  ==>  h x]
+;
+[Eq_refl : {t|Type}refl%%t (Eq|t)
+  = [t|Type]Eqr%%t];
+[Eq_subst : {t|Type}{m,n|t}(Eq%%t m n)->{P:t->Type}(P m)->P n
+  = [t|Type][m,n|t]Eq_elim|t ([x,y:t][_:Eq%%t x y]{P:t->Type}(P x)->P y) ([x:t][P:t->Type][H:P x]H) m n];
+[trivType : Type
+  = {T|Type}T->T];
+[emptyType : Type
+  = {T|Type}T];
+Configure Theorems trivType emptyType Eq_subst;
