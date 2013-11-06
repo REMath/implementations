@@ -1,0 +1,5 @@
+/* AMBIGUOUS */
+
+S : "a" ;
+: "i" "c" "t" S ;
+: "i" "c" "t" S "e" S ;

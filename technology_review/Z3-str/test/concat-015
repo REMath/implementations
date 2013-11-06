@@ -1,0 +1,8 @@
+(declare-variable a String)
+(declare-variable b String)
+
+(assert (or (= (Concat a b) "te" )  (= (Concat b a) "te" ) ) )
+(assert (= b "t" ) )
+
+(check-sat)
+(get-model)

@@ -1,0 +1,58 @@
+/* UNAMBIGUOUS (stated wrongly in original as ambiguous)
+
+Grammar 'ada_calls' (ADA calls) taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+in turn taken from:
+
+Boullier (1984) page III-40.  Updated against ADA 83 MR.
+
+tokens = {
+';', '(', ')', ',',
+'a'=ASSIGN,
+'e'=expression,
+'i'=IDENTIFIER
+}
+*/
+
+
+simple_statement
+: procedure_call_statement ;
+: assignment_statement ;
+
+procedure_call_statement
+: procedure_name actual_parameter_part_opt ";" ;
+
+procedure_name
+: "i" ;
+
+actual_parameter_part_opt
+: ;
+: actual_parameter_part ;
+
+actual_parameter_part
+: "(" parameter_association_list ")" ;
+
+parameter_association_list
+: parameter_association_list "," parameter_association ;
+: parameter_association ;
+
+parameter_association
+: "e" ;
+: variable_name ;
+
+assignment_statement
+: variable_name "a" "e" ";" ;
+
+variable_name
+: "i" ;
+: indexed_component ;
+
+indexed_component
+: "i" "(" expression_list ")" ;
+
+expression_list
+: expression_list "," "e" ;
+: "e" ;

@@ -1,0 +1,6 @@
+Undefined nonterminals:1
+C
+Productions:5
+Special symbols: 1
+Terminals:1
+Nonterminals:4

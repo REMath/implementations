@@ -1,0 +1,29 @@
+/* AMBIGUOUS
+
+Grammar '04-11-047' taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+tokens = {
+'&', '+', ',', '(', ')',
+'=' (abbreviated version of "=="),
+'i'=ID,
+'t'=ITE
+}
+*/
+
+
+F
+: "t" "(" F "," F "," F ")" ;
+: E "&" E ;
+: M ;
+: "i" ;
+
+M
+: E "=" E ;
+
+E
+: "t" "(" E "," E "," E ")" ;
+: E "+" E ;
+: "i" ;

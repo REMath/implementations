@@ -1,0 +1,5 @@
+var v:2;
+cfg X := "foo";
+cfg X := (Y)? (Foo)+ (Bar)*;
+cfg Z := "a" | "b" | ['a'-'z'];
+cfg V := "\'" X "\'";

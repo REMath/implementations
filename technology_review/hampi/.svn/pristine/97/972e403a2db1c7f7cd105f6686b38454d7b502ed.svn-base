@@ -1,0 +1,9 @@
+//created from CFGAnalyzer file 98_08_215.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg start :=  declaration | full_expr ;
+cfg var_list :=  "t" | "t" "," var_list ;
+cfg declaration :=  var_list ":" "m" ";" ;
+cfg label :=  "t" ":" ;
+cfg full_expr :=  label "e" ;
+reg limit := fix(start, 7);
+assert hampiStringVar in limit;

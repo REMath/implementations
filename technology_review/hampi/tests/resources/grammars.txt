@@ -1,0 +1,10 @@
+Grammar = (GrammarRule)+ ;
+GrammarRule = NonterminalElement "=" GrammarRuleRHS ("|" GrammarRuleRHS)* ";" ;
+GrammarRuleRHS = (GrammarRuleRHSElement)+ ;
+GrammarRuleRHSElement = TeminalElement | NonterminalElement | SpecialElement | OptionElement | StarElement | PlusElement ;
+TeminalElement = <TTERMINAL> ;
+NonterminalElement = <TNONTERMINAL> ;
+SpecialElement = <TSPECIAL> ;
+OptionElement = "(" GrammarRuleRHS ")" "?" ; 
+StarElement   = "(" GrammarRuleRHS ")" "*" ; 
+PlusElement   = "(" GrammarRuleRHS ")" "+" ; 

@@ -1,0 +1,9 @@
+(declare-variable x String)
+(declare-variable bv Bool)
+
+(assert (= bv (Contains x "ef_k" ) ) )
+(assert (= x "efk" ) )
+
+
+(check-sat)
+(get-model)

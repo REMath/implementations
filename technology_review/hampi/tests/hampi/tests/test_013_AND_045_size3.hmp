@@ -1,0 +1,15 @@
+/*CFG Analyzer, version 03/12/2007
+
+*/
+var hampiStringVar : 5;
+cfg S0 :=  "a" | A0 A0 ;
+cfg A0 :=  "b" | S0 S0 ;
+reg limit0 := fix(S0, 5);
+assert hampiStringVar in limit0;
+cfg L1 :=  G1 A1 | A1 N1 D1 ;
+cfg A1 :=  "a" "b" | "a" A1 | "a" ;
+cfg N1 :=  "a" "b" ;
+cfg D1 :=  D1 "a" | "b" "a" ;
+cfg G1 :=  "b" "a" | "b" "a" G1 | "b" G1 ;
+reg limit1 := fix(L1, 5);
+assert hampiStringVar in limit1;

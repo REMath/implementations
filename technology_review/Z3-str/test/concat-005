@@ -1,0 +1,11 @@
+(set-option :auto-config true)
+(set-option :produce-models true)
+
+(declare-variable a String)
+(declare-variable b String)
+(declare-variable z String)
+
+(assert (= (Concat a "testhello") "hello"))
+
+(check-sat)
+(get-model)

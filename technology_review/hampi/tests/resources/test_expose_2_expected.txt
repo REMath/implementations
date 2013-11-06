@@ -1,0 +1,2 @@
+A = "a" "a"  | "a" "a" A_renamed  | "a"  ;
+A_renamed = "a"  | "a" A_renamed  ;

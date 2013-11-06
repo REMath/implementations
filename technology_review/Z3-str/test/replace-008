@@ -1,0 +1,9 @@
+(declare-variable x String)
+(declare-variable y String)
+
+
+(assert (= y (Replace "mn_efgefg_k" "efg" "abcd")  ) )
+
+
+(check-sat)
+(get-model)

@@ -1,0 +1,11 @@
+(declare-variable x String)
+(declare-variable y String)
+(declare-variable z String)
+
+
+(assert (= y (Replace x "str1234" "abcd")  ) )
+(assert (< (Length x) 8))
+
+
+(check-sat)
+(get-model)

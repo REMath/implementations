@@ -1,0 +1,41 @@
+(declare-variable  T_3  bool)
+(declare-variable  T_6  bool)
+(declare-variable  T_7  bool)
+(declare-variable  T_4  bool)
+(declare-variable  PCTEMP_LHS_1  bool)
+%------------
+(declare-variable  PCTEMP_LHS_1_len_0  Int)
+%------------
+(declare-variable  var_0xINPUT_2  String)
+(declare-variable  T0_2  String)
+(declare-variable  T2_2  String)
+(declare-variable  PCTEMP_LHS_1_group_1  String)
+(declare-variable  PCTEMP_LHS_1_tempstr_2  String)
+(declare-variable  T_2  String)
+(declare-variable  PCTEMP_LHS_1_idx_0  String)
+(declare-variable  PCTEMP_LHS_1_idx_1  String)
+(declare-variable  T1_2  String)
+(declare-variable  T_5  String)
+
+%============================================
+
+(assert (=> PCTEMP_LHS_1 (= var_0xINPUT_2 (Concat T0_2 T1_2) ) ) )
+(assert (=> PCTEMP_LHS_1 (= T1_2 (Concat PCTEMP_LHS_1_idx_0 T2_2) ) ) )
+(assert PCTEMP_LHS_1)
+(assert (=> PCTEMP_LHS_1 (= T_2 PCTEMP_LHS_1_idx_0 ) ) )
+(assert (= T_3 (not (=  T_2 "Hel")) ) )
+(assert (= T_4 (not T_3 ) ) )
+(assert T_4)
+(assert PCTEMP_LHS_1)
+(assert (=> PCTEMP_LHS_1 (= T_5 PCTEMP_LHS_1_idx_1 ) ) )
+(assert (= T_6 (not (=  T_5 "He")) ) )
+(assert (= T_7 (not T_6 ) ) )
+(assert T_7)
+(assert (=> PCTEMP_LHS_1 (= PCTEMP_LHS_1_group_1 (Concat PCTEMP_LHS_1_idx_1 PCTEMP_LHS_1_tempstr_2) ) ) )
+(assert (=> PCTEMP_LHS_1 (= PCTEMP_LHS_1_group_1 PCTEMP_LHS_1_idx_0 ) ) )
+(assert (=> PCTEMP_LHS_1 (= PCTEMP_LHS_1_len_0 (Length PCTEMP_LHS_1_idx_0) ) ) )
+(assert (=> PCTEMP_LHS_1 (< PCTEMP_LHS_1_len_0 15 ) ) )
+
+(check-sat)
+(get-model)
+

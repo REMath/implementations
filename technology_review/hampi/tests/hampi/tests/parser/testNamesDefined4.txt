@@ -1,0 +1,4 @@
+//this is badly formed there nonterminal name is undefined
+var x:2;
+reg R := "a";
+assert v in R;//v undefined

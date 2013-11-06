@@ -1,0 +1,5 @@
+//this is badly formed because defines two variables
+var x:2;
+var y:2;
+reg r := "foo";
+reg r2 := fix(grammar, 6);

@@ -1,0 +1,798 @@
+/* UN/AMBIGUOUS???:
+
+Grammar 'elsa' (Elsa C++ grammar)
+taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+...originally developed with the Elkhound GLR parser generator
+(by S.McPeak & G.C.Necula)
+*/
+
+
+__EarlyStartSymbol: File TOK_EOF ;
+
+File: TranslationUnit ;
+
+Identifier: TOK_NAME ;
+
+TranslationUnit: ;
+: TranslationUnit Declaration ;
+: TranslationUnit TOK_SEMICOLON ;
+
+PrimaryExpression: Literal ;
+: TOK_THIS ;
+: TOK_LPAREN Expression TOK_RPAREN ;
+: IdExpression ;
+
+Literal: TOK_INT_LITERAL ;
+: TOK_FLOAT_LITERAL ;
+: StringLiteral ;
+: TOK_CHAR_LITERAL ;
+: TOK_TRUE ;
+: TOK_FALSE ;
+
+PreprocString: TOK_STRING_LITERAL ;
+
+StringLiteral: PreprocString ;
+: PreprocString StringLiteral ;
+
+IdExpression: PQualifiedId ;
+: TOK_COLONCOLON PQualifiedId ;
+
+UnqualifiedId: Identifier ;
+: OperatorFunctionId ;
+: ConversionFunctionId ;
+: TemplateId ;
+
+PQualifiedId: UnqualifiedId ;
+: Identifier TOK_COLONCOLON PQualifiedId ;
+: Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN TOK_COLONCOLON PQualifiedId ;
+: TOK_TEMPLATE Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN TOK_COLONCOLON PQualifiedId ;
+
+ArgumentList: TOK_LPAREN ExpressionListOpt TOK_RPAREN ;
+
+PostfixExpression: PrimaryExpression ;
+: PostfixExpression TOK_LBRACKET Expression TOK_RBRACKET ;
+: PostfixExpression ArgumentList ;
+: TOK_TYPENAME IdExpression ArgumentList ;
+: CtorExpressionType ArgumentList ;
+: PostfixExpression TOK_DOT NameAfterDot ;
+: PostfixExpression TOK_ARROW NameAfterDot ;
+: PostfixExpression TOK_PLUSPLUS ;
+: PostfixExpression TOK_MINUSMINUS ;
+: CastKeyword TOK_LESSTHAN TypeId TOK_GREATERTHAN TOK_LPAREN Expression TOK_RPAREN ;
+: TOK_TYPEID TOK_LPAREN Expression TOK_RPAREN ;
+: TOK_TYPEID TOK_LPAREN TypeId TOK_RPAREN ;
+
+CtorExpressionType: PQTypeName ;
+: TOK_CHAR ;
+: TOK_WCHAR_T ;
+: TOK_BOOL ;
+: TOK_SHORT ;
+: TOK_INT ;
+: TOK_LONG ;
+: TOK_SIGNED ;
+: TOK_UNSIGNED ;
+: TOK_FLOAT ;
+: TOK_DOUBLE ;
+: TOK_VOID ;
+
+CastKeyword: TOK_DYNAMIC_CAST ;
+: TOK_STATIC_CAST ;
+: TOK_REINTERPRET_CAST ;
+: TOK_CONST_CAST ;
+
+ExpressionList: AssignmentExpression ;
+: AssignmentExpression TOK_COMMA ExpressionList ;
+
+ExpressionListOpt: ;
+: ExpressionList ;
+
+UnaryExpression: PostfixExpression ;
+: TOK_PLUSPLUS CastExpression ;
+: TOK_MINUSMINUS CastExpression ;
+: TOK_SIZEOF UnaryExpression ;
+: DeleteExpression ;
+: TOK_STAR CastExpression ;
+: TOK_AND CastExpression ;
+: TOK_PLUS CastExpression ;
+: TOK_MINUS CastExpression ;
+: TOK_BANG CastExpression ;
+: TOK_TILDE CastExpression ;
+: TOK_SIZEOF TOK_LPAREN TypeId TOK_RPAREN ;
+: NewExpression ;
+
+ColonColonOpt: ;
+: TOK_COLONCOLON ;
+
+NewExpression: ColonColonOpt TOK_NEW NewPlacementOpt NewTypeId NewInitializerOpt ;
+: ColonColonOpt TOK_NEW NewPlacementOpt TOK_LPAREN TypeId TOK_RPAREN NewInitializerOpt ;
+
+NewPlacementOpt: ;
+: TOK_LPAREN ExpressionList TOK_RPAREN ;
+
+NewTypeId: TypeSpecifier NewDeclaratorOpt ;
+
+NewDeclaratorOpt: ;
+: TOK_STAR CVQualifierSeqOpt NewDeclaratorOpt ;
+: PtrToMemberName TOK_STAR CVQualifierSeqOpt NewDeclaratorOpt ;
+: DirectNewDeclarator ;
+
+DirectNewDeclarator: TOK_LBRACKET Expression TOK_RBRACKET ;
+: DirectNewDeclarator TOK_LBRACKET ConstantExpression TOK_RBRACKET ;
+
+NewInitializerOpt: ;
+: TOK_LPAREN ExpressionListOpt TOK_RPAREN ;
+
+DeleteExpression: ColonColonOpt TOK_DELETE CastExpression ;
+: ColonColonOpt TOK_DELETE TOK_LBRACKET TOK_RBRACKET CastExpression ;
+
+NameAfterDot: NAD1 ;
+: TOK_COLONCOLON NAD2 ;
+
+NAD1: NAD2 ;
+: TOK_TEMPLATE Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN ;
+: TOK_TILDE Identifier ;
+: TOK_TILDE Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN ;
+: ConversionFunctionId ;
+: TOK_TEMPLATE Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN TOK_COLONCOLON NAD1 ;
+
+NAD2: Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN ;
+: Identifier ;
+: OperatorFunctionId ;
+: Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN TOK_COLONCOLON NAD1 ;
+: Identifier TOK_COLONCOLON NAD1 ;
+
+CastExpression: UnaryExpression ;
+: TOK_LPAREN TypeId TOK_RPAREN CastExpression ;
+
+BinExp_high: CastExpression ;
+: BinExp_high TOK_DOTSTAR BinExp_high ;
+: BinExp_high TOK_ARROWSTAR BinExp_high ;
+: BinExp_high TOK_STAR BinExp_high ;
+: BinExp_high TOK_SLASH BinExp_high ;
+: BinExp_high TOK_PERCENT BinExp_high ;
+: BinExp_high TOK_PLUS BinExp_high ;
+: BinExp_high TOK_MINUS BinExp_high ;
+: BinExp_high TOK_LEFTSHIFT BinExp_high ;
+: BinExp_high TOK_RIGHTSHIFT BinExp_high ;
+
+BinExp_mid: BinExp_high ;
+: BinExp_mid TOK_LESSTHAN BinExp_high ;
+: BinExp_mid TOK_GREATERTHAN BinExp_high ;
+: BinExp_mid TOK_LESSEQ BinExp_high ;
+: BinExp_mid TOK_GREATEREQ BinExp_high ;
+
+BinaryExpression: BinExp_mid ;
+: BinaryExpression TOK_EQUALEQUAL BinaryExpression ;
+: BinaryExpression TOK_NOTEQUAL BinaryExpression ;
+: BinaryExpression TOK_AND BinaryExpression ;
+: BinaryExpression TOK_XOR BinaryExpression ;
+: BinaryExpression TOK_OR BinaryExpression ;
+: BinaryExpression TOK_ANDAND BinaryExpression ;
+: BinaryExpression TOK_OROR BinaryExpression ;
+
+ConditionalExpression: BinaryExpression ;
+: BinaryExpression TOK_QUESTION Expression TOK_COLON AssignmentExpression ;
+
+AssignmentExpression: ConditionalExpression ;
+: BinaryExpression AssignmentOperator AssignmentExpression ;
+: ThrowExpression ;
+
+AssignmentOperator: TOK_STAREQUAL ;
+: TOK_SLASHEQUAL ;
+: TOK_PERCENTEQUAL ;
+: TOK_PLUSEQUAL ;
+: TOK_MINUSEQUAL ;
+: TOK_RIGHTSHIFTEQUAL ;
+: TOK_LEFTSHIFTEQUAL ;
+: TOK_ANDEQUAL ;
+: TOK_XOREQUAL ;
+: TOK_OREQUAL ;
+: TOK_EQUAL ;
+
+Expression: AssignmentExpression ;
+: Expression TOK_COMMA AssignmentExpression ;
+
+ExpressionOpt: ;
+: Expression ;
+
+ConstantExpression: AssignmentExpression ;
+
+ConstantExpressionOpt: ;
+: ConstantExpression ;
+
+LabelAndColon: Identifier TOK_COLON ;
+
+Statement: LabelAndColon Statement ;
+: TOK_CASE ConstantExpression TOK_COLON Statement ;
+: TOK_DEFAULT TOK_COLON Statement ;
+: ExpressionStatement ;
+: CompoundStatement ;
+: TOK_IF TOK_LPAREN Condition TOK_RPAREN Statement ;
+: TOK_IF TOK_LPAREN Condition TOK_RPAREN Statement TOK_ELSE Statement ;
+: TOK_SWITCH TOK_LPAREN Condition TOK_RPAREN Statement ;
+: TOK_WHILE TOK_LPAREN Condition TOK_RPAREN Statement ;
+: TOK_DO Statement TOK_WHILE TOK_LPAREN Expression TOK_RPAREN TOK_SEMICOLON ;
+: TOK_FOR TOK_LPAREN ForInitStatement ConditionOpt TOK_SEMICOLON ExpressionOpt TOK_RPAREN Statement ;
+: TOK_BREAK TOK_SEMICOLON ;
+: TOK_CONTINUE TOK_SEMICOLON ;
+: TOK_RETURN Expression TOK_SEMICOLON ;
+: TOK_RETURN TOK_SEMICOLON ;
+: TOK_GOTO Identifier TOK_SEMICOLON ;
+: BlockDeclaration ;
+: TryBlock ;
+: AsmDefinition ;
+: NamespaceDecl ;
+
+ExpressionStatement: TOK_SEMICOLON ;
+: Expression TOK_SEMICOLON ;
+
+CompoundStatement: CompoundStmtHelper TOK_RBRACE ;
+
+CompoundStmtHelper: TOK_LBRACE ;
+: CompoundStmtHelper Statement ;
+
+Condition: Expression ;
+: TypeSpecifier Declarator TOK_EQUAL AssignmentExpression ;
+
+ConditionOpt: ;
+: Condition ;
+
+ForInitStatement: ExpressionStatement ;
+: SimpleDeclaration ;
+
+Declaration: BlockDeclaration ;
+: FunctionDefinition ;
+: TemplateDeclaration ;
+: ExplicitInstantiation ;
+: LinkageSpecification ;
+: AsmDefinition ;
+: NamespaceDefinition ;
+: NamespaceDecl ;
+
+BlockDeclaration: SimpleDeclaration ;
+
+SimpleDeclaration: DeclSpecifier InitDeclaratorList TOK_SEMICOLON ;
+: DeclSpecifier TOK_SEMICOLON ;
+
+DeclSpecifier: PQTypeName UberModifierSeqOpt ;
+: UberModifierSeq PQTypeName UberModifierSeqOpt ;
+: UberTypeKeyword UberTypeAndModifierSeqOpt ;
+: UberModifierSeq UberTypeKeyword UberTypeAndModifierSeqOpt ;
+: ElaboratedOrSpecifier UberModifierSeqOpt ;
+: UberModifierSeq ElaboratedOrSpecifier UberModifierSeqOpt ;
+
+ElaboratedOrSpecifier: ElaboratedTypeSpecifier ;
+: ClassSpecifier ;
+: EnumSpecifier ;
+
+UberModifierSeq: UberModifier ;
+: UberModifierSeq UberModifier ;
+
+UberModifierSeqOpt: ;
+: UberModifierSeq ;
+
+UberTypeAndModifierSeqOpt: ;
+: UberTypeAndModifierSeqOpt UberModifier ;
+: UberTypeAndModifierSeqOpt UberTypeKeyword ;
+
+UberCVQualifierSeq: UberCVQualifier ;
+: UberCVQualifierSeq UberCVQualifier ;
+
+UberCVQualifierSeqOpt: ;
+: UberCVQualifierSeq ;
+
+UberTypeAndCVQualifierSeqOpt: ;
+: UberTypeAndCVQualifierSeqOpt UberCVQualifier ;
+: UberTypeAndCVQualifierSeqOpt UberTypeKeyword ;
+
+UberModifier: TOK_AUTO ;
+: TOK_REGISTER ;
+: TOK_STATIC ;
+: TOK_EXTERN ;
+: TOK_MUTABLE ;
+: TOK_INLINE ;
+: TOK_VIRTUAL ;
+: TOK_FRIEND ;
+: TOK_TYPEDEF ;
+: TOK_CONST ;
+: TOK_VOLATILE ;
+
+UberCVQualifier: TOK_CONST ;
+: TOK_VOLATILE ;
+
+UberTypeKeyword: TOK_CHAR ;
+: TOK_WCHAR_T ;
+: TOK_BOOL ;
+: TOK_SHORT ;
+: TOK_INT ;
+: TOK_LONG ;
+: TOK_SIGNED ;
+: TOK_UNSIGNED ;
+: TOK_FLOAT ;
+: TOK_DOUBLE ;
+: TOK_VOID ;
+
+ElaboratedTypeSpecifier: ClassKey PQTypeName ;
+: TOK_ENUM PQTypeName ;
+: TOK_TYPENAME PQTypeName ;
+
+TypeSpecifier: PQTypeName UberCVQualifierSeqOpt ;
+: UberCVQualifierSeq PQTypeName UberCVQualifierSeqOpt ;
+: UberTypeKeyword UberTypeAndCVQualifierSeqOpt ;
+: UberCVQualifierSeq UberTypeKeyword UberTypeAndCVQualifierSeqOpt ;
+: ElaboratedOrSpecifier UberCVQualifierSeqOpt ;
+: UberCVQualifierSeq ElaboratedOrSpecifier UberCVQualifierSeqOpt ;
+
+PQTypeName: PQTypeName_ncc ;
+: TOK_COLONCOLON PQTypeName_ncc ;
+
+PQTypeName_ncc: Identifier ;
+: TemplateId ;
+: Identifier TOK_COLONCOLON PQTypeName_notfirst ;
+: Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN TOK_COLONCOLON PQTypeName_notfirst ;
+
+PQTypeName_notfirst: PQTypeName_ncc ;
+: TOK_TEMPLATE TemplateId ;
+: TOK_TEMPLATE Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN TOK_COLONCOLON PQTypeName_notfirst ;
+
+EnumSpecifier: TOK_ENUM TOK_LBRACE EnumeratorListOpt TOK_RBRACE ;
+: TOK_ENUM Identifier TOK_LBRACE EnumeratorListOpt TOK_RBRACE ;
+
+EnumeratorListOpt: ;
+: EnumeratorDefinition ;
+: EnumeratorDefinition TOK_COMMA EnumeratorListOpt ;
+
+EnumeratorDefinition: Identifier ;
+: Identifier TOK_EQUAL ConstantExpression ;
+
+AsmDefinition: TOK_ASM TOK_LPAREN StringLiteral TOK_RPAREN TOK_SEMICOLON ;
+
+LinkageSpecification: TOK_EXTERN TOK_STRING_LITERAL TOK_LBRACE TranslationUnit TOK_RBRACE ;
+: TOK_EXTERN TOK_STRING_LITERAL Declaration ;
+
+InitDeclaratorList: InitDeclarator ;
+: InitDeclarator TOK_COMMA InitDeclaratorList ;
+
+InitDeclarator: Declarator ;
+: Declarator Initializer ;
+
+Initializer: TOK_EQUAL SimpleInitializerClause ;
+: TOK_LPAREN ExpressionList TOK_RPAREN ;
+
+SimpleInitializerClause: AssignmentExpression ;
+: CompoundInitializer ;
+
+InitializerClause: SimpleInitializerClause ;
+
+CompoundInitializer: TOK_LBRACE InitializerList CommaOpt TOK_RBRACE ;
+: TOK_LBRACE TOK_RBRACE ;
+
+CommaOpt: ;
+: TOK_COMMA ;
+
+InitializerList: InitializerClause ;
+: InitializerList TOK_COMMA InitializerClause ;
+
+Declarator: TOK_STAR CVQualifierSeqOpt Declarator ;
+: TOK_AND Declarator ;
+: PtrToMemberName TOK_STAR CVQualifierSeqOpt Declarator ;
+: DirectDeclarator ;
+
+DirectDeclarator: IdExpression ;
+: PQDtorName ;
+: DirectDeclarator TOK_LPAREN ParameterDeclarationClause TOK_RPAREN CVQualifierSeqOpt ExceptionSpecificationOpt ;
+: DirectDeclarator TOK_LBRACKET ConstantExpressionOpt TOK_RBRACKET ;
+: TOK_LPAREN Declarator TOK_RPAREN ;
+
+PQDtorName: TOK_TILDE Identifier ;
+: TOK_TILDE Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN ;
+: Identifier TOK_COLONCOLON PQDtorName ;
+: Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN TOK_COLONCOLON PQDtorName ;
+: TOK_TEMPLATE Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN TOK_COLONCOLON PQDtorName ;
+
+PtrToMemberName: IdExpression TOK_COLONCOLON ;
+
+CVQualifierSeqOpt: ;
+: CVQualifierSeq ;
+
+CVQualifierSeq: CVQualifier ;
+: CVQualifier CVQualifierSeq ;
+
+CVQualifier: TOK_CONST ;
+: TOK_VOLATILE ;
+
+TypeId: TypeSpecifier AbstractDeclaratorOpt ;
+
+AbstractDeclaratorOpt: ;
+: AbstractDeclarator ;
+
+AbstractDeclarator: TOK_STAR CVQualifierSeqOpt AbstractDeclaratorOpt ;
+: TOK_AND AbstractDeclaratorOpt ;
+: PtrToMemberName TOK_STAR CVQualifierSeqOpt AbstractDeclaratorOpt ;
+: DirectAbstractDeclarator ;
+
+DirectAbstractDeclaratorOpt: ;
+: DirectAbstractDeclarator ;
+
+DirectAbstractDeclarator: DirectAbstractDeclaratorOpt TOK_LPAREN ParameterDeclarationClause TOK_RPAREN CVQualifierSeqOpt ExceptionSpecificationOpt ;
+: DirectAbstractDeclaratorOpt TOK_LBRACKET ConstantExpressionOpt TOK_RBRACKET ;
+: TOK_LPAREN AbstractDeclarator TOK_RPAREN ;
+
+ParameterDeclarationClause: ParameterDeclarationList ;
+: ;
+
+ParameterDeclarationList: TOK_ELLIPSIS ;
+: ParameterDeclaration TOK_ELLIPSIS ;
+: ParameterDeclaration ;
+: ParameterDeclaration TOK_COMMA ParameterDeclarationList ;
+
+ParameterDeclaration: TypeSpecifier ParameterDeclarator ;
+: TOK_REGISTER TypeSpecifier ParameterDeclarator ;
+: TypeSpecifier TOK_REGISTER ParameterDeclarator ;
+
+ParameterDeclarator: UnqualifiedDeclarator ;
+: UnqualifiedDeclarator TOK_EQUAL AssignmentExpression ;
+: AbstractDeclaratorOpt ;
+: AbstractDeclaratorOpt TOK_EQUAL AssignmentExpression ;
+
+FunctionDefinition: DeclSpecifier FDDeclarator FunctionBody ;
+: DeclSpecifier FDDeclarator TOK_TRY FunctionBody HandlerSeq ;
+: CDtorModifierSeq FDDeclarator CtorInitializerOpt FunctionBody ;
+: FDDeclarator CtorInitializerOpt FunctionBody ;
+: CDtorModifierSeq FDDeclarator TOK_TRY CtorInitializerOpt FunctionBody HandlerSeq ;
+: FDDeclarator TOK_TRY CtorInitializerOpt FunctionBody HandlerSeq ;
+
+FDDeclarator: Declarator ;
+
+FunctionBody: CompoundStatement ;
+
+CtorInitializerOpt: ;
+: TOK_COLON MemInitializerList ;
+
+ClassSpecifier: ClassKey ClassHeadNameOpt BaseClauseOpt TOK_LBRACE MemberDeclarationSeqOpt TOK_RBRACE ;
+
+ClassHeadNameOpt: ;
+: ClassHeadName ;
+
+ClassHeadName: Identifier ;
+: TemplateId ;
+: Identifier TOK_COLONCOLON ClassHeadName ;
+: Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN TOK_COLONCOLON ClassHeadName ;
+: TOK_TEMPLATE Identifier TOK_LESSTHAN TemplateArgumentList TOK_GREATERTHAN TOK_COLONCOLON ClassHeadName ;
+
+ClassKey: TOK_CLASS ;
+: TOK_STRUCT ;
+: TOK_UNION ;
+
+MemberDeclarationSeqOpt: ;
+: MemberDeclarationSeqOpt TOK_SEMICOLON ;
+: MemberDeclarationSeqOpt MemberDeclaration ;
+: MemberDeclarationSeqOpt AccessSpecifier TOK_COLON ;
+
+AccessSpecifier: TOK_PUBLIC ;
+: TOK_PRIVATE ;
+: TOK_PROTECTED ;
+
+MemberDeclaration: DeclSpecifier MemberDeclaratorList TOK_SEMICOLON ;
+: DeclSpecifier TOK_SEMICOLON ;
+: PQualifiedId TOK_SEMICOLON ;
+: TOK_USING IdExpression TOK_SEMICOLON ;
+: FunctionDefinition ;
+: CDtorProtoDecl ;
+: TemplateDeclaration ;
+
+CDtorProtoDecl: CDtorModifierSeq MemberDeclarator TOK_SEMICOLON ;
+: MemberDeclarator TOK_SEMICOLON ;
+
+MemberDeclaratorList: MemberDeclarator ;
+: MemberDeclarator TOK_COMMA MemberDeclaratorList ;
+
+MemberDeclarator: Declarator ;
+: Declarator TOK_EQUAL ConstantExpression ;
+: IdentifierOpt TOK_COLON ConstantExpression ;
+
+IdentifierOpt: ;
+: Identifier ;
+
+CDtorModifier: TOK_EXPLICIT ;
+: TOK_VIRTUAL ;
+: TOK_INLINE ;
+: TOK_FRIEND ;
+
+CDtorModifierSeq: CDtorModifier ;
+: CDtorModifierSeq CDtorModifier ;
+
+BaseClauseOpt: ;
+: TOK_COLON BaseSpecifierList ;
+
+BaseSpecifierList: BaseSpecifier ;
+: BaseSpecifier TOK_COMMA BaseSpecifierList ;
+
+BaseSpecifier: PQClassName ;
+: TOK_VIRTUAL AccessSpecifierOpt PQClassName ;
+: AccessSpecifier VirtualOpt PQClassName ;
+
+VirtualOpt: ;
+: TOK_VIRTUAL ;
+
+AccessSpecifierOpt: ;
+: AccessSpecifier ;
+
+PQClassName: PQTypeName ;
+
+ConversionFunctionId: TOK_OPERATOR ConversionTypeId ;
+
+ConversionTypeId: TypeSpecifier ConversionDeclaratorOpt ;
+
+ConversionDeclaratorOpt: ;
+: TOK_STAR CVQualifierSeqOpt ConversionDeclaratorOpt ;
+: TOK_AND ConversionDeclaratorOpt ;
+: PtrToMemberName TOK_STAR CVQualifierSeqOpt ConversionDeclaratorOpt ;
+
+MemInitializerList: MemInitializer ;
+: MemInitializer TOK_COMMA MemInitializerList ;
+
+MemInitializer: MemInitializerId TOK_LPAREN ExpressionListOpt TOK_RPAREN ;
+
+MemInitializerId: PQTypeName ;
+
+OperatorFunctionId: TOK_OPERATOR Operator ;
+
+Operator: TOK_NEW ;
+: TOK_DELETE ;
+: TOK_NEW TOK_LBRACKET TOK_RBRACKET ;
+: TOK_DELETE TOK_LBRACKET TOK_RBRACKET ;
+: TOK_BANG ;
+: TOK_TILDE ;
+: TOK_PLUSPLUS ;
+: TOK_MINUSMINUS ;
+: TOK_PLUS ;
+: TOK_MINUS ;
+: TOK_STAR ;
+: TOK_SLASH ;
+: TOK_PERCENT ;
+: TOK_LEFTSHIFT ;
+: TOK_RIGHTSHIFT ;
+: TOK_AND ;
+: TOK_XOR ;
+: TOK_OR ;
+: TOK_EQUAL ;
+: TOK_PLUSEQUAL ;
+: TOK_MINUSEQUAL ;
+: TOK_STAREQUAL ;
+: TOK_SLASHEQUAL ;
+: TOK_PERCENTEQUAL ;
+: TOK_LEFTSHIFTEQUAL ;
+: TOK_RIGHTSHIFTEQUAL ;
+: TOK_ANDEQUAL ;
+: TOK_XOREQUAL ;
+: TOK_OREQUAL ;
+: TOK_EQUALEQUAL ;
+: TOK_NOTEQUAL ;
+: TOK_LESSTHAN ;
+: TOK_GREATERTHAN ;
+: TOK_LESSEQ ;
+: TOK_GREATEREQ ;
+: TOK_ANDAND ;
+: TOK_OROR ;
+: TOK_ARROW ;
+: TOK_ARROWSTAR ;
+: TOK_LBRACKET TOK_RBRACKET ;
+: TOK_LPAREN TOK_RPAREN ;
+: TOK_COMMA ;
+
+TemplateDeclaration: TemplatePreamble FunctionDefinition ;
+: TemplatePreamble SimpleDeclaration ;
+: TemplatePreamble TemplateDeclaration ;
+: TemplatePreamble CDtorProtoDecl ;
+
+TemplatePreamble: TOK_TEMPLATE TOK_LESSTHAN TemplateParameterList TOK_GREATERTHAN ;
+: TOK_EXPORT TOK_TEMPLATE TOK_LESSTHAN TemplateParameterList TOK_GREATERTHAN ;
+: TOK_TEMPLATE TOK_LESSTHAN TOK_GREATERTHAN ;
+: TOK_EXPORT TOK_TEMPLATE TOK_LESSTHAN TOK_GREATERTHAN ;
+
+TemplateParameterList: ClassOrTypename IdentifierOpt DefaultTypeOpt ;
+: ClassOrTypename IdentifierOpt DefaultTypeOpt TOK_COMMA TemplateParameterList ;
+: ParameterDeclaration ;
+: ParameterDeclaration TOK_COMMA TemplateParameterList ;
+
+ClassOrTypename: TOK_CLASS ;
+: TOK_TYPENAME ;
+
+DefaultTypeOpt: ;
+: TOK_EQUAL TypeId ;
+
+TemplateArgumentListOpt: ;
+: TemplateArgumentList ;
+
+TemplateId: Identifier TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN ;
+: OperatorFunctionId TOK_LESSTHAN TemplateArgumentListOpt TOK_GREATERTHAN ;
+
+TemplateArgumentList: TemplateArgument ;
+
+TemplateArgumentListTailOpt: ;
+: TOK_COMMA TemplateArgument ;
+
+TemplateArgument: TypeId TemplateArgumentListTailOpt ;
+: AssignmentExpression TemplateArgumentListTailOpt ;
+
+ExplicitInstantiation: TOK_TEMPLATE BlockDeclaration ;
+
+TryBlock: TOK_TRY CompoundStatement HandlerSeq ;
+
+HandlerSeq: Handler ;
+: Handler HandlerSeq ;
+
+Handler: TOK_CATCH TOK_LPAREN HandlerParameter TOK_RPAREN CompoundStatement ;
+: TOK_CATCH TOK_LPAREN TOK_ELLIPSIS TOK_RPAREN CompoundStatement ;
+
+HandlerParameter: TypeSpecifier UnqualifiedDeclarator ;
+: TypeSpecifier AbstractDeclaratorOpt ;
+
+UnqualifiedDeclarator: Declarator ;
+
+ThrowExpression: TOK_THROW ;
+: TOK_THROW AssignmentExpression ;
+
+ExceptionSpecificationOpt: ;
+: TOK_THROW TOK_LPAREN TOK_RPAREN ;
+: TOK_THROW TOK_LPAREN TypeIdList TOK_RPAREN ;
+
+TypeIdList: TypeId ;
+: TypeId TOK_COMMA TypeIdList ;
+
+NamespaceDefinition: TOK_NAMESPACE IdentifierOpt TOK_LBRACE TranslationUnit TOK_RBRACE ;
+
+NamespaceDecl: TOK_NAMESPACE Identifier TOK_EQUAL IdExpression TOK_SEMICOLON ;
+: TOK_USING IdExpression TOK_SEMICOLON ;
+: TOK_USING TOK_NAMESPACE IdExpression TOK_SEMICOLON ;
+
+TOK_EOF : "\0000" ;
+TOK_NAME : "\0001" ;
+TOK_INT_LITERAL : "\0004" ;
+TOK_FLOAT_LITERAL : "\0005" ;
+TOK_STRING_LITERAL : "\0006" ;
+TOK_CHAR_LITERAL : "\0007" ;
+TOK_ASM : "\0008" ;
+TOK_AUTO : "\0009" ;
+TOK_BREAK : "\0010" ;
+TOK_BOOL : "\0011" ;
+TOK_CASE : "\0012" ;
+TOK_CATCH : "\0013" ;
+TOK_CHAR : "\0015" ;
+TOK_CLASS : "\0016" ;
+TOK_CONST : "\0017" ;
+TOK_CONST_CAST : "\0018" ;
+TOK_CONTINUE : "\0019" ;
+TOK_DEFAULT : "\0020" ;
+TOK_DELETE : "\0021" ;
+TOK_DO : "\0022" ;
+TOK_DOUBLE : "\0023" ;
+TOK_DYNAMIC_CAST : "\0024" ;
+TOK_ELSE : "\0025" ;
+TOK_ENUM : "\0026" ;
+TOK_EXPLICIT : "\0027" ;
+TOK_EXPORT : "\0028" ;
+TOK_EXTERN : "\0029" ;
+TOK_FALSE : "\0030" ;
+TOK_FLOAT : "\0031" ;
+TOK_FOR : "\0032" ;
+TOK_FRIEND : "\0033" ;
+TOK_GOTO : "\0034" ;
+TOK_IF : "\0035" ;
+TOK_INLINE : "\0036" ;
+TOK_INT : "\0037" ;
+TOK_LONG : "\0038" ;
+TOK_MUTABLE : "\0039" ;
+TOK_NAMESPACE : "\0040" ;
+TOK_NEW : "\0041" ;
+TOK_OPERATOR : "\0042" ;
+TOK_PRIVATE : "\0044" ;
+TOK_PROTECTED : "\0045" ;
+TOK_PUBLIC : "\0046" ;
+TOK_REGISTER : "\0047" ;
+TOK_REINTERPRET_CAST : "\0048" ;
+TOK_RETURN : "\0049" ;
+TOK_SHORT : "\0050" ;
+TOK_SIGNED : "\0051" ;
+TOK_SIZEOF : "\0052" ;
+TOK_STATIC : "\0053" ;
+TOK_STATIC_CAST : "\0054" ;
+TOK_STRUCT : "\0055" ;
+TOK_SWITCH : "\0056" ;
+TOK_TEMPLATE : "\0057" ;
+TOK_THIS : "\0058" ;
+TOK_THROW : "\0059" ;
+TOK_TRUE : "\0060" ;
+TOK_TRY : "\0061" ;
+TOK_TYPEDEF : "\0062" ;
+TOK_TYPEID : "\0063" ;
+TOK_TYPENAME : "\0064" ;
+TOK_UNION : "\0065" ;
+TOK_UNSIGNED : "\0066" ;
+TOK_USING : "\0067" ;
+TOK_VIRTUAL : "\0068" ;
+TOK_VOID : "\0069" ;
+TOK_VOLATILE : "\0070" ;
+TOK_WCHAR_T : "\0071" ;
+TOK_WHILE : "\0072" ;
+TOK_LPAREN : "\0073" ;
+TOK_RPAREN : "\0074" ;
+TOK_LBRACKET : "\0075" ;
+TOK_RBRACKET : "\0076" ;
+TOK_ARROW : "\0077" ;
+TOK_COLONCOLON : "\0078" ;
+TOK_DOT : "\0079" ;
+TOK_BANG : "\0080" ;
+TOK_TILDE : "\0081" ;
+TOK_PLUS : "\0082" ;
+TOK_MINUS : "\0083" ;
+TOK_PLUSPLUS : "\0084" ;
+TOK_MINUSMINUS : "\0085" ;
+TOK_AND : "\0086" ;
+TOK_STAR : "\0087" ;
+TOK_DOTSTAR : "\0088" ;
+TOK_ARROWSTAR : "\0089" ;
+TOK_SLASH : "\0090" ;
+TOK_PERCENT : "\0091" ;
+TOK_LEFTSHIFT : "\0092" ;
+TOK_RIGHTSHIFT : "\0093" ;
+TOK_LESSTHAN : "\0094" ;
+TOK_LESSEQ : "\0095" ;
+TOK_GREATERTHAN : "\0096" ;
+TOK_GREATEREQ : "\0097" ;
+TOK_EQUALEQUAL : "\0098" ;
+TOK_NOTEQUAL : "\0099" ;
+TOK_XOR : "\0100" ;
+TOK_OR : "\0101" ;
+TOK_ANDAND : "\0102" ;
+TOK_OROR : "\0103" ;
+TOK_QUESTION : "\0104" ;
+TOK_COLON : "\0105" ;
+TOK_EQUAL : "\0106" ;
+TOK_STAREQUAL : "\0107" ;
+TOK_SLASHEQUAL : "\0108" ;
+TOK_PERCENTEQUAL : "\0109" ;
+TOK_PLUSEQUAL : "\0110" ;
+TOK_MINUSEQUAL : "\0111" ;
+TOK_ANDEQUAL : "\0112" ;
+TOK_XOREQUAL : "\0113" ;
+TOK_OREQUAL : "\0114" ;
+TOK_LEFTSHIFTEQUAL : "\0115" ;
+TOK_RIGHTSHIFTEQUAL : "\0116" ;
+TOK_COMMA : "\0117" ;
+TOK_ELLIPSIS : "\0118" ;
+TOK_SEMICOLON : "\0119" ;
+TOK_LBRACE : "\0120" ;
+TOK_RBRACE : "\0121" ;
+
+/* -- apparantly unused productions??? --:
+
+TOK_VARIABLE_NAME : "\0003"
+TOK_CDECL : "\0014"
+TOK_BUILTIN_CONSTANT_P : "\0124"
+TOK_IMAG : "\0137"
+TOK_COMPLEX : "\0139"
+TOK_RESTRICT : "\0138"
+TOK_REAL : "\0136"
+TOK_PREFER_REDUCE : "\0122"
+TOK_PREFER_SHIFT : "\0123"
+TOK_MAX_OP : "\0135"
+TOK_TYPE_NAME : "\0002"
+TOK_PASCAL : "\0043"
+TOK___ATTRIBUTE__ : "\0126"
+TOK___TYPEOF__ : "\0130"
+TOK___BUILTIN_EXPECT : "\0132"
+TOK_MIN_OP : "\0134"
+TOK_IMAGINARY : "\0140"
+TOK___ALIGNOF__ : "\0125"
+TOK___FUNCTION__ : "\0127"
+TOK___LABEL__ : "\0128"
+TOK___PRETTY_FUNCTION__ : "\0129"
+TOK___EXTENSION__ : "\0131"
+TOK___BUILTIN_VA_ARG : "\0133"
+*/

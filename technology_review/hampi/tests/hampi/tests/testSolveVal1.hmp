@@ -1,0 +1,5 @@
+//this tests the ability to create new variables and put constraints on them
+var v:1;
+
+val xx:= concat("ab", v);
+assert xx contains "bc";

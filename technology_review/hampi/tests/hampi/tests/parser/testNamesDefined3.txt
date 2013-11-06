@@ -1,0 +1,5 @@
+//this is badly formed there nonterminal name is undefined
+var x:2;
+cfg A := "a";
+reg R := fix(B, 30); //B is undefined
+assert x contains "foo";

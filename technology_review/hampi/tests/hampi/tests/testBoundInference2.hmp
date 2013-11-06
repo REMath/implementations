@@ -1,0 +1,5 @@
+var v : 19;
+cfg S :=  "!" | "a" S "b" | "b" S "a";
+val q := concat("aba", v, "bab");
+assert q contains "baba!";
+assert q in S; //limit should be inferred

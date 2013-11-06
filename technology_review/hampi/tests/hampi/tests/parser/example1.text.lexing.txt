@@ -1,0 +1,5 @@
+	CFG		cfg
+	ID		x
+	ASSIGN		:=
+	STR_LIT		"foo"
+	SEMI		;

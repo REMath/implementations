@@ -1,0 +1,6 @@
+A = B "c"  ;
+B = "b"  | S_renamed "a"  ;
+S = "a" "a" A "a" "a" "c" "a"  | "a" "b" "c" "a"  | "a" "b" B "b" "a" "c" "a"  ;
+S_renamed = "a" A "a"  | "b" B "b"  ;
+
+

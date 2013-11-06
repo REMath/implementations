@@ -1,0 +1,3 @@
+var v:1;
+reg r := ['a'-'z'];
+assert v in r;

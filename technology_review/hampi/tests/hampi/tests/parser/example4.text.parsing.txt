@@ -1,0 +1,1 @@
+(PROGRAM (REG r "foo") (REG r2 (FIX grammar 6)))

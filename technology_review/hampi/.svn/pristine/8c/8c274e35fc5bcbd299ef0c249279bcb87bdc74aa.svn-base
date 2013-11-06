@@ -1,0 +1,12 @@
+S : O ;
+O : A ;
+  : B ;
+  : A E ;
+  : B E ;
+  : O O ;
+E : A A ;
+  : B B ;
+  : A B ;
+  : B A ;
+A : "a" ;
+B : "b" ;

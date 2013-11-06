@@ -1,0 +1,3 @@
+var v : 1 .. 10;
+val l := "abcdef";
+assert v equals l;

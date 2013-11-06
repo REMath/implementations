@@ -1,0 +1,72 @@
+/* UNAMBIGUOUS
+
+
+*/
+
+
+program
+: statement ;
+: program ";" statement ;
+
+statement
+: assign_stat ;
+: jump ;
+: ident ":" statement ;
+
+assign_stat
+: ident "=" arith_exp ;
+: ident "~" set_exp ;
+
+jump
+: "i" relation "t" "g" ident ;
+
+relation
+: arith_exp "=" arith_exp ;
+: set_exp "~" set_exp ;
+
+arith_exp
+: arith_exp "+" arith_term ;
+: arith_exp "-" arith_term ;
+: arith_term ;
+
+arith_term
+: arith_term "*" arith_primary ;
+: arith_primary ;
+
+arith_primary
+: "(" arith_exp ")" ;
+: ident ;
+: const ;
+
+set_exp
+: set_exp "+" set_term ;
+: set_term ;
+
+set_term
+: set_term "*" set_factor ;
+: set_factor ;
+
+set_factor
+: set_factor "-" set_primary ;
+: set_primary ;
+
+set_primary
+: "(" set_exp ")" ;
+: ident ;
+: const ;
+
+ident
+: ident letter ;
+: letter ;
+
+const
+: const digit ;
+: digit ;
+
+letter
+: "a" ;
+: "b" ;
+
+digit
+: "0" ;
+: "1" ;

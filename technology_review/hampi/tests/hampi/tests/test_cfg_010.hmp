@@ -1,0 +1,8 @@
+//created from CFGAnalyzer file 010.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg S :=  C A | A B ;
+cfg A :=  "a" ;
+cfg B :=  "b" | A B | B C ;
+cfg C :=  "b" | "a" B ;
+reg limit := fix(S, 7);
+assert hampiStringVar in limit;

@@ -1,0 +1,15 @@
+(set-option set-param "STRONG_CONTEXT_SIMPLIFIER" "true")
+(set-option set-param "CONTEXT_SIMPLIFIER" "true")
+
+(declare-variable vi1 Int)
+(declare-variable vi2 Int)
+(declare-variable x String)
+
+
+(assert (= "efg" (Substring x 1 3) ) )
+(assert (= "bef" (Substring x 0 3) ) )
+
+
+
+(check-sat)
+(get-model)

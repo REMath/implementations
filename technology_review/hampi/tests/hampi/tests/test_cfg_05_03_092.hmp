@@ -1,0 +1,9 @@
+//created from CFGAnalyzer file 05_03_092.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg atomic :=  "b" | predicate | basic "=" basic | "(" "f" ")" ;
+cfg predicate :=  "i" "(" term_list ")" ;
+cfg basic :=  "d" | "i" | call | "(" "t" ")" ;
+cfg call :=  "i" "(" term_list ")" ;
+cfg term_list :=  "t" | term_list "," "t" ;
+reg limit := fix(atomic, 7);
+assert hampiStringVar in limit;

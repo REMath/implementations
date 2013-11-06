@@ -1,0 +1,15 @@
+	REG		reg
+	ID		r
+	ASSIGN		:=
+	STR_LIT		"foo"
+	SEMI		;
+	REG		reg
+	ID		r2
+	ASSIGN		:=
+	FIX		fix
+	LPAREN		(
+	ID		grammar
+	COMMA		,
+	INT		6
+	RPAREN		)
+	SEMI		;

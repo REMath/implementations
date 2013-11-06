@@ -1,0 +1,4 @@
+var v:20;
+assert v contains "aaa1";
+assert v contains "aaa2";
+assert v contains "aaa3";

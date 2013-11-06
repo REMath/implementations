@@ -1,0 +1,9 @@
+(declare-variable x String)
+(declare-variable y String)
+(declare-variable m String)
+(declare-variable n String)
+
+(assert (= (Concat x y) (Concat m n) ) )
+
+(check-sat)
+(get-model)

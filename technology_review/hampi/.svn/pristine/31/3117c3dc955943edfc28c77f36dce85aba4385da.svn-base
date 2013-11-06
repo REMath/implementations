@@ -1,0 +1,9 @@
+//created from CFGAnalyzer file 91_08_014.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg declar_list :=  declar | declar_list declar ;
+cfg declar :=  type decl_list ";" | type declar "{" "}" ;
+cfg type :=  "t" | "s" "{" declar_list "}" | ;
+cfg decl_list :=  decl | decl_list "," declar ;
+cfg decl :=  "t" | "i" | "*" decl | "(" decl ")" | decl "(" ")" | decl "[" "]" ;
+reg limit := fix(declar_list, 7);
+assert hampiStringVar in limit;

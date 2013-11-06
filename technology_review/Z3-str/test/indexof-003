@@ -1,0 +1,10 @@
+(declare-variable x String)
+(declare-variable vi1 Int)
+
+
+(assert (= x "aaaaefg" ) )
+(assert (= vi1 (Indexof x "efg") ) )
+
+
+(check-sat)
+(get-model)

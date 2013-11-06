@@ -1,0 +1,854 @@
+(declare-variable  v_93f8ebc  bool )
+(declare-variable  v_941f988  bool )
+(declare-variable  v_9422d5c  bool )
+(declare-variable  v_94242cc  bool )
+(declare-variable  v_942c48c  bool )
+(declare-variable  v_942ebdc  bool )
+
+(declare-variable  v_941f8f8 String)
+%------------- Taint declare -------------
+(declare-variable  T_local__SESSION   (_ BitVec 1)  )
+(declare-variable  T_local__SESSION_i_admin_email   (_ BitVec 1)  )
+(declare-variable  T_local__SESSION_i_database   (_ BitVec 1)  )
+(declare-variable  T_local__SESSION_i_hostname   (_ BitVec 1)  )
+(declare-variable  T_local__SESSION_i_password   (_ BitVec 1)  )
+(declare-variable  T_local__SESSION_i_title   (_ BitVec 1)  )
+(declare-variable  T_local__SESSION_i_url   (_ BitVec 1)  )
+(declare-variable  T_local__SESSION_i_username   (_ BitVec 1)  )
+(declare-variable  T_v_93fa12c   (_ BitVec 1)  )
+(declare-variable  T_v_93fa1cc   (_ BitVec 1)  )
+(declare-variable  T_v_93fa26c   (_ BitVec 1)  )
+(declare-variable  T_v_93fa30c   (_ BitVec 1)  )
+(declare-variable  T_v_93fa3ac   (_ BitVec 1)  )
+(declare-variable  T_v_93fa44c   (_ BitVec 1)  )
+(declare-variable  T_v_93fa52c   (_ BitVec 1)  )
+(declare-variable  T_v_93fa5cc   (_ BitVec 1)  )
+(declare-variable  T_v_93fa66c   (_ BitVec 1)  )
+(declare-variable  T_v_93fa70c   (_ BitVec 1)  )
+(declare-variable  T_v_93fa7ac   (_ BitVec 1)  )
+(declare-variable  T_v_93fa84c   (_ BitVec 1)  )
+(declare-variable  T_v_941d924   (_ BitVec 1)  )
+(declare-variable  T_v_941d9c4   (_ BitVec 1)  )
+(declare-variable  T_v_941da64   (_ BitVec 1)  )
+(declare-variable  T_v_941db04   (_ BitVec 1)  )
+(declare-variable  T_v_941dba4   (_ BitVec 1)  )
+(declare-variable  T_v_941dc44   (_ BitVec 1)  )
+(declare-variable  T_v_941dce4   (_ BitVec 1)  )
+(declare-variable  T_v_941dd84   (_ BitVec 1)  )
+(declare-variable  T_v_941de24   (_ BitVec 1)  )
+(declare-variable  T_v_941dec4   (_ BitVec 1)  )
+(declare-variable  T_v_941df64   (_ BitVec 1)  )
+(declare-variable  T_v_941e004   (_ BitVec 1)  )
+(declare-variable  T_v_941e0a4   (_ BitVec 1)  )
+(declare-variable  T_v_941e144   (_ BitVec 1)  )
+(declare-variable  T_v_941e1e4   (_ BitVec 1)  )
+(declare-variable  T_v_941e284   (_ BitVec 1)  )
+(declare-variable  T_v_941e324   (_ BitVec 1)  )
+(declare-variable  T_v_941e3c4   (_ BitVec 1)  )
+(declare-variable  T_v_941e464   (_ BitVec 1)  )
+(declare-variable  T_v_941e504   (_ BitVec 1)  )
+(declare-variable  T_v_941e5a4   (_ BitVec 1)  )
+(declare-variable  T_v_941e644   (_ BitVec 1)  )
+(declare-variable  T_v_941e6e4   (_ BitVec 1)  )
+(declare-variable  T_v_941e784   (_ BitVec 1)  )
+(declare-variable  T_v_941e824   (_ BitVec 1)  )
+(declare-variable  T_v_941e8c4   (_ BitVec 1)  )
+(declare-variable  T_v_941e964   (_ BitVec 1)  )
+(declare-variable  T_v_941ea04   (_ BitVec 1)  )
+(declare-variable  T_v_941eaa4   (_ BitVec 1)  )
+(declare-variable  T_v_941eb44   (_ BitVec 1)  )
+(declare-variable  T_v_941ebe4   (_ BitVec 1)  )
+(declare-variable  T_v_941ec84   (_ BitVec 1)  )
+(declare-variable  T_v_941ed24   (_ BitVec 1)  )
+(declare-variable  T_v_941edc4   (_ BitVec 1)  )
+(declare-variable  T_v_941ee64   (_ BitVec 1)  )
+(declare-variable  T_v_941ef04   (_ BitVec 1)  )
+(declare-variable  T_v_941efa4   (_ BitVec 1)  )
+(declare-variable  T_v_941f044   (_ BitVec 1)  )
+(declare-variable  T_v_941f0e4   (_ BitVec 1)  )
+(declare-variable  T_v_941f184   (_ BitVec 1)  )
+(declare-variable  T_v_941f224   (_ BitVec 1)  )
+(declare-variable  T_v_941f2c4   (_ BitVec 1)  )
+(declare-variable  T_v_941f364   (_ BitVec 1)  )
+(declare-variable  T_v_941f404   (_ BitVec 1)  )
+(declare-variable  T_v_941f4a4   (_ BitVec 1)  )
+(declare-variable  T_v_941f544   (_ BitVec 1)  )
+(declare-variable  T_v_941f5e4   (_ BitVec 1)  )
+(declare-variable  T_v_941f684   (_ BitVec 1)  )
+(declare-variable  T_v_941f724   (_ BitVec 1)  )
+(declare-variable  T_v_941f7c4   (_ BitVec 1)  )
+(declare-variable  T_v_941f864   (_ BitVec 1)  )
+(declare-variable  T_v_943058c   (_ BitVec 1)  )
+(declare-variable  T_v_943062c   (_ BitVec 1)  )
+(declare-variable  T_v_94306cc   (_ BitVec 1)  )
+(declare-variable  T_v_943076c   (_ BitVec 1)  )
+(declare-variable  T_v_943084c   (_ BitVec 1)  )
+(declare-variable  T_v_94308ec   (_ BitVec 1)  )
+(declare-variable  T_v_943098c   (_ BitVec 1)  )
+(declare-variable  T_v_9430a2c   (_ BitVec 1)  )
+(declare-variable  T_v_9430acc   (_ BitVec 1)  )
+(declare-variable  T_v_9430b6c   (_ BitVec 1)  )
+(declare-variable  T_v_9430c0c   (_ BitVec 1)  )
+(declare-variable  T_v_9431d2c   (_ BitVec 1)  )
+(declare-variable  T_v_9431dcc   (_ BitVec 1)  )
+(declare-variable  T_v_9431e6c   (_ BitVec 1)  )
+(declare-variable  T_v_9431f0c   (_ BitVec 1)  )
+(declare-variable  T_v_9431fac   (_ BitVec 1)  )
+(declare-variable  T_v_943204c   (_ BitVec 1)  )
+(declare-variable  T_v_943212c   (_ BitVec 1)  )
+(declare-variable  T_v_94321cc   (_ BitVec 1)  )
+(declare-variable  T_v_943226c   (_ BitVec 1)  )
+(declare-variable  T_v_943230c   (_ BitVec 1)  )
+(declare-variable  T_v_94323ac   (_ BitVec 1)  )
+(declare-variable  T_v_943244c   (_ BitVec 1)  )
+(declare-variable  T_v_943252c   (_ BitVec 1)  )
+(declare-variable  T_v_94325cc   (_ BitVec 1)  )
+(declare-variable  T_v_943266c   (_ BitVec 1)  )
+(declare-variable  T_v_943270c   (_ BitVec 1)  )
+(declare-variable  T_v_94327ac   (_ BitVec 1)  )
+(declare-variable  T_v_943284c   (_ BitVec 1)  )
+(declare-variable  T_v_94328ec   (_ BitVec 1)  )
+(declare-variable  T_v_943298c   (_ BitVec 1)  )
+(declare-variable  T_v_9432a2c   (_ BitVec 1)  )
+(declare-variable  T_v_9432b0c   (_ BitVec 1)  )
+(declare-variable  T_v_9432bac   (_ BitVec 1)  )
+(declare-variable  T_v_9432c4c   (_ BitVec 1)  )
+(declare-variable  T_v_9432cec   (_ BitVec 1)  )
+(declare-variable  T_v_9432d8c   (_ BitVec 1)  )
+(declare-variable  T_v_9432e2c   (_ BitVec 1)  )
+(declare-variable  T_v_9432f0c   (_ BitVec 1)  )
+(declare-variable  T_v_9432fac   (_ BitVec 1)  )
+(declare-variable  T_v_943304c   (_ BitVec 1)  )
+(declare-variable  T_v_94330ec   (_ BitVec 1)  )
+(declare-variable  T_v_943318c   (_ BitVec 1)  )
+(declare-variable  T_v_943322c   (_ BitVec 1)  )
+(declare-variable  T_v_94332cc   (_ BitVec 1)  )
+(declare-variable  T_v_943336c   (_ BitVec 1)  )
+(declare-variable  T_v_943340c   (_ BitVec 1)  )
+(declare-variable  T_v_94334ac   (_ BitVec 1)  )
+(declare-variable  T_v_943354c   (_ BitVec 1)  )
+(declare-variable  T_v_94335ec   (_ BitVec 1)  )
+(declare-variable  T_v_943368c   (_ BitVec 1)  )
+(declare-variable  T_v_943372c   (_ BitVec 1)  )
+(declare-variable  T_v_94337cc   (_ BitVec 1)  )
+(declare-variable  T_v_943386c   (_ BitVec 1)  )
+(declare-variable  T_v_943390c   (_ BitVec 1)  )
+(declare-variable  T_v_94339ac   (_ BitVec 1)  )
+(declare-variable  T_v_9433a4c   (_ BitVec 1)  )
+(declare-variable  T_v_9433aec   (_ BitVec 1)  )
+(declare-variable  T_v_9433b8c   (_ BitVec 1)  )
+(declare-variable  T_v_9433c2c   (_ BitVec 1)  )
+(declare-variable  T_v_9433ccc   (_ BitVec 1)  )
+(declare-variable  T_v_9433d6c   (_ BitVec 1)  )
+(declare-variable  T_v_9433e0c   (_ BitVec 1)  )
+(declare-variable  T_v_9433eac   (_ BitVec 1)  )
+(declare-variable  T_v_9433f4c   (_ BitVec 1)  )
+(declare-variable  T_v_9433fec   (_ BitVec 1)  )
+%-------------------------------------------------------------------
+% ASSERT( v_941f988 <=> NOT(v_941f8f8 = 0bin00000000000000000000000000000000) );
+(assert (= v_941f988 (not (= v_941f8f8 "") ) ) )
+% ASSERT( T_v_941f864 = 0bin00000000000000000000000000000001 );
+(assert (= T_v_941f864 #b1 ) )
+% ASSERT( T_v_941f864 = T_v_941f7c4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f864 (bvor T_v_941f7c4 #b0) ) )
+% ASSERT( T_v_941f7c4 = T_v_941f724 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f7c4 (bvor T_v_941f724 #b0) ) )
+% ASSERT( T_v_941f724 = T_v_941f684 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f724 (bvor T_v_941f684 #b0) ) )
+% ASSERT( T_v_941f684 = T_v_941f5e4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f684 (bvor T_v_941f5e4 #b0) ) )
+% ASSERT( T_v_941f5e4 = T_v_941f544 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f5e4 (bvor T_v_941f544 #b0) ) )
+% ASSERT( T_v_941f544 = T_v_941f4a4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f544 (bvor T_v_941f4a4 #b0) ) )
+% ASSERT( T_v_941f4a4 = T_v_941f404 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f4a4 (bvor T_v_941f404 #b0) ) )
+% ASSERT( T_v_941f404 = T_v_941f364 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f404 (bvor T_v_941f364 #b0) ) )
+% ASSERT( T_v_941f364 = T_v_941f2c4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f364 (bvor T_v_941f2c4 #b0) ) )
+% ASSERT( T_v_941f2c4 = T_v_941f224 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f2c4 (bvor T_v_941f224 #b0) ) )
+% ASSERT( T_v_941f224 = T_v_941f184 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f224 (bvor T_v_941f184 #b0) ) )
+% ASSERT( T_v_941f184 = T_v_941f0e4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f184 (bvor T_v_941f0e4 #b0) ) )
+% ASSERT( T_v_941f0e4 = T_v_941f044 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f0e4 (bvor T_v_941f044 #b0) ) )
+% ASSERT( T_v_941f044 = T_v_941efa4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941f044 (bvor T_v_941efa4 #b0) ) )
+% ASSERT( T_v_941efa4 = T_v_941ef04 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941efa4 (bvor T_v_941ef04 #b0) ) )
+% ASSERT( T_v_941ef04 = T_v_941ee64 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941ef04 (bvor T_v_941ee64 #b0) ) )
+% ASSERT( T_v_941ee64 = T_v_941edc4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941ee64 (bvor T_v_941edc4 #b0) ) )
+% ASSERT( T_v_941edc4 = T_v_941ed24 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941edc4 (bvor T_v_941ed24 #b0) ) )
+% ASSERT( T_v_941ed24 = T_v_941ec84 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941ed24 (bvor T_v_941ec84 #b0) ) )
+% ASSERT( T_v_941ec84 = T_v_941ebe4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941ec84 (bvor T_v_941ebe4 #b0) ) )
+% ASSERT( T_v_941ebe4 = T_v_941eb44 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941ebe4 (bvor T_v_941eb44 #b0) ) )
+% ASSERT( T_v_941eb44 = T_v_941eaa4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941eb44 (bvor T_v_941eaa4 #b0) ) )
+% ASSERT( T_v_941eaa4 = T_v_941ea04 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941eaa4 (bvor T_v_941ea04 #b0) ) )
+% ASSERT( T_v_941ea04 = T_v_941e964 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941ea04 (bvor T_v_941e964 #b0) ) )
+% ASSERT( T_v_941e964 = T_v_941e8c4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e964 (bvor T_v_941e8c4 #b0) ) )
+% ASSERT( T_v_941e8c4 = T_v_941e824 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e8c4 (bvor T_v_941e824 #b0) ) )
+% ASSERT( T_v_941e824 = T_v_941e784 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e824 (bvor T_v_941e784 #b0) ) )
+% ASSERT( T_v_941e784 = T_v_941e6e4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e784 (bvor T_v_941e6e4 #b0) ) )
+% ASSERT( T_v_941e6e4 = T_v_941e644 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e6e4 (bvor T_v_941e644 #b0) ) )
+% ASSERT( T_v_941e644 = T_v_941e5a4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e644 (bvor T_v_941e5a4 #b0) ) )
+% ASSERT( T_v_941e5a4 = T_v_941e504 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e5a4 (bvor T_v_941e504 #b0) ) )
+% ASSERT( T_v_941e504 = T_v_941e464 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e504 (bvor T_v_941e464 #b0) ) )
+% ASSERT( T_v_941e464 = T_v_941e3c4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e464 (bvor T_v_941e3c4 #b0) ) )
+% ASSERT( T_v_941e3c4 = T_v_941e324 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e3c4 (bvor T_v_941e324 #b0) ) )
+% ASSERT( T_v_941e324 = T_v_941e284 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e324 (bvor T_v_941e284 #b0) ) )
+% ASSERT( T_v_941e284 = T_v_941e1e4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e284 (bvor T_v_941e1e4 #b0) ) )
+% ASSERT( T_v_941e1e4 = T_v_941e144 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e1e4 (bvor T_v_941e144 #b0) ) )
+% ASSERT( T_v_941e144 = T_v_941e0a4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e144 (bvor T_v_941e0a4 #b0) ) )
+% ASSERT( T_v_941e0a4 = T_v_941e004 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e0a4 (bvor T_v_941e004 #b0) ) )
+% ASSERT( T_v_941e004 = T_v_941df64 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941e004 (bvor T_v_941df64 #b0) ) )
+% ASSERT( T_v_941df64 = T_v_941dec4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941df64 (bvor T_v_941dec4 #b0) ) )
+% ASSERT( T_v_941dec4 = T_v_941de24 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941dec4 (bvor T_v_941de24 #b0) ) )
+% ASSERT( T_v_941de24 = T_v_941dd84 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941de24 (bvor T_v_941dd84 #b0) ) )
+% ASSERT( T_v_941dd84 = T_v_941dce4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941dd84 (bvor T_v_941dce4 #b0) ) )
+% ASSERT( T_v_941dce4 = T_v_941dc44 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941dce4 (bvor T_v_941dc44 #b0) ) )
+% ASSERT( T_v_941dc44 = T_v_941dba4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941dc44 (bvor T_v_941dba4 #b0) ) )
+% ASSERT( T_v_941dba4 = T_v_941db04 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941dba4 (bvor T_v_941db04 #b0) ) )
+% ASSERT( T_v_941db04 = T_v_941da64 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941db04 (bvor T_v_941da64 #b0) ) )
+% ASSERT( T_v_941da64 = T_v_941d9c4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941da64 (bvor T_v_941d9c4 #b0) ) )
+% ASSERT( T_v_941d9c4 = T_v_941d924 | 0bin00000000000000000000000000000000);
+(assert (= T_v_941d9c4 (bvor T_v_941d924 #b0) ) )
+% ASSERT( T_v_941d924 = T_v_9433fec | 0bin00000000000000000000000000000000);
+(assert (= T_v_941d924 (bvor T_v_9433fec #b0) ) )
+% ASSERT( T_v_9433fec = T_v_9433f4c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433fec (bvor T_v_9433f4c #b0) ) )
+% ASSERT( T_v_9433f4c = T_v_9433eac | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433f4c (bvor T_v_9433eac #b0) ) )
+% ASSERT( T_v_9433eac = T_v_9433e0c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433eac (bvor T_v_9433e0c #b0) ) )
+% ASSERT( T_v_9433e0c = T_v_9433d6c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433e0c (bvor T_v_9433d6c #b0) ) )
+% ASSERT( T_v_9433d6c = T_v_9433ccc | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433d6c (bvor T_v_9433ccc #b0) ) )
+% ASSERT( T_v_9433ccc = T_v_9433c2c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433ccc (bvor T_v_9433c2c #b0) ) )
+% ASSERT( T_v_9433c2c = T_v_9433b8c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433c2c (bvor T_v_9433b8c #b0) ) )
+% ASSERT( T_v_9433b8c = T_v_9433aec | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433b8c (bvor T_v_9433aec #b0) ) )
+% ASSERT( T_v_9433aec = T_v_9433a4c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433aec (bvor T_v_9433a4c #b0) ) )
+% ASSERT( T_v_9433a4c = T_v_94339ac | 0bin00000000000000000000000000000000);
+(assert (= T_v_9433a4c (bvor T_v_94339ac #b0) ) )
+% ASSERT( T_v_94339ac = T_v_943390c | 0bin00000000000000000000000000000000);
+(assert (= T_v_94339ac (bvor T_v_943390c #b0) ) )
+% ASSERT( T_v_943390c = T_v_943386c | 0bin00000000000000000000000000000000);
+(assert (= T_v_943390c (bvor T_v_943386c #b0) ) )
+% ASSERT( T_v_943386c = T_v_94337cc | 0bin00000000000000000000000000000000);
+(assert (= T_v_943386c (bvor T_v_94337cc #b0) ) )
+% ASSERT( T_v_94337cc = T_v_943372c | 0bin00000000000000000000000000000000);
+(assert (= T_v_94337cc (bvor T_v_943372c #b0) ) )
+% ASSERT( T_v_943372c = T_v_943368c | 0bin00000000000000000000000000000000);
+(assert (= T_v_943372c (bvor T_v_943368c #b0) ) )
+% ASSERT( T_v_943368c = T_v_94335ec | 0bin00000000000000000000000000000000);
+(assert (= T_v_943368c (bvor T_v_94335ec #b0) ) )
+% ASSERT( T_v_94335ec = T_v_943354c | 0bin00000000000000000000000000000000);
+(assert (= T_v_94335ec (bvor T_v_943354c #b0) ) )
+% ASSERT( T_v_943354c = T_v_94334ac | 0bin00000000000000000000000000000000);
+(assert (= T_v_943354c (bvor T_v_94334ac #b0) ) )
+% ASSERT( T_v_94334ac = T_v_943340c | 0bin00000000000000000000000000000000);
+(assert (= T_v_94334ac (bvor T_v_943340c #b0) ) )
+% ASSERT( T_v_943340c = T_v_943336c | 0bin00000000000000000000000000000000);
+(assert (= T_v_943340c (bvor T_v_943336c #b0) ) )
+% ASSERT( T_v_943336c = T_v_94332cc | 0bin00000000000000000000000000000000);
+(assert (= T_v_943336c (bvor T_v_94332cc #b0) ) )
+% ASSERT( T_v_94332cc = T_v_943322c | 0bin00000000000000000000000000000000);
+(assert (= T_v_94332cc (bvor T_v_943322c #b0) ) )
+% ASSERT( T_v_943322c = T_v_943318c | 0bin00000000000000000000000000000000);
+(assert (= T_v_943322c (bvor T_v_943318c #b0) ) )
+% ASSERT( T_v_943318c = T_v_9432e2c | T_v_94330ec);
+(assert (= T_v_943318c (bvor T_v_9432e2c T_v_94330ec) ) )
+% ASSERT( T_v_9432e2c = T_v_9432d8c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9432e2c (bvor T_v_9432d8c #b0) ) )
+% ASSERT( T_v_9432d8c = T_v_9432a2c | T_v_9432cec);
+(assert (= T_v_9432d8c (bvor T_v_9432a2c T_v_9432cec) ) )
+% ASSERT( T_v_9432a2c = T_v_943298c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9432a2c (bvor T_v_943298c #b0) ) )
+% ASSERT( T_v_943298c = T_v_94328ec | 0bin00000000000000000000000000000000);
+(assert (= T_v_943298c (bvor T_v_94328ec #b0) ) )
+% ASSERT( T_v_94328ec = T_v_943284c | 0bin00000000000000000000000000000000);
+(assert (= T_v_94328ec (bvor T_v_943284c #b0) ) )
+% ASSERT( T_v_943284c = T_v_94327ac | 0bin00000000000000000000000000000000);
+(assert (= T_v_943284c (bvor T_v_94327ac #b0) ) )
+% ASSERT( T_v_94327ac = T_v_943244c | T_v_943270c);
+(assert (= T_v_94327ac (bvor T_v_943244c T_v_943270c) ) )
+% ASSERT( T_v_943244c = T_v_94323ac | 0bin00000000000000000000000000000000);
+(assert (= T_v_943244c (bvor T_v_94323ac #b0) ) )
+% ASSERT( T_v_94323ac = T_v_943204c | T_v_943230c);
+(assert (= T_v_94323ac (bvor T_v_943204c T_v_943230c) ) )
+% ASSERT( T_v_943204c = T_v_9431fac | 0bin00000000000000000000000000000000);
+(assert (= T_v_943204c (bvor T_v_9431fac #b0) ) )
+% ASSERT( T_v_9431fac = T_v_93fa84c | T_v_9431f0c);
+(assert (= T_v_9431fac (bvor T_v_93fa84c T_v_9431f0c) ) )
+% ASSERT( T_v_93fa84c = T_v_93fa7ac | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa84c (bvor T_v_93fa7ac #b0) ) )
+% ASSERT( T_v_93fa7ac = T_v_93fa44c | T_v_93fa70c);
+(assert (= T_v_93fa7ac (bvor T_v_93fa44c T_v_93fa70c) ) )
+% ASSERT( T_v_93fa44c = T_v_93fa3ac | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa44c (bvor T_v_93fa3ac #b0) ) )
+% ASSERT( T_v_93fa3ac = T_v_93fa30c | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa3ac (bvor T_v_93fa30c #b0) ) )
+% ASSERT( T_v_93fa30c = T_v_93fa26c | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa30c (bvor T_v_93fa26c #b0) ) )
+% ASSERT( T_v_93fa26c = T_v_93fa1cc | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa26c (bvor T_v_93fa1cc #b0) ) )
+% ASSERT( T_v_93fa1cc = T_v_93fa12c | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa1cc (bvor T_v_93fa12c #b0) ) )
+% ASSERT( T_v_93fa12c = T_v_9430c0c | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa12c (bvor T_v_9430c0c #b0) ) )
+% ASSERT( T_v_9430c0c = T_v_9430b6c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9430c0c (bvor T_v_9430b6c #b0) ) )
+% ASSERT( T_v_9430b6c = T_v_9430acc | 0bin00000000000000000000000000000000);
+(assert (= T_v_9430b6c (bvor T_v_9430acc #b0) ) )
+% ASSERT( T_v_9430acc = T_v_943076c | T_v_9430a2c);
+(assert (= T_v_9430acc (bvor T_v_943076c T_v_9430a2c) ) )
+% ASSERT( T_v_943076c = T_v_94306cc | 0bin00000000000000000000000000000000);
+(assert (= T_v_943076c (bvor T_v_94306cc #b0) ) )
+% ASSERT( T_v_94306cc = T_v_943062c | 0bin00000000000000000000000000000000);
+(assert (= T_v_94306cc (bvor T_v_943062c #b0) ) )
+% ASSERT( T_v_943062c = T_v_943058c | 0bin00000000000000000000000000000000);
+(assert (= T_v_943062c (bvor T_v_943058c #b0) ) )
+% ASSERT( T_v_943058c = 0bin00000000000000000000000000000000 | 0bin00000000000000000000000000000000);
+(assert (= T_v_943058c (bvor #b0 #b0) ) )
+% ASSERT( T_v_9430a2c = T_v_943098c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9430a2c (bvor T_v_943098c #b0) ) )
+% ASSERT( T_v_943098c = T_v_94308ec | 0bin00000000000000000000000000000000);
+(assert (= T_v_943098c (bvor T_v_94308ec #b0) ) )
+% ASSERT( T_v_94308ec = 0bin00000000000000000000000000000000 | T_v_943084c);
+(assert (= T_v_94308ec (bvor T_v_943084c #b0) ) )
+% ASSERT( T_local__SESSION_i_url = T_local__SESSION );
+(assert (= T_local__SESSION_i_url T_local__SESSION ) )
+% ASSERT( T_v_943084c = T_local__SESSION_i_url );
+(assert (= T_v_943084c T_local__SESSION_i_url ) )
+% ASSERT( T_v_93fa70c = T_v_93fa66c | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa70c (bvor T_v_93fa66c #b0) ) )
+% ASSERT( T_v_93fa66c = T_v_93fa5cc | 0bin00000000000000000000000000000000);
+(assert (= T_v_93fa66c (bvor T_v_93fa5cc #b0) ) )
+% ASSERT( T_v_93fa5cc = 0bin00000000000000000000000000000000 | T_v_93fa52c);
+(assert (= T_v_93fa5cc (bvor T_v_93fa52c #b0) ) )
+% ASSERT( T_local__SESSION_i_hostname = T_local__SESSION );
+(assert (= T_local__SESSION_i_hostname T_local__SESSION ) )
+% ASSERT( T_v_93fa52c = T_local__SESSION_i_hostname );
+(assert (= T_v_93fa52c T_local__SESSION_i_hostname ) )
+% ASSERT( T_v_9431f0c = T_v_9431e6c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9431f0c (bvor T_v_9431e6c #b0) ) )
+% ASSERT( T_v_9431e6c = T_v_9431dcc | 0bin00000000000000000000000000000000);
+(assert (= T_v_9431e6c (bvor T_v_9431dcc #b0) ) )
+% ASSERT( T_v_9431dcc = 0bin00000000000000000000000000000000 | T_v_9431d2c);
+(assert (= T_v_9431dcc (bvor T_v_9431d2c #b0) ) )
+% ASSERT( T_local__SESSION_i_username = T_local__SESSION );
+(assert (= T_local__SESSION_i_username T_local__SESSION ) )
+% ASSERT( T_v_9431d2c = T_local__SESSION_i_username );
+(assert (= T_v_9431d2c T_local__SESSION_i_username ) )
+% ASSERT( T_v_943230c = T_v_943226c | 0bin00000000000000000000000000000000);
+(assert (= T_v_943230c (bvor T_v_943226c #b0) ) )
+% ASSERT( T_v_943226c = T_v_94321cc | 0bin00000000000000000000000000000000);
+(assert (= T_v_943226c (bvor T_v_94321cc #b0) ) )
+% ASSERT( T_v_94321cc = 0bin00000000000000000000000000000000 | T_v_943212c);
+(assert (= T_v_94321cc (bvor T_v_943212c #b0) ) )
+% ASSERT( T_local__SESSION_i_password = T_local__SESSION );
+(assert (= T_local__SESSION_i_password T_local__SESSION ) )
+% ASSERT( T_v_943212c = T_local__SESSION_i_password );
+(assert (= T_v_943212c T_local__SESSION_i_password ) )
+% ASSERT( T_v_943270c = T_v_943266c | 0bin00000000000000000000000000000000);
+(assert (= T_v_943270c (bvor T_v_943266c #b0) ) )
+% ASSERT( T_v_943266c = T_v_94325cc | 0bin00000000000000000000000000000000);
+(assert (= T_v_943266c (bvor T_v_94325cc #b0) ) )
+% ASSERT( T_v_94325cc = 0bin00000000000000000000000000000000 | T_v_943252c);
+(assert (= T_v_94325cc (bvor T_v_943252c #b0) ) )
+% ASSERT( T_local__SESSION_i_database = T_local__SESSION );
+(assert (= T_local__SESSION_i_database T_local__SESSION ) )
+% ASSERT( T_v_943252c = T_local__SESSION_i_database );
+(assert (= T_v_943252c T_local__SESSION_i_database ) )
+% ASSERT( T_v_9432cec = T_v_9432c4c | 0bin00000000000000000000000000000000);
+(assert (= T_v_9432cec (bvor T_v_9432c4c #b0) ) )
+% ASSERT( T_v_9432c4c = T_v_9432bac | 0bin00000000000000000000000000000000);
+(assert (= T_v_9432c4c (bvor T_v_9432bac #b0) ) )
+% ASSERT( T_v_9432bac = 0bin00000000000000000000000000000000 | T_v_9432b0c);
+(assert (= T_v_9432bac (bvor T_v_9432b0c #b0) ) )
+% ASSERT( T_local__SESSION_i_title = T_local__SESSION );
+(assert (= T_local__SESSION_i_title T_local__SESSION ) )
+% ASSERT( T_v_9432b0c = T_local__SESSION_i_title );
+(assert (= T_v_9432b0c T_local__SESSION_i_title ) )
+% ASSERT( T_v_94330ec = T_v_943304c | 0bin00000000000000000000000000000000);
+(assert (= T_v_94330ec (bvor T_v_943304c #b0) ) )
+% ASSERT( T_v_943304c = T_v_9432fac | 0bin00000000000000000000000000000000);
+(assert (= T_v_943304c (bvor T_v_9432fac #b0) ) )
+% ASSERT( T_v_9432fac = 0bin00000000000000000000000000000000 | T_v_9432f0c);
+(assert (= T_v_9432fac (bvor T_v_9432f0c #b0) ) )
+% ASSERT( T_local__SESSION_i_admin_email = T_local__SESSION );
+(assert (= T_local__SESSION_i_admin_email T_local__SESSION ) )
+% ASSERT( T_v_9432f0c = T_local__SESSION_i_admin_email );
+(assert (= T_v_9432f0c T_local__SESSION_i_admin_email ) )
+% ASSERT( T_local__SESSION = 0bin00000000000000000000000000000001 );
+(assert (= T_local__SESSION #b1 ) )
+% ASSERT( NOT v_93f8ebc );
+(assert (not v_93f8ebc ) )
+% ASSERT( v_941f988 );
+(assert v_941f988 )
+% ASSERT( NOT v_9422d5c );
+(assert (not v_9422d5c ) )
+% ASSERT( NOT v_94242cc );
+(assert (not v_94242cc ) )
+% ASSERT( NOT v_942c48c );
+(assert (not v_942c48c ) )
+% ASSERT( v_942ebdc );
+(assert v_942ebdc )
+%===================================================================
+(declare-variable  v_93dd828  String)
+(declare-variable  v_941f864  String)
+(declare-variable  v_941f7c4  String)
+(declare-variable  v_941f724  String)
+(declare-variable  v_941f684  String)
+(declare-variable  v_941f5e4  String)
+(declare-variable  v_941f544  String)
+(declare-variable  v_941f4a4  String)
+(declare-variable  v_941f404  String)
+(declare-variable  v_941f364  String)
+(declare-variable  v_941f2c4  String)
+(declare-variable  v_941f224  String)
+(declare-variable  v_941f184  String)
+(declare-variable  v_941f0e4  String)
+
+% v_93dd828 := "fifth"
+(assert (= v_93dd828 "fifth" ) )
+% v_9422d5c := v_93dd828 == "first"
+(assert (= v_9422d5c (= v_93dd828 "first") ) )
+% v_94242cc := v_93dd828 == "secon"
+(assert (= v_94242cc (= v_93dd828 "secon") ) )
+% v_93f8ebc := v_93dd828 == "third"
+(assert (= v_93f8ebc (= v_93dd828 "third") ) )
+% v_942c48c := v_93dd828 == "fourt"
+(assert (= v_942c48c (= v_93dd828 "fourt") ) )
+% v_942ebdc := v_93dd828 == "fifth"
+(assert (= v_942ebdc (= v_93dd828 "fifth") ) )
+% v_941f864 := v_941f7c4 "?>"
+(assert (= v_941f864 (Concat v_941f7c4 "?>") ) )
+% v_941f7c4 := v_941f724 "// ____________________________________________________________________________n_"
+(assert (= v_941f7c4 (Concat v_941f724 "____________________________________________________________________________n_") ) )
+% v_941f724 := v_941f684 "_tdefine(_quote_ACT_VER_quote_,strip_tags(_dollar__GET[_quote_act_ver_quote_]));_n_"
+(assert (= v_941f724 (Concat v_941f684 "_tdefine_quote_ACT_VER_quote_strip_tags_dollar__GET_quote_act_ver_quote__n_") ) )
+% v_941f684 := v_941f5e4 "_tdefine(_quote_ACT_quote_,strip_tags(_dollar__GET[_quote_act_quote_]));_n_"
+(assert (= v_941f684 (Concat v_941f5e4 "_tdefine_quote_ACT_quote_strip_tags_dollar__GET_quote_act_quote__n_") ) )
+% v_941f5e4 := v_941f544 "_tdefine(_quote_LIMITDOWN_quote_,(int)_dollar__GET[_quote_limitdown_quote_]);_n_"
+(assert (= v_941f5e4 (Concat v_941f544 "_tdefine_quote_LIMITDOWN_quote_int_dollar__GET_quote_limitdown_quote__n_") ) )
+% v_941f544 := v_941f4a4 "_tdefine(_quote_SHOW_quote_,strip_tags(_dollar__GET[_quote_show_quote_]));_n_"
+(assert (= v_941f544 (Concat v_941f4a4 "_tdefine_quote_SHOW_quote_strip_tags_dollar__GET_quote_show_quote__n_") ) )
+% v_941f4a4 := v_941f404 "_tdefine(_quote_SHOWVIEW_quote_,strip_tags(_dollar__GET[_quote_showview_quote_]));_n_"
+(assert (= v_941f4a4 (Concat v_941f404 "_tdefine_quote_SHOWVIEW_quote_strip_tags_dollar__GET_quote_showview_quote__n_") ) )
+% v_941f404 := v_941f364 "_tdefine(_quote_RUSER_quote_,_dollar_aidicms_important_user);_n_"
+(assert (= v_941f404 (Concat v_941f364 "_tdefine_quote_RUSER_quote__dollar_aidicms_important_user_n_") ) )
+% v_941f364 := v_941f2c4 "_tdefine(_quote_DEFSHOW_quote_,_dollar_aidicms_next_prev);_n_"
+(assert (= v_941f364 (Concat v_941f2c4 "_tdefine_quote_DEFSHOW_quote__dollar_aidicms_next_prev_n_") ) )
+% v_941f2c4 := v_941f224 "_tdefine(_quote_PAGE_quote_,_dollar_aidicms_page);_n_"
+(assert (= v_941f2c4 (Concat v_941f224 "_tdefine_quote_PAGE_quote__dollar_aidicms_page_n_") ) )
+% v_941f224 := v_941f184 "_tdefine(_quote_NUMREC_quote_,_dollar_aidicms_record);_n_"
+(assert (= v_941f224 (Concat v_941f184 "_tdefine_quote_NUMREC_quote__dollar_aidicms_record_n_") ) )
+% v_941f184 := v_941f0e4 "_tdefine(_quote_WIDTH_FILE_THUMB_quote_,_dollar_aidicms_width_file_thumb);_n_"
+(assert (= v_941f184 (Concat v_941f0e4 "_tdefine_quote_WIDTH_FILE_THUMB_quote__dollar_aidicms_width_file_thumb_n_") ) )
+% v_941f0e4 := v_941f044 "_tdefine(_quote_WIDTH_FILE_quote_,_dollar_aidicms_width_file);_n_"
+(declare-variable  v_941f044  String)
+(assert (= v_941f0e4 (Concat v_941f044 "_tdefine_quote_WIDTH_FILE_THUMB_quote__dollar_aidicms_width_file_thumb_n_") ) )
+% v_941f044 := v_941efa4 "_tdefine(_quote_UKURAN_FILE_quote_,_dollar_aidicms_ukuran_max_foto);_n_"
+(declare-variable  v_941efa4  String)
+(assert (= v_941f044 (Concat v_941efa4 "_tdefine_quote_UKURAN_FILE_quote__dollar_aidicms_ukuran_max_foto_n_") ) )
+% v_941efa4 := v_941ef04 "_tdefine(_quote_JUMLAH_POST_IKLAN_quote_,_dollar_aidicms_jum_post_iklan);_n_"
+(declare-variable  v_941ef04  String)
+(assert (= v_941efa4 (Concat v_941ef04 "_tdefine_quote_JUMLAH_POST_IKLAN_quote__dollar_aidicms_jum_post_iklan_n_") ) )
+% v_941ef04 := v_941ee64 "_tdefine(_quote_LAMA_IKLAN_quote_,_dollar_aidicms_lamaIklan);_n_"
+(declare-variable  v_941ee64  String)
+(declare-variable  v_941edc4  String)
+(declare-variable  v_941ed24  String)
+(declare-variable  v_941ec84  String)
+(assert (= v_941ef04 (Concat v_941ee64 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941ee64 := v_941edc4 "_tdefine(_quote_AUTHOR_MAIL_quote_,_dollar_aidicms_mail);_n_"
+(assert (= v_941ee64 (Concat v_941edc4 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941edc4 := v_941ed24 "_tdefine(_quote_WEBSITE_TITLE_quote_,_dollar_aidicms_website_title);_n_"
+(assert (= v_941edc4 (Concat v_941ed24 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941ed24 := v_941ec84 "_tdefine(_quote_DIR_ABS_PATH_quote_,_dollar_aidicms_path_abs);_n_"
+(assert (= v_941ed24 (Concat v_941ec84 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941ec84 := v_941ebe4 "_tdefine(_quote_DIR_DATA_PATH_quote_,_dollar_aidicms_path_data);_n_"
+(declare-variable  v_941ebe4  String)
+(declare-variable  v_941eb44  String)
+(declare-variable  v_941eaa4  String)
+(declare-variable  v_941ea04  String)
+(declare-variable  v_941e964  String)
+(declare-variable  v_941e8c4  String)
+(declare-variable  v_941e824  String)
+(declare-variable  v_941e784  String)
+(declare-variable  v_941e6e4  String)
+
+(assert (= v_941ec84 (Concat v_941ebe4 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941ebe4 := v_941eb44 "_tdefine(_quote_DIR_MODULE_PATH_quote_,_dollar_aidicms_path_module);_n_"
+(assert (= v_941ebe4 (Concat v_941eb44 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941eb44 := v_941eaa4 "_tdefine(_quote_DIR_THEMES_PATH_quote_,_dollar_aidicms_path_themes);_n_"
+(assert (= v_941eb44 (Concat v_941eaa4 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941eaa4 := v_941ea04 "_tdefine(_quote_DIR_PATH_quote_,_dollar_aidicms_path);_n_"
+(assert (= v_941eaa4 (Concat v_941ea04 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941ea04 := v_941e964 "_tdefine(_quote_DATABASE_WEB_quote_,_dollar_aidicms_baseQ);_n_"
+(assert (= v_941ea04 (Concat v_941e964 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941e964 := v_941e8c4 "_tdefine(_quote_PASSWORD_WEB_quote_,_dollar_aidicms_passQ);_n_"
+(assert (= v_941e964 (Concat v_941e8c4 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941e8c4 := v_941e824 "_tdefine(_quote_USERNAME_WEB_quote_,_dollar_aidicms_userQ);_n_"
+(assert (= v_941e8c4 (Concat v_941e824 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941e824 := v_941e784 "_tdefine(_quote_HOSTNAME_WEB_quote_,_dollar_aidicms_hostQ);_n_"
+(assert (= v_941e824 (Concat v_941e784 "_tdefine_quote_LAMA_IKLAN_quote__dollar_aidicms_lamaIklan_n_") ) )
+% v_941e784 := v_941e6e4 "// Global Initialize_n_"
+(assert (= v_941e784 (Concat v_941e6e4 "Global_Initialize_n_") ) )
+% v_941e6e4 := v_941e644 "_n_"
+(declare-variable  v_941e644  String)
+(declare-variable  v_941e5a4  String)
+(declare-variable  v_941e504  String)
+(declare-variable  v_941e464  String)
+(assert (= v_941e6e4 (Concat v_941e644 "_n_") ) )
+% v_941e644 := v_941e5a4 "_t};_n_"
+(assert (= v_941e644 (Concat v_941e5a4 "_t_n_") ) )
+% v_941e5a4 := v_941e504 "_t_tdie(_quote_tidak bisa memilih database mySQL. Periksa Kembali Konfigurasi database Anda._quote_);_n_"
+(assert (= v_941e5a4 (Concat v_941e504 "_n_") ) )
+% v_941e504 := v_941e464 "_tif (!_dollar_aidicms_db) {_n_"
+(assert (= v_941e504 (Concat v_941e464 "_n_") ) )
+(declare-variable  v_941e3c4  String)
+(declare-variable  v_941e324  String)
+(declare-variable  v_941e284  String)
+(declare-variable  v_941e1e4  String)
+(declare-variable  v_941e144  String)
+(declare-variable  v_941e0a4  String)
+(declare-variable  v_941e004  String)
+(declare-variable  v_941df64  String)
+(declare-variable  v_941dec4  String)
+(declare-variable  v_941de24  String)
+% v_941e464 := v_941e3c4 "_t_n_"
+(assert (= v_941e464 (Concat v_941e3c4 "_n_") ) )
+% v_941e3c4 := v_941e324 "_t_dollar_aidicms_db = @mysql_select_db(_dollar_aidicms_baseQ);_n_"
+(assert (= v_941e3c4 (Concat v_941e324 "_n_") ) )
+% v_941e324 := v_941e284 "_t_t_n_"
+(assert (= v_941e324 (Concat v_941e284 "_n_") ) )
+% v_941e284 := v_941e1e4 "_t}_n_"
+(assert (= v_941e284 (Concat v_941e1e4 "_n_") ) )
+% v_941e1e4 := v_941e144 "_t_tdie(_quote_tidak bisa melakukan koneksi ke database mySQL. Periksa Kembali Konfigurasi Koneksi Anda_quote_);_n_"
+(assert (= v_941e1e4 (Concat v_941e144 "_n_") ) )
+% v_941e144 := v_941e0a4 "_tif (!_dollar_aidicms_conn) {_n_"
+(assert (= v_941e144 (Concat v_941e0a4 "_n_") ) )
+% v_941e0a4 := v_941e004 "_t_dollar_aidicms_conn = @mysql_connect(_dollar_aidicms_hostQ,_dollar_aidicms_userQ,_dollar_aidicms_passQ);_t_n_"
+(assert (= v_941e0a4 (Concat v_941e004 "_n_") ) )
+% v_941e004 := v_941df64 "_t_n_"
+(assert (= v_941e004 (Concat v_941df64 "_n_") ) )
+% v_941df64 := v_941dec4 "_t_dollar_aidicms_arrpenting _t_t= array();_n_"
+(assert (= v_941df64 (Concat v_941dec4 "_n_") ) )
+% v_941dec4 := v_941de24 "_t_dollar_aidicms_important_user_t_t= _quote_id_user!='1'_quote_;_n_"
+(assert (= v_941dec4 (Concat v_941de24 "_n_") ) )
+(declare-variable  v_941dd84  String)
+(declare-variable  v_941dce4  String)
+(declare-variable  v_941dc44  String)
+(declare-variable  v_941dba4  String)
+(declare-variable  v_941db04  String)
+(declare-variable  v_941da64  String)
+(declare-variable  v_941d924  String)
+(declare-variable  v_941d9c4  String)
+(declare-variable  v_9433fec  String)
+(declare-variable  v_9433f4c  String)
+(declare-variable  v_9433eac  String)
+% v_941de24 := v_941dd84 "_t// SQL Mode_n_"
+(assert (= v_941de24 (Concat v_941dd84 "_n_") ) )
+% v_941dd84 := v_941dce4 "_t_dollar_aidicms_baris_t_t_t= 2;_n_"
+(assert (= v_941dd84 (Concat v_941dce4 "_n_") ) )
+% v_941dce4 := v_941dc44 "_t_dollar_aidicms_limitdown _t_t= (@is_numeric(_dollar__GET[_quote_limitdown_quote_])) ? (@abs(@strip_tags(_dollar__GET[_quote_limitdown_quote_]))) : 0;_n_"
+(assert (= v_941dce4 (Concat v_941dc44 "_n_") ) )
+% v_941dc44 := v_941dba4 "_t_dollar__SESSION[_quote_modul_access_quote_] _t= _quote__quote_;_n_"
+(assert (= v_941dc44 (Concat v_941dba4 "_n_") ) )
+% v_941dba4 := v_941db04 "_t_dollar__SESSION[_quote_hasilX_quote_] _t_t= array();_n_"
+(assert (= v_941dba4 (Concat v_941db04 "_n_") ) )
+% v_941db04 := v_941da64 "_t_dollar_aidicms_hakakses _t_t= explode(_quote_|_quote_,_dollar__SESSION[_quote_modul_access_quote_]); _n_"
+(assert (= v_941db04 (Concat v_941da64 "_n_") ) )
+% v_941dec4 := v_941de24 "// Do not edit_n_"
+(assert (= v_941dec4 (Concat v_941de24 "_n_") ) )
+% v_941d9c4 := v_941d924 "// ____________________________________________________________________________n_"
+(assert (= v_941d9c4 (Concat v_941d924 "_n_") ) )
+% v_941d924 := v_9433fec "_n_"
+(assert (= v_941d924 (Concat v_9433fec "_n_") ) )
+% v_9433fec := v_9433f4c "_t_dollar_aidicms_next_prev _t_t= 4;_n_"
+(assert (= v_9433fec (Concat v_9433f4c "_n_") ) )
+% v_9433f4c := v_9433eac "_t// Default number show after/before current page number_n_"
+(assert (= v_9433f4c (Concat v_9433eac "_n_") ) )
+
+
+(declare-variable  v_9433e0c  String)
+(declare-variable  v_9433d6c  String)
+(declare-variable  v_9433ccc  String)
+(declare-variable  v_9433c2c  String)
+(declare-variable  v_9433b8c  String)
+(declare-variable  v_9433aec  String)
+(declare-variable  v_9433a4c  String)
+(declare-variable  v_94339ac  String)
+(declare-variable  v_943390c  String)
+(declare-variable  v_943386c  String)
+% v_9433eac := v_9433e0c "_t_dollar_aidicms_page_t_t_t= 10;_n_"
+(assert (= v_9433eac (Concat v_9433e0c "_n_") ) )
+% v_9433e0c := v_9433d6c "_t// Default record each page_n_"
+(assert (= v_9433e0c (Concat v_9433d6c "_n_") ) )
+% v_9433d6c := v_9433ccc "_t_dollar_aidicms_record _t_t= 0;_n_"
+(assert (= v_9433d6c (Concat v_9433ccc "_n_") ) )
+% v_9433ccc := v_9433c2c "_t// Default record for show_n_"
+(assert (= v_9433ccc (Concat v_9433c2c "_n_") ) )
+% v_9433c2c := v_9433b8c "// Website Default Paging Configuration_n_"
+(assert (= v_9433c2c (Concat v_9433b8c "_n_") ) )
+% v_9433b8c := v_9433aec "// ____________________________________________________________________________n_"
+(assert (= v_9433b8c (Concat v_9433aec "_n_") ) )
+% v_9433aec := v_9433a4c "_n_"
+(assert (= v_9433aec (Concat v_9433a4c "_n_") ) )
+% v_9433a4c := v_94339ac "_t_dollar_aidicms_width_thumb_t_t= 100;_n_"
+(assert (= v_9433a4c (Concat v_94339ac "_n_") ) )
+% v_94339ac := v_943390c "_t// Default banner thumbnail maximum width (in px)_t_n_"
+(assert (= v_94339ac (Concat v_943390c "_n_") ) )
+% v_943390c := v_943386c "_t_dollar_aidicms_width_file_t_t= 300;_n_"
+(assert (= v_943390c (Concat v_943386c "_n_") ) )
+(declare-variable  v_94337cc  String)
+(declare-variable  v_943372c  String)
+(declare-variable  v_943368c  String)
+(declare-variable  v_94335ec  String)
+(declare-variable  v_943354c  String)
+(declare-variable  v_94334ac  String)
+(declare-variable  v_943340c  String)
+(declare-variable  v_943336c  String)
+(declare-variable  v_94332cc  String)
+(declare-variable  v_943322c  String)
+% v_943386c := v_94337cc "_t// Default banner maximum width (in px)_n_"
+(assert (= v_943386c (Concat v_94337cc "_n_") ) )
+% v_94337cc := v_943372c "_t_dollar_aidicms_max_foto _t_t= 25600;_n_"
+(assert (= v_94337cc (Concat v_943372c "_n_") ) )
+% v_943372c := v_943368c "_t// 1 KB = 1024 B_n_"
+(assert (= v_943372c (Concat v_943368c "_n_") ) )
+% v_943368c := v_94335ec "_t// Default banner Maximum size (in byte)_n_"
+(assert (= v_943368c (Concat v_94335ec "_n_") ) )
+% v_94335ec := v_943354c "_t_dollar_aidicms_jum_post_iklan_t_t= 2;_n_"
+(assert (= v_94335ec (Concat v_943354c "_n_") ) )
+% v_943354c := v_94334ac "_t// Default banner maximum post_n_"
+(assert (= v_943354c (Concat v_94334ac "_n_") ) )
+% v_94334ac := v_943340c "_t_dollar_aidicms_lamaIklan _t_t= 7;_n_"
+(assert (= v_94334ac (Concat v_943340c "_n_") ) )
+% v_943340c := v_943336c "_t// Default Time a banner showed up (in day)_n_"
+(assert (= v_943340c (Concat v_943336c "_n_") ) )
+% v_943336c := v_94332cc "// Website Default Banner Configuration_n_"
+(assert (= v_943336c (Concat v_94332cc "_n_") ) )
+% v_94332cc := v_943322c "//____________________________________________________________________________n_"
+(assert (= v_94332cc (Concat v_943322c "_n_") ) )
+(declare-variable  v_943318c  String)
+(declare-variable  v_9432e2c  String)
+(declare-variable  v_9432d8c  String)
+(declare-variable  v_9432a2c  String)
+(declare-variable  v_943298c  String)
+(declare-variable  v_94328ec  String)
+(declare-variable  v_943284c  String)
+(declare-variable  v_94327ac  String)
+(declare-variable  v_943244c  String)
+(declare-variable  v_94323ac  String)
+(declare-variable  v_94330ec  String)
+(declare-variable  v_9432cec  String)
+% v_943322c := v_943318c "_n_"
+(assert (= v_943322c (Concat v_943318c "_n_") ) )
+% v_943318c := v_9432e2c v_94330ec
+(assert (= v_943318c (Concat v_9432e2c v_94330ec) ) )
+% v_9432e2c := v_9432d8c "_t// Website author Email_n_"
+(assert (= v_9432e2c (Concat v_9432d8c "_n_") ) )
+% v_9432d8c := v_9432a2c v_9432cec
+(assert (= v_9432d8c (Concat v_9432a2c v_9432cec) ) )
+% v_9432a2c := v_943298c "_t// Website Title_n_"
+(assert (= v_9432a2c (Concat v_943298c "_n_") ) )
+% v_943298c := v_94328ec "// Website Base Configuration_n_"
+(assert (= v_943298c (Concat v_94328ec "_n_") ) )
+% v_94328ec := v_943284c "//____________________________________________________________________________n_"
+(assert (= v_94328ec (Concat v_943284c "_n_") ) )
+% v_943284c := v_94327ac "_n_"
+(assert (= v_943284c (Concat v_94327ac "_n_") ) )
+% v_94327ac := v_943244c v_943270c
+(assert (= v_94327ac (Concat v_943244c "_n_") ) )
+% v_943244c := v_94323ac "_t// Database Name_n_"
+(assert (= v_943244c (Concat v_94323ac "_n_") ) )
+(declare-variable  v_943204c  String)
+(declare-variable  v_9431fac  String)
+(declare-variable  v_93fa84c  String)
+(declare-variable  v_9431f0c  String)
+(declare-variable  v_93fa7ac  String)
+(declare-variable  v_93fa44c  String)
+(declare-variable  v_93fa70c  String)
+(declare-variable  v_93fa3ac  String)
+(declare-variable  v_93fa30c  String)
+(declare-variable  v_93fa26c  String)
+(declare-variable  v_93fa1cc  String)
+(declare-variable  v_93fa12c  String)
+% v_94323ac := v_943204c v_943230c
+(assert (= v_94323ac (Concat v_943204c "_n_") ) )
+% v_943204c := v_9431fac "_t// Database Password_n_"
+(assert (= v_943204c (Concat v_9431fac "_n_") ) )
+% v_9431fac := v_93fa84c v_9431f0c
+(assert (= v_9431fac (Concat v_93fa84c v_9431f0c) ) )
+% v_93fa84c := v_93fa7ac "_t// Database User_n_"
+(assert (= v_93fa84c (Concat v_93fa7ac "_n_") ) )
+% v_93fa7ac := v_93fa44c v_93fa70c
+(assert (= v_93fa7ac (Concat v_93fa44c v_93fa70c) ) )
+% v_93fa44c := v_93fa3ac "_t// Database Host_n_"
+(assert (= v_93fa44c (Concat v_93fa3ac "_n_") ) )
+% v_93fa3ac := v_93fa30c "// Database Configuration. MySQL v4 or above Only._n_"
+(assert (= v_93fa3ac (Concat v_93fa30c "_n_") ) )
+% v_93fa30c := v_93fa26c "// ____________________________________________________________________________n_"
+(assert (= v_93fa30c (Concat v_93fa26c "_n_") ) )
+% v_93fa26c := v_93fa1cc "_n_"
+(assert (= v_93fa26c (Concat v_93fa1cc "_n_") ) )
+% v_93fa1cc := v_93fa12c "_t_dollar_aidicms_path_abs_t_t= str_replace(_quote_\\_quote_, _quote_/_quote_, dirname(__FILE__));_n_"
+(assert (= v_93fa1cc (Concat v_93fa12c "_n_") ) )
+(declare-variable  v_9430c0c  String)
+(declare-variable  v_9430b6c  String)
+(declare-variable  v_9430acc  String)
+(declare-variable  v_943076c  String)
+(declare-variable  v_9430a2c  String)
+(declare-variable  v_94306cc  String)
+(declare-variable  v_943062c  String)
+(declare-variable  v_943058c  String)
+(declare-variable  v_943098c  String)
+(declare-variable  v_94308ec  String)
+% v_93fa12c := v_9430c0c "_t_dollar_aidicms_path_data _t_t= _quote_data/_quote_;_n_"
+(assert (= v_93fa12c (Concat v_9430c0c "_n_") ) )
+% v_9430c0c := v_9430b6c "_t_dollar_aidicms_path_themes _t_t= _quote_themes/_quote_;_n_"
+(assert (= v_9430c0c (Concat v_9430b6c "_n_") ) )
+% v_9430b6c := v_9430acc "_t_dollar_aidicms_path_module _t_t= _quote_modul/_quote_;_n_"
+(assert (= v_9430b6c (Concat v_9430acc "_n_") ) )
+% v_9430acc := v_943076c v_9430a2c
+(assert (= v_9430acc (Concat v_943076c v_9430a2c) ) )
+% v_943076c := v_94306cc "_t// ex.http://aidicms.com/aidi so aidicms_path variable must be in _quote_/aidi/_quote_ (without quotes)_n_"
+(assert (= v_943076c (Concat v_94306cc "_n_") ) )
+% v_94306cc := v_943062c "_t// Relative path to website _n_"
+(assert (= v_94306cc (Concat v_943062c "_n_") ) )
+% v_943062c := v_943058c "// Website Path_n_"
+(assert (= v_943062c (Concat v_943058c "_n_") ) )
+% v_943058c := "<?php_n_" "// ____________________________________________________________________________n_"
+(assert (= v_943058c (Concat "<?php_n_" "_n_") ) )
+% v_9430a2c := v_943098c "_n_"
+(assert (= v_9430a2c (Concat v_943098c "_n_") ) )
+% v_943098c := v_94308ec "_quote_;"
+(assert (= v_943098c (Concat v_94308ec "_n_") ) )
+(declare-variable  v_943084c  String)
+(declare-variable  local__SESSION_i_url  String)
+(declare-variable  v_93fa66c  String)
+(declare-variable  v_93fa5cc  String)
+% v_94308ec := "_t_dollar_aidicms_path _t_t_t= _quote_" v_943084c
+(assert (= v_94308ec (Concat "_t_dollar" v_943084c) ) )
+% v_943084c := local__SESSION_i_url
+(assert (= v_943084c local__SESSION_i_url ) )
+% v_93fa70c := v_93fa66c "_n_"
+(assert (= v_93fa70c (Concat v_93fa66c "_n_") ) )
+% v_93fa66c := v_93fa5cc "_quote_;"
+(assert (= v_93fa66c (Concat v_93fa5cc "_n_") ) )
+(declare-variable  v_93fa52c  String)
+(declare-variable  local__SESSION_i_hostname  String)
+(declare-variable  v_9431e6c  String)
+(declare-variable  v_9431dcc  String)
+(declare-variable  v_9431d2c  String)
+(declare-variable  local__SESSION_i_username  String)
+% v_93fa5cc := "_t_dollar_aidicms_hostQ _t_t_t= _quote_" v_93fa52c
+(assert (= v_93fa5cc (Concat "_t_dollar" v_93fa52c) ) )
+% v_93fa52c := local__SESSION_i_hostname
+(assert (= v_93fa52c local__SESSION_i_hostname ) )
+% v_9431f0c := v_9431e6c "_n_"
+(assert (= v_9431f0c (Concat v_9431e6c "_n_") ) )
+% v_9431e6c := v_9431dcc "_quote_;"
+(assert (= v_9431e6c (Concat v_9431dcc "_quote_") ) )
+% v_9431dcc := "_t_dollar_aidicms_userQ _t_t_t= _quote_" v_9431d2c
+(assert (= v_9431dcc (Concat "_t_dollar" v_9431d2c) ) )
+% v_9431d2c := local__SESSION_i_username
+(assert (= v_9431d2c local__SESSION_i_username ) )
+(declare-variable  v_943230c  String)
+(declare-variable  v_943226c  String)
+(declare-variable  v_94321cc  String)
+(declare-variable  v_943212c  String)
+(declare-variable  local__SESSION_i_password  String)
+(declare-variable  v_943270c  String)
+(declare-variable  v_943266c  String)
+(declare-variable  v_94325cc  String)
+(declare-variable  v_943252c  String)
+(declare-variable  v_9432c4c  String)
+(declare-variable  v_9432bac  String)
+(declare-variable  local__SESSION_i_database  String)
+% v_943230c := v_943226c "_n_"
+(assert (= v_943230c (Concat v_943226c "_n_") ) )
+% v_943226c := v_94321cc "_quote_;"
+(assert (= v_943226c (Concat v_94321cc "_n_") ) )
+% v_94321cc := "_t_dollar_aidicms_passQ _t_t_t= _quote_" v_943212c
+(assert (= v_94321cc (Concat "t_quote_" v_943212c) ) )
+% v_943212c := local__SESSION_i_password
+(assert (= v_943212c local__SESSION_i_password ) )
+% v_943270c := v_943266c "_n_"
+(assert (= v_943270c (Concat v_943266c "_n_") ) )
+% v_943266c := v_94325cc "_quote_;_t"
+(assert (= v_943266c (Concat v_94325cc "_quote_") ) )
+% v_94325cc := "_t_dollar_aidicms_baseQ _t_t_t= _quote_" v_943252c
+(assert (= v_94325cc (Concat "aidicms" v_943252c) ) )
+% v_943252c := local__SESSION_i_database
+(assert (= v_943252c local__SESSION_i_database ) )
+% v_9432cec := v_9432c4c "_n_"
+(assert (= v_9432cec (Concat v_9432c4c "_n_") ) )
+% v_9432c4c := v_9432bac "_quote_;_t"
+(assert (= v_9432c4c (Concat v_9432bac "_n_") ) )
+(declare-variable  v_9432b0c  String)
+(declare-variable  local__SESSION_i_title  String)
+(declare-variable  v_943304c  String)
+(declare-variable  v_9432fac  String)
+(declare-variable  v_9432f0c  String)
+(declare-variable  local__SESSION_i_admin_email  String)
+% v_9432bac := "_t_dollar_aidicms_website_title_t_t= _quote_" v_9432b0c
+(assert (= v_9432bac (Concat "_t_dollar_" v_9432b0c) ) )
+% v_9432b0c := local__SESSION_i_title
+(assert (= v_9432b0c local__SESSION_i_title ) )
+% v_94330ec := v_943304c "_n_"
+(assert (= v_94330ec (Concat v_943304c "_n_") ) )
+% v_943304c := v_9432fac "_quote_;"
+(assert (= v_943304c (Concat v_9432fac "_n_") ) )
+% v_9432fac := "_t_dollar_aidicms_mail_t_t_t= _quote_" v_9432f0c
+(assert (= v_9432fac (Concat "_t_dollar_" v_9432f0c) ) )
+% v_9432f0c := local__SESSION_i_admin_email
+(assert (= v_9432f0c local__SESSION_i_admin_email ) )
+
+
+%===================================================================
+(check-sat) 
+(get-model)

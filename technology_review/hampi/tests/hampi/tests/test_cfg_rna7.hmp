@@ -1,0 +1,9 @@
+//created from CFGAnalyzer file rna7.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg S :=  "(" P ")" | "." L | R "." | L S ;
+cfg L :=  "(" P ")" | "." L ;
+cfg R :=  R "." | ;
+cfg P :=  "(" P ")" | "(" N ")" ;
+cfg N :=  "." L | R "." | L S ;
+reg limit := fix(S, 7);
+assert hampiStringVar in limit;

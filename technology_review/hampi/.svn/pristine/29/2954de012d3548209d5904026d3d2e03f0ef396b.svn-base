@@ -1,0 +1,2 @@
+token0 = "a" ;
+token1 = "b" | "a" ;

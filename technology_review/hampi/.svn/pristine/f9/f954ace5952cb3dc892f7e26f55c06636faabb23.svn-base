@@ -1,0 +1,44 @@
+/* UNAMBIGUOUS (stated wrongly in original as ambiguous)
+
+Grammar 'ada_is' (ADA "is" keyword) taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+in turn taken from:
+
+Baker (1981) JCSS 22: 243--259.  Updated against the ADA83 RM.
+
+tokens = {
+'p'=PROCEDURE,
+'i'=identifier,
+'I'=IS,
+'n'=NEW,
+'g'=generic_procedure_name,
+'s'=SEPARATE
+}
+*/
+
+
+declarative_part
+: subprogram_body ;
+: body_stub ;
+: generic_instantiation ;
+
+subprogram_body
+: subprogram_specification "I" declarative_part_opt ;
+
+declarative_part_opt
+: ;
+
+body_stub
+: subprogram_specification "I" "s" ;
+
+subprogram_specification
+: "p" "i" formal_part_opt ;
+
+formal_part_opt
+: ;
+
+generic_instantiation
+: "p" "i" "I" "n" "g" ;

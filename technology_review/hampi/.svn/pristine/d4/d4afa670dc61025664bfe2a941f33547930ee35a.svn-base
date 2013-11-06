@@ -1,0 +1,2 @@
+AnBn : "a" "b" ;
+     : "a" AnBn "b";

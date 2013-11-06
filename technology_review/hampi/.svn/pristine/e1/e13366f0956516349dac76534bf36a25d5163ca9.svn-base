@@ -1,0 +1,54 @@
+symb: "UPDATE schoolinfo SET schoolname = "" . htmlspecialchars(VAR(schoolname)) . "", address = '" . VAR(schooladdress) . "', phonenumber = '" . VAR(schoolphone) . "', sitetext = '" . VAR(sitetext) . "', sitemessage = '" . VAR(sitemessage) . "', numsemesters = '" . VAR(numsemesters) . "', numperiods = '" . VAR(numperiods) . "', apoint = '" . VAR(apoint) . "', bpoint = '" . VAR(bpoint) . "', cpoint = '" . VAR(cpoint) . "', dpoint = '" . VAR(dpoint) . "', fpoint = '" . VAR(fpoint) . "' where schoolname = '" . mysql_result(mysql_query("select schoolname from schoolinfo"), "0") . "' LIMIT 1"
+conc: UPDATE schoolinfo SET schoolname = "1", address = '1', phonenumber = '1', sitetext = '1', sitemessage = '1', numsemesters = '1', numperiods = '1', apoint = '1', bpoint = '1', cpoint = '1', dpoint = '1', fpoint = '1' where schoolname = 'MIT' LIMIT 1
+
+symb: "select password from users where username = "" . VAR(username) . """
+conc: select password from users where username = "1"
+
+symb: "select type from users where username = '" . VAR(username) . "'"
+conc: select type from users where username = 'teacher'
+
+symb: "select userid from users where username = '" . VAR(username) . "'"
+conc: select userid from users where username = 'teacher'
+
+symb: "SELECT aperc, bperc, cperc, dperc, coursename FROM courses WHERE courseid =" . VAR(selectclass)
+conc: SELECT aperc, bperc, cperc, dperc, coursename FROM courses WHERE courseid = 1
+
+symb: "UPDATE courses SET aperc = '', bperc = '', cperc = '', dperc = '', fperc = '' WHERE courseid = '" . VAR(selectclass) . "'"
+conc: UPDATE courses SET aperc = '', bperc = '', cperc = '', dperc = '', fperc = '' WHERE courseid = '1'
+
+symb: "UPDATE courses SET aperc = '" . VAR(aperc) . "', bperc = '" . VAR(bperc) . "', cperc = '" . VAR(cperc) . "', dperc = '" . VAR(dperc) . "', fperc = '" . VAR(fperc) . "' WHERE courseid = '" . VAR(selectclass) . "'"
+conc: UPDATE courses SET aperc = '1', bperc = '1', cperc = '1', dperc = '1', fperc = '1' WHERE courseid = '1'
+
+symb: "SELECT teacherid, fname, lname FROM teachers WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0")
+conc: SELECT teacherid, fname, lname FROM teachers WHERE userid = 3
+
+symb: "SELECT courseid, coursename FROM courses WHERE (teacherid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT teacherid, fname, lname FROM teachers WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0"))), "0") . " OR substituteid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT teacherid, fname, lname FROM teachers WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0"))), "0") . ") AND semesterid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT semesterid FROM semesters WHERE startdate < CURDATE() < enddate")), "")
+conc: SELECT courseid, coursename FROM courses WHERE (teacherid = 1 OR substituteid = 1) AND semesterid = 1
+
+symb: "SELECT studentid, fname, lname FROM students WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0")
+conc: SELECT studentid, fname, lname FROM students WHERE userid = 5
+
+symb: "SELECT DISTINCT courseid FROM registrations WHERE studentid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT studentid, fname, lname FROM students WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0"))), "0")
+conc: SELECT DISTINCT courseid FROM registrations WHERE studentid = 1
+
+symb: "SELECT DISTINCT coursename FROM courses WHERE courseid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT DISTINCT courseid FROM registrations WHERE studentid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT studentid, fname, lname FROM students WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0"))), "0"))), "0") . " AND semesterid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT semesterid FROM semesters WHERE startdate < CURDATE() < enddate")), "")
+conc: SELECT DISTINCT coursename FROM courses WHERE courseid = 1 AND semesterid = 1
+
+symb: "SELECT parentid, fname, lname FROM parents WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0")
+conc: SELECT parentid, fname, lname FROM parents WHERE userid = 6
+
+symb: "SELECT studentid FROM parent_student_match WHERE parentid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT parentid, fname, lname FROM parents WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0"))), "")
+conc: SELECT studentid FROM parent_student_match WHERE parentid = 1
+
+symb: "SELECT fname,lname, studentid FROM students WHERE studentid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT studentid FROM parent_student_match WHERE parentid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT parentid, fname, lname FROM parents WHERE userid =" . mysql_result(mysql_query("select userid from users where username = '" . VAR(username) . "'"), "0"))), ""))), "0")
+conc: SELECT fname,lname, studentid FROM students WHERE studentid = 1
+
+symb: "SELECT studentid, fname, lname FROM students WHERE studentid =" . VAR(student)
+conc: SELECT studentid, fname, lname FROM students WHERE studentid = 1
+
+symb: "SELECT DISTINCT courseid FROM registrations WHERE studentid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT studentid, fname, lname FROM students WHERE studentid =" . VAR(student))), "0")
+conc: SELECT DISTINCT courseid FROM registrations WHERE studentid = 1
+
+symb: "SELECT DISTINCT coursename FROM courses WHERE courseid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT DISTINCT courseid FROM registrations WHERE studentid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT studentid, fname, lname FROM students WHERE studentid =" . VAR(student))), "0"))), "0") . " AND semesterid =" . HASHREAD(mysql_fetch_row(mysql_query("SELECT semesterid FROM semesters WHERE startdate < CURDATE() < enddate")), "")
+conc: SELECT DISTINCT coursename FROM courses WHERE courseid = 1 AND semesterid = 1
+

@@ -1,0 +1,12 @@
+(set-option :auto-config true)
+(set-option :produce-models true)
+
+(declare-variable x String)
+(declare-variable y String)
+(declare-variable z String)
+
+(assert (= (Concat (Concat x y) z) "teest"))
+(assert (= y "es"))
+
+(check-sat)
+(get-model)

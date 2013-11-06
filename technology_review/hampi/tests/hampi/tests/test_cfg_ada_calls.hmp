@@ -1,0 +1,15 @@
+//created from CFGAnalyzer file ada_calls.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg simple_statement :=  procedure_call_statement | assignment_statement ;
+cfg procedure_call_statement :=  procedure_name actual_parameter_part_opt ";" ;
+cfg procedure_name :=  "i" ;
+cfg actual_parameter_part_opt :=  | actual_parameter_part ;
+cfg actual_parameter_part :=  "(" parameter_association_list ")" ;
+cfg parameter_association_list :=  parameter_association_list "," parameter_association | parameter_association ;
+cfg parameter_association :=  "e" | variable_name ;
+cfg assignment_statement :=  variable_name "a" "e" ";" ;
+cfg variable_name :=  "i" | indexed_component ;
+cfg indexed_component :=  "i" "(" expression_list ")" ;
+cfg expression_list :=  expression_list "," "e" | "e" ;
+reg limit := fix(simple_statement, 7);
+assert hampiStringVar in limit;

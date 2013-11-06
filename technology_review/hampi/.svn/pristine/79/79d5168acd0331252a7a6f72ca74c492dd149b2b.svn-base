@@ -1,0 +1,9 @@
+D : "a" D ;
+  : ;
+S : D "a" A "b" D S ;
+  : D "b" B "a" D S ;
+  : ;
+A : D "a" A "b" D A ;
+  : ;
+B : D "b" B "b" D B ;
+  : ;

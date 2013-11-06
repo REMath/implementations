@@ -1,0 +1,302 @@
+/* UNAMBIGUOUS */
+
+program		: PROGRAM newident external_files ";" block "." ;
+
+external_files  : ;
+: "(" newident_list ")" ;
+
+block		: opt_declarations  statement_part ;
+
+opt_declarations: ;
+: declarations ;
+
+declarations	: declarations declaration ;
+: declaration ;
+
+declaration	: label_dcl_part ;
+: const_dcl_part ;
+: type_dcl_part ;
+: var_dcl_part ;
+: proc_dcl_part ;
+
+label_dcl_part	: LABEL labels ";" ;
+
+labels		: labels "," label ;
+: label ;
+
+label		: UNSIGNED_INT ;
+
+const_dcl_part	: CONST const_defs ";" ;
+
+const_defs	: const_defs ";" const_def ;
+: const_def ;
+
+const_def	: newident "=" constant ;
+
+constant	: unsigned_num ;
+: "+" unsigned_num ;
+: "-" unsigned_num ;
+: ident ;
+: "+" ident ;
+: "-" ident ;
+: STRING ;
+
+unsigned_num	: UNSIGNED_INT ;
+: UNSIGNED_REAL ;
+
+type_dcl_part	: TYPE type_defs ";" ;
+
+type_defs	: type_defs ";" type_def ;
+: type_def ;
+
+type_def	: newident "=" type ;
+
+type		: simple_type ;
+: PACKED struct_type ;
+: struct_type ;
+: "^" IDENTIFIER ;
+
+simple_type	: "(" newident_list ")" ;
+: constant DOTDOT constant ;
+: ident ;
+
+struct_type	: ARRAY "[" index_t_list "]" OF type ;
+: RECORD field_list END ;
+: SET OF simple_type ;
+: SFILE OF type ;
+
+index_t_list	: index_t_list "," simple_type ;
+: simple_type ;
+
+field_list	: fixed_part ;
+: fixed_part ";" variant_part ;
+: variant_part ;
+
+fixed_part	: fixed_part ";" record_section ;
+: record_section ;
+
+record_section	: newident_list ":" type ;
+: ;
+
+variant_part	: CASE tag_field OF variants ;
+
+tag_field	: newident ":" ident ;
+: ident ;
+
+variants	: variants ";" variant ;
+: variant ;
+
+variant		: case_label_list ":" "(" field_list ")" ;
+: ;
+
+var_dcl_part	: VAR variable_dcls ";" ;
+
+variable_dcls	: variable_dcls ";" variable_dcl ;
+: variable_dcl ;
+
+variable_dcl	: newident_list ":" type ;
+
+newident_list	: new_id_list ;
+
+new_id_list	: new_id_list "," newident ;
+: newident ;
+
+proc_dcl_part	: proc_or_func ;
+
+proc_or_func	: proc_heading ";" body ";" ;
+: func_heading ";" body ";" ;
+
+proc_heading	: PROCEDURE newident formal_params ;
+
+func_heading	: FUNCTION newident function_form ;
+
+function_form	: ;
+: formal_params ":" ident ;
+
+body		: block ;
+: IDENTIFIER ;
+
+formal_params	: ;
+: "(" formal_p_sects ")" ;
+
+formal_p_sects	: formal_p_sects ";" formal_p_sect ;
+: formal_p_sect ;
+
+formal_p_sect	: param_group ;
+: VAR param_group ;
+: proc_heading ;
+: func_heading ;
+
+param_group	: newident_list ":" paramtype ;
+
+paramtype	: ident ;
+: ARRAY "[" index_specs "]" OF paramtype ;
+: PACKED ARRAY "[" index_spec "]" OF ident ;
+
+index_specs	: index_specs ";" index_spec ;
+: index_spec ;
+
+index_spec	: newident DOTDOT newident ":" ident ;
+
+statement_part	: compound_stmt ;
+
+compound_stmt	: SBEGIN statements END ;
+
+statements	: statements ";" statement ;
+: statement ;
+
+statement	: ;
+: label ":" statement ;
+: compound_stmt ;
+: assignment ;
+: procedure_call ;
+: GOTO label ;
+: IF expression THEN statement ;
+: IF expression THEN statement ELSE statement ;
+: CASE expression OF case_list END ;
+: WHILE expression DO statement ;
+: REPEAT statements UNTIL expression ;
+: FOR ident BECOMES expression direction expression DO statement ;
+: WITH rec_var_list DO statement ;
+
+direction	: TO ;
+: DOWNTO ;
+
+assignment	: variable BECOMES expression ;
+
+procedure_call	: ident actual_params ;
+
+actual_params	:  ;
+: "(" actuals_list ")" ;
+
+actuals_list	: actuals_list "," actual_param ;
+: actual_param ;
+
+actual_param	: expression ;
+: expression colon_things ;
+
+colon_things    : ":" expression ;
+: ":" expression ":" expression ;
+
+case_list	: case_list ";" case_list_elem ;
+: case_list_elem ;
+
+case_list_elem	: case_label_list ":" statement ;
+: ;
+
+case_label_list	: case_label_list "," case_label ;
+: case_label ;
+
+case_label	: constant ;
+
+rec_var_list	: rec_var_list "," record_var ;
+: record_var ;
+
+expression	: simple_expr ;
+: simple_expr relational_op simple_expr ;
+
+relational_op	: "=" ;
+: "<" ;
+: ">" ;
+: LE ;
+: GE ;
+: NE ;
+: IN ;
+
+simple_expr	: term ;
+: "+" term ;
+: "-" term ;
+: simple_expr add_op term ;
+
+add_op		: "+" ;
+: "-" ;
+: OR ;
+
+term		: factor ;
+: term mult_op factor ;
+
+mult_op		: "*" ;
+: "/" ;
+: DIV ;
+: MOD ;
+: AND ;
+
+factor		: variable ;
+: unsigned_lit ;
+: "(" expression ")" ;
+: set ;
+: NOT factor ;
+
+unsigned_lit	: unsigned_num ;
+: STRING ;
+: NIL ;
+
+set		: "[" member_list "]" ;
+
+member_list	: ;
+: members ;
+
+members		: members "," member ;
+: member ;
+
+member		: expression ;
+: expression DOTDOT expression ;
+
+variable	: ident actual_params ;
+: variable "[" expressions "]" ;
+: variable "." ident ;
+: variable "^" ;
+
+expressions	: expressions "," expression ;
+: expression ;
+
+record_var	: variable ;
+
+ident		: IDENTIFIER ;
+
+newident	: IDENTIFIER ;
+
+AND : "0" ;
+ARRAY : "1" ;
+BECOMES : "2" ;
+CASE : "3" ;
+CONST : "4" ;
+DIV : "5" ;
+DO : "6" ;
+DOTDOT: "7" ;
+DOWNTO: "8" ;
+ELSE : "9" ;
+END : "a" ;
+FOR : "b" ;
+FUNCTION: "c" ;
+GE : "d" ;
+GOTO : "e" ;
+IDENTIFIER: "f" ;
+IF : "g" ;
+IN : "h" ;
+LABEL : "i" ;
+LE : "j" ;
+MOD : "k" ;
+NE : "l" ;
+NIL : "m" ;
+NOT : "n" ;
+OF : "o" ;
+OR : "p" ;
+PACKED : "q" ;
+PROCEDURE : "r" ;
+PROGRAM: "s" ;
+RECORD : "t" ;
+REPEAT : "u" ;
+SBEGIN : "v" ;
+SET : "w" ;
+SFILE : "x" ;
+STRING : "y" ;
+THEN : "z" ;
+TO : "A" ;
+TYPE : "B" ;
+UNSIGNED_INT : "C" ;
+UNSIGNED_REAL : "D" ;
+UNTIL : "E" ;
+VAR : "F" ;
+WHILE : "G" ;
+WITH : "H" ;

@@ -1,0 +1,3 @@
+# This runs the emptiness experiment.
+java -Djava.library.path=lib -Xmx700M -ea -classpath bin:lib/jpaul.jar:lib/STPJNI.jar:lib/antlr-3.1b1.jar:lib/antlr-2.7.7.jar:lib/stringtemplate-3.1.jar:lib/junit.jar hampi.experiments.ExperimentCFGEmptiness $@
+ 

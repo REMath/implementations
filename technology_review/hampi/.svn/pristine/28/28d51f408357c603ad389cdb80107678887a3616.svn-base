@@ -1,0 +1,26 @@
+/* UNAMBIGUOUS (LR(2))
+
+Grammar '03-02-124' ("C#" syntax) taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+tokens = { 'o'=OPENPAREN, 'c'=CLOSEPAREN, 'i'=IDENTIFIER }
+*/
+
+
+PrimaryExpression
+: ParenthesizedExpression ;
+: CastExpression ;
+
+ParenthesizedExpression
+: "o" Expression "c" ;
+
+CastExpression
+: "o" Type "c" "i" ;
+
+Expression
+: "i" ;
+
+Type
+: "i" ;

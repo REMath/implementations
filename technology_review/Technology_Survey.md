@@ -36,6 +36,11 @@
 * http://fmv.jku.at/boolector/
 * http://mathsat.fbk.eu/
 
+## String Solvers
+* http://webblaze.cs.berkeley.edu/2010/kaluza/
+* http://people.csail.mit.edu/akiezun/hampi/
+* http://www.cs.purdue.edu/homes/zheng16/str/
+
 ## Datasets 
 * https://svn.sosy-lab.org/software/sv-benchmarks/tags/svcomp13/
 * http://samate.nist.gov/SRD/testsuite.php 
@@ -66,6 +71,8 @@
 * http://code.google.com/p/arm-thumb-decompiler-plugin/
 * https://github.com/EiNSTeiN-/ida-decompiler
 * http://boomerang.sourceforge.net/ 
+
+
 
 ## Symbolic Virtual Machines
 * http://klee.llvm.org/

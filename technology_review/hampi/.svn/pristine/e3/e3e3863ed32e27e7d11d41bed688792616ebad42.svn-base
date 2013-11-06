@@ -1,0 +1,5 @@
+B = "b"  ;
+C = "c"  ;
+S = "a" Sym0  ;
+Sym0 = B C  | B C Sym0  ;
+

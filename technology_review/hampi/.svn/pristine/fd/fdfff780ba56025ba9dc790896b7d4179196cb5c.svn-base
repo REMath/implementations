@@ -1,0 +1,6 @@
+A = B  | S_prime  ;
+B =  | "b"  ;
+S = S_prime  ;
+S_prime = A X0  | U_a B  ;
+U_a = "a"  ;
+X0 = S_prime A  ;

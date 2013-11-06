@@ -1,0 +1,10 @@
+S = A B | (C (E)* "F")? | (G)+ ;
+F = "f";
+C = E | E; 
+E = S | C; 
+A = "a";
+B = H ;
+H = | "h";
+I = S | A B ;
+G = G;
+J = J;

@@ -1,0 +1,8 @@
+//created from CFGAnalyzer file 05_03_114.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg main :=  identifier_chain | qualified_asterisk ;
+cfg identifier_chain :=  identifier_chain "." "i" | "i" ;
+cfg qualified_asterisk :=  asterisked_identified_chain "." "*" ;
+cfg asterisked_identified_chain :=  asterisked_identified_chain "." "i" | "i" ;
+reg limit := fix(main, 7);
+assert hampiStringVar in limit;

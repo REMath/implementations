@@ -1,0 +1,10 @@
+//created from CFGAnalyzer file 03_09_081.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg def :=  param_spec | return_spec "," ;
+cfg param_spec :=  type | name_list ":" type ;
+cfg return_spec :=  type | name ":" type ;
+cfg type :=  "i" ;
+cfg name :=  "i" ;
+cfg name_list :=  name | name "," name_list ;
+reg limit := fix(def, 7);
+assert hampiStringVar in limit;

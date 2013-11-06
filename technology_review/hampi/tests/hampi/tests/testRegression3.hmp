@@ -1,0 +1,13 @@
+var v : 10;
+
+cfg program := "FOO" |
+    "FOO" trailing_spaces;
+
+cfg trailing_spaces := " "
+    | trailing_spaces " ";
+
+
+// Hampi can only deal with bounded CFGs
+reg Pbound := fix(program, 10);
+assert v in Pbound;
+ 

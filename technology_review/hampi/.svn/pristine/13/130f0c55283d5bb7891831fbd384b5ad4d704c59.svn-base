@@ -1,0 +1,5 @@
+token0= "(";
+token1= "*";
+token2= <NUMBER>;
+token3= "(";
+token4= "+";

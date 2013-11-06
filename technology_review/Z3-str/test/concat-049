@@ -1,0 +1,11 @@
+(declare-variable x String)
+(declare-variable y String)
+(declare-variable z String)
+
+(assert (= (Concat x y) (Concat "abc" z) ) )
+(assert (= (Length x) 1 ) )
+(assert (= (Length y) 3 ) )
+(assert (= (Length z) 1 ) )
+
+(check-sat)
+(get-model)

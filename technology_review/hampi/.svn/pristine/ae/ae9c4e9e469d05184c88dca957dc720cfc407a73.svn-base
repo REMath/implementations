@@ -1,0 +1,15 @@
+S : C ;
+  : X ;
+  : X Y ;
+  : C X ;
+Y : C ;
+  : X ;
+  : X Y ;
+  : C X ;
+X : A X ;
+  : B X ;
+  : Y ;
+A : "a" ;
+B : "b" ;
+C : "a" D ;
+D : "b" "b" ;

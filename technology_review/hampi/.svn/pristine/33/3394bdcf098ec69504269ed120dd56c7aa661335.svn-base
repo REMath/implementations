@@ -1,0 +1,1 @@
+FunctionDeclaration = "continue" ( "id" )? ( ";" )?  |  "break" ( "id" )? ( ";" )?;

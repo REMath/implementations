@@ -1,0 +1,127 @@
+/* UNAMBIGUOUS
+
+Grammar 'voss' from:
+
+"Complete Probabilistic Analysis of RNA Shapes"
+B.Voss, R.Giegerich, R.Rehmsmeier, BMC Biology 4(5).
+
+tokens = {'.','(',')'}
+*/
+
+struct
+: left_dangle ;
+: noleft_dangle ;
+
+left_dangle
+:    "." left_dangle ;
+: edanglel "." noleft_dangle ;
+: edanglel noleft_dangle_opt ;
+: edanglelr left_dangle ;
+: ;
+
+noleft_dangle_opt
+: noleft_dangle ;
+: ;
+
+noleft_dangle
+:     edangler left_dangle ;
+: nodangle noleft_dangle_opt ;
+: nodangle "." noleft_dangle ;
+
+edanglel
+:    "." initstem ;
+
+edangler
+:     initstem "." ;
+
+edanglelr
+:    "." initstem "." ;
+
+nodangle
+:    initstem ;
+
+initstem
+:     closed ;
+
+closed
+:    stack ;
+: hairpin ;
+: multiloop ;
+: leftB ;
+: rightB ;
+: iloop ;
+
+multiloop
+:    "(" "(" "." ml_comps1 ")" ")" ;
+: "(" "(" "." ml_comps2 ")" ")" ;
+: "(" "(" ml_comps3 "." ")" ")" ;
+: "(" "(" ml_comps2 "." ")" ")" ;
+: "(" "(" "." ml_comps4 "." ")" ")" ;
+: "(" "(" "." ml_comps2 "." ")" ")" ;
+: "(" "(" "." ml_comps1 "." ")" ")" ;
+: "(" "(" "." ml_comps3 "." ")" ")" ;
+: "(" "(" ml_comps2 ")" ")" ;
+
+ml_comps1
+:    block_dl no_dl_no_ss_end ;
+: block_dlr dl_or_ss_left_no_ss_end ;
+: block_dl "." no_dl_no_ss_end ;
+
+ml_comps2
+:    nodangle no_dl_no_ss_end ;
+: edangler dl_or_ss_left_no_ss_end ;
+: nodangle "." no_dl_no_ss_end ;
+
+ml_comps3
+:    nodangle no_dl_ss_end ;
+: nodangle "." no_dl_ss_end ;
+
+ml_comps4
+:    block_dl no_dl_ss_end ;
+: block_dlr dl_or_ss_left_ss_end ;
+: block_dl "." no_dl_ss_end ;
+
+block_dl
+:    region edanglel ;
+: edanglel ;
+
+block_dlr
+:    region edanglelr ;
+: edanglelr ;
+
+no_dl_no_ss_end
+:    ml_comps2 ;
+: nodangle ;
+
+dl_or_ss_left_no_ss_end
+:    ml_comps1 ;
+: block_dl ;
+
+no_dl_ss_end
+:    ml_comps3 ;
+: edangler ;
+: edangler region ;
+
+dl_or_ss_left_ss_end
+:    ml_comps4 ;
+: block_dlr ;
+: block_dlr region ;
+
+stack
+:     "(" closed ")" ;
+
+hairpin
+:    "(" "(" region ")" ")" ;
+
+leftB
+:     "(" "(" region initstem ")" ")" ;
+
+rightB
+:     "(" "(" initstem region ")" ")" ;
+
+iloop
+:    "(" "(" region closed region ")" ")" ;
+
+region
+:    "." ;
+: "." region ;

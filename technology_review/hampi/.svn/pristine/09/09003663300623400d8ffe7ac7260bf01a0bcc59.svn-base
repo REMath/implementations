@@ -1,0 +1,16 @@
+/* UNAMBIGUOUS
+
+Grammar 'g6' taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (J-version of LDTA'07 paper), p. 10.
+
+tokens = {'a','b'}
+*/
+
+S : "a" S "a" ;
+: "b" S "b" ;
+: "a" ;
+: "b" ;
+: ;
+

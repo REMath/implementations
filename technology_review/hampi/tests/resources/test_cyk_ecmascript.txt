@@ -1,0 +1,19 @@
+ Identifier = <IDENTIFIER_NAME> ;
+
+ Statement =  EmptyStatement 
+ | BreakStatement ; 
+
+ EmptyStatement = ";" ;
+
+ BreakStatement = "break" ( Identifier )? ( ";" )? ;
+
+ FunctionDeclaration = "function" Identifier "(" ( FormalParameterList )? ")" FunctionBody ;
+
+ FormalParameterList = Identifier ( "," Identifier )* ;
+
+ FunctionBody = "{" ( SourceElements )? "}" ;
+
+ SourceElements = ( SourceElement )+ ;
+
+ SourceElement = FunctionDeclaration 
+  | Statement ;

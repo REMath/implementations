@@ -1,0 +1,10 @@
+	ASSERT		assert
+	ID		v
+	CONTAINS		contains
+	STR_LIT		"foo"
+	SEMI		;
+	ASSERT		assert
+	ID		v
+	IN		in
+	ID		Bar
+	SEMI		;

@@ -1,0 +1,5 @@
+var x:2;
+cfg Num := (Digit)+;
+cfg Digit := ['0'-'9'];
+reg SqlSmallBounded := fix(x, 2);//x is not a cfg
+assert x contains "foo";

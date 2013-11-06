@@ -1,0 +1,14 @@
+/* AMBIGUOUS */
+
+S : V ;
+: U ;
+
+U : T "a" T ;
+: T "a" U ;
+
+V : T "b" T ;
+: T "b" V ;
+
+T : ;
+: "b" T "a" T ;
+: "a" T "b" T ;

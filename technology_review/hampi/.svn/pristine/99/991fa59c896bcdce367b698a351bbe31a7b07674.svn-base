@@ -1,0 +1,25 @@
+/* AMBIGUOUS
+
+Grammar 'g4' taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (J-version of LDTA'07 paper), p. 10.
+
+tokens = {'a'}
+*/
+
+S  : A ;
+: B5 "a" ;
+
+A  : A "a" "a" ;
+: "a" ;
+
+B1 : "a" "a" ;
+
+B2 : B1 B1 ;
+
+B3 : B2 B2 ;
+
+B4 : B3 B3 ;
+
+B5 : B4 B4 ;

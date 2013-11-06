@@ -1,0 +1,26 @@
+S = Stmt (Comment)?;
+Comment = "--" (Sigma)*;
+Stmt = SelectStmt | UpdateStmt;
+SelectStmt = SelectKw ws What ws FromKw ws Name ws Where;
+UpdateStmt = UpdateKw ws Name ws SetKw ws KeyValueList (ws Where)?;
+KeyValueList = Name "=" Value ("," ws Name "=" Value)*; 
+ws = " ";
+What = "*" | Name ("," ws Name)* ; 
+Where = WhereKw ws Condition;
+Condition = Value (" ")* Op (" ")* Value | Condition ws AndKw ws Condition | Condition ws OrKw ws Condition;
+Op = "=" ;
+Value =  UnquotedValue | "'" UnquotedValue "'" ;
+UnquotedValue = Number | Name;
+Number = (Digit)+ ;
+Digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ; 
+Name = (Letter)+ ;
+Letter = "a"|"b"|"c"|"d"|"e"|"f"|"g"|"h"|"i"|"j"|"k"|"l"|"m"|"n"|"o"|"p"|"q"|"r"|"s"|"t"|"u"|"v"|"w"|"x"|"y"|"z"|
+         "A"|"B"|"C"|"D"|"E"|"F"|"G"|"H"|"I"|"J"|"K"|"L"|"M"|"N"|"O"|"P"|"Q"|"R"|"S"|"T"|"U"|"V"|"W"|"X"|"Y"|"Z";
+Sigma = "-" | "=" | "," | " " | "*" | "'" | Digit | Letter;
+SelectKw= "SELECT";
+UpdateKw= "UPDATE";
+FromKw = "FROM";
+SetKw = "SET";
+WhereKw = "WHERE";
+AndKw = "AND";
+OrKw = "OR";

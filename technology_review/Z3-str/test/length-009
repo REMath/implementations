@@ -1,0 +1,8 @@
+(declare-variable x String)
+(declare-variable i Int)
+
+(assert (= (Length "abcd") i) )
+(assert (> (Length x) (+ i 1) ) )
+
+(check-sat)
+(get-model)

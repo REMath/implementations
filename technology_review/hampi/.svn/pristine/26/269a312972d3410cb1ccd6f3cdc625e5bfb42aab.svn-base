@@ -1,0 +1,4 @@
+//this is badly formed there nonterminal name is undefined
+var x:2;
+cfg A := "a" | "a" B ; //B is undefined
+assert x contains "foo";

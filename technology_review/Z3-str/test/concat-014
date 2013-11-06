@@ -1,0 +1,6 @@
+(declare-variable a String)
+
+(assert (= (Concat a "") "num" ) )
+
+(check-sat)
+(get-model)

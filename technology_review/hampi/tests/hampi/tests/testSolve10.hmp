@@ -1,0 +1,3 @@
+var v:6;
+reg r := star("foo");
+assert v in r;

@@ -1,0 +1,14 @@
+//created from CFGAnalyzer file java_arrays.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg Type :=  "n" | ReferenceType ;
+cfg ReferenceType :=  ArrayType ;
+cfg ArrayType :=  Type "[" "]" ;
+cfg BlockStatement :=  Assignment | LocalVariableDeclarationStatement ;
+cfg LocalVariableDeclarationStatement :=  LocalVariableDeclaration ";" ;
+cfg LocalVariableDeclaration :=  Type "v" ;
+cfg ArrayAccess :=  "n" "[" "e" "]" ;
+cfg Assignment :=  LeftHandSide AssignmentOperator "a" ;
+cfg LeftHandSide :=  ArrayAccess ;
+cfg AssignmentOperator :=  "=" ;
+reg limit := fix(Type, 7);
+assert hampiStringVar in limit;

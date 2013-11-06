@@ -1,0 +1,13 @@
+/* UNAMBIGUOUS
+
+Grammar 'g2' taken from:
+
+"Conservative Ambiguity Detection in Context-Free Grammars"
+Sylvain Schmitz (ICALP'07), p. 6.
+
+tokens = {'a','b','c'} */
+
+S : "a" A "a" ;
+: "b" A "a" ;
+
+A : "c" ;

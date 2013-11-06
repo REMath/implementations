@@ -1,0 +1,13 @@
+/* UNAMBIGUOUS */
+
+S : A ;
+: I ;
+
+I : "if" E "then" S ;
+
+A : D "=" E ;
+
+E : D "=" D ;
+
+D : "then" ;
+: "if" ;

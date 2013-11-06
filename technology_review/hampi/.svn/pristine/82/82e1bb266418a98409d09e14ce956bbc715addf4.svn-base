@@ -1,0 +1,39 @@
+/* UNAMBIGUOUS
+
+Grammar 'isocpp-qualid' (ISO CPP qualified identifiers) taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+tokens = {
+'<', '>',
+'i'=identifier,
+'c'=COLONCOLON
+}
+*/
+
+
+id_expression
+: unqualified_id ;
+: qualified_id ;
+
+unqualified_id
+: "i" ;
+: template_id ;
+
+qualified_id
+: nested_name_specifier unqualified_id ;
+
+nested_name_specifier
+: class_name "c" nested_name_specifier ;
+: class_name "c" ;
+
+class_name
+: "i" ;
+: template_id ;
+
+template_id
+: "i" "<" template_argument ">" ;
+
+template_argument
+: id_expression ;

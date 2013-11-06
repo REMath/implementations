@@ -1,0 +1,26 @@
+//created from CFGAnalyzer file java_modifiers.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg SimpleTypeName :=  "i" ;
+cfg ClassBodyDeclaration :=  ClassMemberDeclaration | ConstructorDeclaration ;
+cfg ClassMemberDeclaration :=  FieldDeclaration | MethodDeclaration ;
+cfg FieldDeclaration :=  FieldModifiersOpt "y" VariableDeclarators ";" ;
+cfg VariableDeclarators :=  VariableDeclarator | VariableDeclarators "," VariableDeclarator ;
+cfg VariableDeclarator :=  VariableDeclaratorId | VariableDeclaratorId "=" "v" ;
+cfg VariableDeclaratorId :=  "i" ;
+cfg FieldModifiersOpt :=  | FieldModifiers ;
+cfg FieldModifiers :=  FieldModifier | FieldModifiers FieldModifier ;
+cfg FieldModifier :=  "c" | "d" | "e" | "f" | "s" | "t" | "x" ;
+cfg MethodDeclaration :=  MethodHeader "m" ;
+cfg MethodHeader :=  MethodModifiersOpt ResultType MethodDeclarator "h" ;
+cfg ResultType :=  "y" | "w" ;
+cfg MethodDeclarator :=  "i" "(" "p" ")" ;
+cfg MethodModifiersOpt :=  | MethodModifiers ;
+cfg MethodModifiers :=  MethodModifier | MethodModifiers MethodModifier ;
+cfg MethodModifier :=  "c" | "d" | "e" | "a" | "s" | "f" | "z" | "n" ;
+cfg ConstructorDeclaration :=  ConstructorModifiersOpt ConstructorDeclarator "h" "b" ;
+cfg ConstructorDeclarator :=  SimpleTypeName "(" "p" ")" ;
+cfg ConstructorModifiersOpt :=  | ConstructorModifiers ;
+cfg ConstructorModifiers :=  ConstructorModifier | ConstructorModifiers ConstructorModifier ;
+cfg ConstructorModifier :=  "c" | "d" | "e" ;
+reg limit := fix(SimpleTypeName, 7);
+assert hampiStringVar in limit;

@@ -1,0 +1,5 @@
+MaybeF =  | "f"  ;
+S = S_prime  ;
+S_prime = Sym0 U_end  ;
+Sym0 = MaybeF  | MaybeF Sym0  ;
+U_end = "end"  ;

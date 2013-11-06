@@ -1,0 +1,8 @@
+//this tests the ability to create new variables and put constraints on them
+//and combine with constraints on the main variable
+var v:2;
+
+val xx:= concat("ab", v);
+assert xx contains "bc";
+assert v contains "d";
+//the only solution for v is cd

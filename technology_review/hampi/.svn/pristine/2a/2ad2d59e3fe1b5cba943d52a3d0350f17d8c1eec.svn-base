@@ -1,0 +1,4 @@
+A = B  | S  ;
+B =  | "b"  ;
+S = A S A  | U_a B  ;
+U_a = "a"  ;

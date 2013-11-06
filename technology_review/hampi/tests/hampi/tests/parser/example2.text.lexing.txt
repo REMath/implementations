@@ -1,0 +1,10 @@
+	VAR		var
+	ID		v
+	COLON		:
+	INT		2
+	SEMI		;
+	CFG		cfg
+	ID		x
+	ASSIGN		:=
+	STR_LIT		"foo"
+	SEMI		;

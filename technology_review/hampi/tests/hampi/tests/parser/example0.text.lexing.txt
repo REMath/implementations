@@ -1,0 +1,5 @@
+	VAR		var
+	ID		s
+	COLON		:
+	INT		3
+	SEMI		;

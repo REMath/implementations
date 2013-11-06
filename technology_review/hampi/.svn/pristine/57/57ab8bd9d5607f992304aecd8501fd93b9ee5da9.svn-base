@@ -1,0 +1,24 @@
+symb: "SELECT * FROM geccBB_forum WHERE id=" . VAR(rd)
+conc: SELECT * FROM geccBB_forum WHERE id=1
+
+symb: "SELECT id,rispostadel FROM geccBB_forum WHERE id=" . VAR(id)
+conc: SELECT id,rispostadel FROM geccBB_forum WHERE id=1
+
+symb: "SELECT * FROM geccBB_forum WHERE id=" . HASHREAD(mysql_fetch_assoc(mysql_query("SELECT id,rispostadel FROM geccBB_forum WHERE id=" . VAR(id))), "id")
+conc: SELECT * FROM geccBB_forum WHERE id=1
+
+symb: "SELECT * FROM geccBB_forum WHERE rispostadel=" . HASHREAD(mysql_fetch_assoc(mysql_query("SELECT * FROM geccBB_forum WHERE id=" . HASHREAD(mysql_fetch_assoc(mysql_query("SELECT id,rispostadel FROM geccBB_forum WHERE id=" . VAR(id))), "id"))), "id")
+conc: SELECT * FROM geccBB_forum WHERE rispostadel=1
+
+symb: "SELECT * FROM geccBB_forum WHERE rispostadel=" . HASHREAD(mysql_fetch_assoc(mysql_query("SELECT * FROM geccBB_forum WHERE rispostadel=" . HASHREAD(mysql_fetch_assoc(mysql_query("SELECT * FROM geccBB_forum WHERE id=" . HASHREAD(mysql_fetch_assoc(mysql_query("SELECT id,rispostadel FROM geccBB_forum WHERE id=" . VAR(id))), "id"))), "id"))), "id")
+conc: SELECT * FROM geccBB_forum WHERE rispostadel=2
+
+symb: "SELECT * FROM geccBB_forum WHERE id=" . VAR(id)
+conc: SELECT * FROM geccBB_forum WHERE id=1
+
+symb: "INSERT INTO geccBB_forum VALUES(NULL, '" . strip_tags(VAR(postatoda)) . "', '1221844226', '" . VAR(titolo) . "', '" . VAR(testonuovo) . "" . HASHREAD(explode("", strip_tags(VAR(testo))), "") . "', '" . VAR(rispostadel) . "')"
+conc: INSERT INTO geccBB_forum VALUES(NULL, '1', '1221844226', '1', '1 1', '1')
+
+symb: "INSERT INTO geccBB_forum VALUES(NULL, '" . strip_tags(VAR(postatoda)) . "', '1221844226', '" . strip_tags(VAR(titolo)) . "', '" . VAR(testonuovo) . "" . HASHREAD(explode("", strip_tags(VAR(testo))), "") . "', '')"
+conc: INSERT INTO geccBB_forum VALUES(NULL, '1', '1221844226', '1', '1 1', '')
+

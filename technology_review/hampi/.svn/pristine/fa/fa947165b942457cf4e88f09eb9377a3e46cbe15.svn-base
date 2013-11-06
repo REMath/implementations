@@ -1,0 +1,4 @@
+S = "a" A "a" ;
+A = Sym0 "c"  ;
+B = "b"  | S "a"  ;
+Sym0 =  | B  ;

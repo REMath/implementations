@@ -1,0 +1,8 @@
+/* UNAMBIGUOUS */
+
+S : "a" D "d" ;
+: "a" B "c" ;
+
+B : "b" ;
+
+D : "b" ;

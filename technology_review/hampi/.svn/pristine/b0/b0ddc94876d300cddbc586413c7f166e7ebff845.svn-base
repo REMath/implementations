@@ -1,0 +1,200 @@
+/* AMBIGUOUS */
+
+progr
+: declarations ;
+
+declarations
+: declaration ;
+: declarations declaration ;
+
+declaration
+: declarations_simples ;
+: definition_fonction ;
+
+definition_fonction
+: declaration_fonction "{" corps "}" ;
+
+declaration_fonction
+: declaration_initiale ;
+
+declarations_simples
+: declaration_initiale suite_decl ";" ;
+
+suite_decl
+: ;
+: "," declarateur suite_decl ;
+
+declaration_initiale
+: type_initial declarateur ;
+
+type_initial
+: INT ;
+: VOID ;
+
+declarateur
+: pdecl ;
+
+pdecl
+: "*" pdecl ;
+: tdecl ;
+
+tdecl
+: sdecl ;
+: tdecl dim ;
+
+dim
+: "[" "]" ;
+: "[" CONST "]" ;
+
+sdecl
+: ;
+: ident_var ;
+: ident_fonc "(" parametres ")" ;
+: "(" pdecl ")" ;
+
+ident_var
+: IDENT ;
+
+ident_fonc
+: IDENT ;
+
+parametres
+: ;
+: liste_parametres ;
+
+liste_parametres
+: declaration_parametre ;
+: liste_parametres "," declaration_parametre ;
+
+declaration_parametre
+: declaration_initiale ;
+
+corps
+: decl_locales liste_instr ;
+: liste_instr ;
+: decl_locales ;
+
+decl_locales
+: declarations_simples ;
+: decl_locales declarations_simples ;
+
+liste_instr
+: instruction ;
+: liste_instr instruction ;
+
+instruction
+: bloc ;
+: si ;
+: tantque ;
+: repeter ";" ;
+: instruction_simple ";" ;
+: expression ";" ;
+: error ";" ;
+: ";" ;
+
+instruction_simple
+: retour ;
+: BREAK ;
+: PRINT "(" arguments ")" ;
+: READ "(" variables ")" ;
+
+si
+: IF condition instruction ;
+: IF condition instruction ELSE instruction ;
+
+tantque
+: while condition instruction ;
+
+while
+: WHILE ;
+
+repeter
+: do bloc WHILE condition ;
+
+do
+: DO ;
+
+retour
+: RETURN ;
+: RETURN expression ;
+
+bloc
+: "{" liste_instr "}" ;
+: "{" "}" ;
+
+condition
+: "(" expression ")" ;
+
+expression
+: designation "=" expression ;
+: expression OU expression ;
+: expression ET expression ;
+: expression EQU expression ;
+: expression NEQ expression ;
+: expression "<" expression ;
+: expression LEQ expression ;
+: expression ">" expression ;
+: expression GEQ expression ;
+: expression SLL expression ;
+: expression SLR expression ;
+: expression "+" expression ;
+: expression "-" expression ;
+: expression "*" expression ;
+: expression "/" expression ;
+: expression "%" expression ;
+: facteur ;
+
+facteur
+: CONST ;
+: STRING ;
+: "!" facteur ;
+: primaire ;
+: "-" CONST        ;
+: "&" designation  ;
+: "-" primaire     ;
+
+primaire
+: designation ;
+: IDENT "(" ")" ;
+: IDENT "(" arguments ")" ;
+: "(" expression ")" ;
+
+designation
+: denotation ;
+: "*" primaire     ;
+
+denotation
+: IDENT ;
+: primaire "[" expression "]" ;
+
+arguments
+: expression ;
+: arguments "," expression ;
+
+variables
+: designation ;
+: variables "," designation ;
+
+IF : "1" ;
+ELSE : "2" ;
+WHILE : "3" ;
+DO : "4" ;
+BREAK : "5" ;
+RETURN : "6" ;
+INT : "7" ;
+VOID : "8" ;
+PRINT : "9" ;
+READ : "a" ;
+CONST : "b" ;
+IDENT : "c" ;
+STRING : "d" ;
+
+SLL : "<<" ;
+SLR : ">>" ;
+EQU : "==" ;
+LEQ : "<=" ;
+GEQ : ">=" ;
+NEQ : "!=" ;
+ET  : "&&" ;
+OU  : "::" ;
+error : "###" ;

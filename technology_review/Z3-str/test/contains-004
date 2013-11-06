@@ -1,0 +1,8 @@
+(declare-variable x String)
+
+(assert (not (Contains x "efg" ) ) )
+(assert (Contains x "ef" ) )
+
+
+(check-sat)
+(get-model)

@@ -1,0 +1,4 @@
+var v:5;
+val prefix := v[4:3];
+reg r1 := star(['a'-'b']);
+assert prefix in r1;

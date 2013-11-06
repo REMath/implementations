@@ -1,0 +1,5 @@
+A = <digit> "b"  ;
+A_renamed = <digit> B  ;
+B = "b"  ;
+
+

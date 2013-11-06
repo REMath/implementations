@@ -1,0 +1,6 @@
+var v:1;
+
+reg r1:= or("a", "b");
+assert v in r1;
+assert v not contains "a";
+//v="b" is the only solution

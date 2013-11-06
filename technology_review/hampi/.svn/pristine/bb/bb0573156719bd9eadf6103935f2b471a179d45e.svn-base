@@ -1,0 +1,8 @@
+//created from CFGAnalyzer file g1.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg S :=  NP VP ;
+cfg NP :=  "d" "n" | "p" | NP PP ;
+cfg PP :=  "q" NP ;
+cfg VP :=  "v" NP | VP PP ;
+reg limit := fix(S, 7);
+assert hampiStringVar in limit;

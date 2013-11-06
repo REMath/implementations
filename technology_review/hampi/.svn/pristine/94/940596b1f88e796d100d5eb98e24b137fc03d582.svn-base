@@ -1,0 +1,8 @@
+var v:6;
+val prefix := v[0:3]; //substring of v (offset 2, length 3)
+val suffix := v[3:3];
+reg r1 := star(['a'-'b']);
+reg r2 := star("b");
+assert prefix in r1;
+assert suffix in r2;
+assert prefix equals suffix;

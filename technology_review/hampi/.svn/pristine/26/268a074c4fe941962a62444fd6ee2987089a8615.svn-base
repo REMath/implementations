@@ -1,0 +1,125 @@
+[2008.10.12]
+This is the same as 2007.3.12 but can be compiled with g++-4.3
+
+[2007.3.12]
+Fixed the inefficiency bug in zverify_df. Thanks to Allen Van Gelder and 
+Tjark Weber.
+
+[2004.11.15 Simplified]
+This is just a simplified version of 2004.5.13. Many portions of dead 
+codes are removed. Some of codes are re-written and re-formatted for 
+easy reading. You might experience a little speedup. Please switch back
+to 2004.5.13 if the functionalities you need are removed in the simplified 
+version.
+
+[2004.5.13]
+Some performace update. This is the version we used for SAT04 competition. 
+Please consult our website for the detailed description.
+
+[2003.12.04]
+Fixed:
+1. Various bugs in add_clause_incr(). We would like to thank Alexander 
+   Smith from University of Toronto for his suggestion and experiments on 
+   this issue.
+2. SAT_HOOK added.
+3. unset_force_terminate added.
+
+[2003.11.04]
+Fixed:
+1. Compile under g++ 3.3 and above
+2. Assertion error for certain instances in core extraction
+3. A typo in run_till_fix. Now it takes the second argument as the max 
+number of iterations to run as intended.
+
+[2003.10.09]
+Fixes in this release:
+1. Bug fixed for time overflow after 2147 seconds.
+2. The Perl script run_till_fix is updated such that it works for cnf 
+files located in other directory.
+3. zverify_df.cpp now also verifies the conflict clause given in 
+resolve_trace with the one constructed by zverify itself using the 
+information given in resolve_trace.
+[2003.7.22]
+NOTE: If your code is in C instead of C++, please use SAT_C.h instead of 
+SAT.h as the header file. 
+
+This is a new (as of June, 2003)  release of zchaff, a SAT solver from
+Princeton University. The main difference between this one and the 
+previous (2001.2.17) version are listed in the following:
+1. This version of zchaff has incremental SAT solving capability
+   In practice, many SAT instances are related in the sense that they only
+   differ in a small number of clauses. Zchaff can solve a set of
+   such instances incrementally, leveraging the knowledge (clauses) learned
+   from previous runs to help current runs. This feature can only be invoked
+   through the functional call interface. Please read SAT.h for more
+   information about assigning clauses with Group IDs and how to delete
+   clause or add clauses by groups.
+                                                                                
+                                    
+2. This version of zchaff is certifiable
+   Now zchaff can produce a verifiable trace that can be checked by a third
+   party checker. To invoke this, modify zchaff_solver.cpp and uncomment
+   #define VERIFY_ON and compile again. Now zchaff will produce a trace
+   called resolution_trace after each run and this can be checked by
+   zverify_bf or zverify_df, which are two checkers based on breadth-first 
+   and depth-first search.
+                                                                                
+                                    
+3. This version of zchaff can produce an unsatisfiable core from an 
+   unsatisifable formula Unsatisfiable core extraction can be useful for 
+   some applications. This version of zchaff implement the idea presented 
+   in our SAT 2003 paper about extracting unsat cores.
+                                                                                
+4. This version can compile under gcc 3.x.
+                                    
+5. This version fixed a couple of serious bugs in the previous version. 
+   (But may have introduced other bugs :().
+                                                                                
+                                    
+How to Install:
+  Use "make" to compile, or "make all" to compile zchaff with extra utilities
+  (e.g. core extractor, verifier). It should work without any problem 
+  under Linux, Cygwin or Solaris.
+
+  To compile a native Windows executable, Open Visual Studio .Net, create
+  a project, and add these files into the project:
+  zchaff_base.cpp, 
+  zchaff_cpp_wrapper.cpp (this can be obtained by rename 
+  zchaff_wrapper.wrp to zchaff_cpp_wrapper.cpp and delete all occurance of 
+  "EXTERN" in the file.)
+  zchaff_dbase.cpp
+  zchaff_solver.cpp
+  zchaff_utils.cpp
+  sat_solver.cpp
+
+  Also, modify files that contain headers "sys/*.h". Delete those troublesome 
+  headers, replace them with "#include <time.h>", and replace the code for 
+  function get_cpu_time() with:
+
+        double get_cpu_time(void) {
+                return  (double)clock()/(double)(CLOCKS_PER_SEC);
+        } 
+  This function will overflow after 2147 seconds. So the reported time 
+  may not be correct. This is a temporary solution and hopefully we will fix it in 
+  the future.
+ 
+  MSVC will report a lot of warnings. Hopefully none is serious. :(. As 
+  you suspected, zchaff is not tested under native Windows enviroment. 
+  But anyway, this is the hack. 
+
+How to use: 
+  the main executable is zchaff. The command line is 
+                zchaff CNF_FILE [TimeLimit]
+  Other executables will print out a help info when executed with no 
+  argument.
+
+  run_till_fix can obtain a small core by iteratively run core extraction. 
+  Do turn
+  VERIFY_ON in zchaff_solver.cpp when compile. 
+
+For any questions or bug reports, please send email to 
+Yogesh Mahajan at yogism@Princeton.EDU
+
+Thanks.
+
+The SAT Group at Princeton University

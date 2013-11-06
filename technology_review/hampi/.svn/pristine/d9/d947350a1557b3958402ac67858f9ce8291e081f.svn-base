@@ -1,0 +1,24 @@
+/*CFG Analyzer, version 03/12/2007
+
+The intersection of L(G1) ... L(G2) is empty when restricted  to words of length k with 5 <= k <= 5.
+*/
+var hampiStringVar : 5;
+cfg S0 :=  N20 V20 | N10 V10 ;
+cfg N10 :=  D0 N30 S10 ;
+cfg N20 :=  D0 N40 ;
+cfg V10 :=  V30 N20 ;
+cfg V20 :=  "s" | V40 S10 ;
+cfg S10 :=  C0 S0 ;
+cfg D0 :=  "t" ;
+cfg N30 :=  "f" ;
+cfg N40 :=  "d" | "c" ;
+cfg C0 :=  "h" ;
+cfg V40 :=  "i" ;
+cfg V30 :=  "b" | "a" ;
+reg limit0 := fix(S0, 5);
+assert hampiStringVar in limit0;
+cfg S1 :=  "b" A1 | "a" B1 ;
+cfg A1 :=  "b" "b" A1 A1 "a" | "b" "a" A1 | "a" S1 | "a" ;
+cfg B1 :=  "a" B1 B1 | "b" S1 | "b" ;
+reg limit1 := fix(S1, 5);
+assert hampiStringVar in limit1;

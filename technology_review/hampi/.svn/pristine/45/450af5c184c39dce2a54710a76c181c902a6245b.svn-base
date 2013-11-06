@@ -1,0 +1,5 @@
+S = Sym0  ;
+Sym0 =  | Sym1 Sym2 Sym0  ;
+Sym1 =  | "a"  ;
+Sym2 =  | "b"  ;
+

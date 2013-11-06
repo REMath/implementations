@@ -1,0 +1,3 @@
+var v:3;
+assert v contains "foo";
+//EXPECT v = "foo"

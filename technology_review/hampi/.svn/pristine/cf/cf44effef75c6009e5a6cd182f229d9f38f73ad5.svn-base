@@ -1,0 +1,12 @@
+var v:9;
+val vSub1 := v[0:3]; //substring of v (offset 2, length 3)
+val vSub2 := v[3:3];
+val vSub3 := v[6:3];
+val vSub4 := v[2:2];
+val c     := "deg";
+assert vSub1 contains "de";
+assert vSub2 contains "ef";
+assert vSub1 equals c;
+assert vSub1 not equals vSub4;
+assert vSub4 not equals c;
+assert v not equals c;

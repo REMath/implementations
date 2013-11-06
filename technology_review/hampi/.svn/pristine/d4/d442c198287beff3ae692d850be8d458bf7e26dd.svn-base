@@ -1,0 +1,1 @@
+(PROGRAM (VAR x 1) (REG r1 (OR "a" "b")) (ASSERT (IN x r1)))

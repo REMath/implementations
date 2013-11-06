@@ -1,0 +1,17 @@
+/*CFG Analyzer, version 03/12/2007
+
+A word in the intersection of L(G1) ... L(G2) is, e.g., "n[][]" of length 5
+*/
+var hampiStringVar : 5;
+cfg Type :=  "n" | ReferenceType ;
+cfg ReferenceType :=  ArrayType ;
+cfg ArrayType :=  Type "[" "]" ;
+cfg BlockStatement :=  Assignment | LocalVariableDeclarationStatement ;
+cfg LocalVariableDeclarationStatement :=  LocalVariableDeclaration ";" ;
+cfg LocalVariableDeclaration :=  Type "v" ;
+cfg ArrayAccess :=  "n" "[" "e" "]" ;
+cfg Assignment :=  LeftHandSide AssignmentOperator "a" ;
+cfg LeftHandSide :=  ArrayAccess ;
+cfg AssignmentOperator :=  "=" ;
+reg limit := fix(Type, 5);
+assert hampiStringVar in limit;

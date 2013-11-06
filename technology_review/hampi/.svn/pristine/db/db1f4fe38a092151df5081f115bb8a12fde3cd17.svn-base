@@ -1,0 +1,2 @@
+assert v contains "foo";
+assert v in Bar;

@@ -1,0 +1,53 @@
+/* AMBIGUOUS
+
+Grammar 'sml_fvalbind' (Standard ML function declarations)
+taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+in turn taken from:
+"The definition of standard ML"
+Milner et al. (1997), ISBN 0-262-63181-4.
+
+tokens = {
+':', '=',
+'c'=CASE,
+'f'=FUN,
+'m'=MATCH,
+'o'=OF,
+'v'=VID
+}
+*/
+
+
+dec
+: "f" fvalbind ;
+
+fvalbind
+: sfvalbind ;
+: fvalbind ":" sfvalbind ;
+
+sfvalbind
+: "v" atpats "=" exp ;
+
+exp
+: "v" ;
+: "c" exp "o" match ;
+
+match
+: mrule ;
+: match ":" mrule ;
+
+mrule
+: pat "m" exp ;
+
+atpats
+: atpat ;
+: atpats atpat ;
+
+atpat
+: "v" ;
+
+pat
+: "v" atpat ;

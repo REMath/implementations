@@ -1,0 +1,62 @@
+/* UNAMBIGUOUS
+
+Grammar 'java_names' (Java names) taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+in turn inspired by:
+
+[ http://java.sun.com/docs/books/jls/first_edition/html/19.doc.html#44488 ]
+
+tokens = {
+'.', ';', ',', '=', '(', ')', '[', ']',
+'a'=ArgumentListOpt
+'i'=ID
+'v'=VariableInitializer
+}
+*/
+
+Type
+: TypeName ;
+
+TypeName
+: "i" ;
+: PackageName "." "i" ;
+
+PackageName
+: "i" ;
+: PackageName "." "i" ;
+
+MethodName
+: "i" ;
+: AmbiguousName "." "i" ;
+
+AmbiguousName
+: "i" ;
+: AmbiguousName "." "i" ;
+
+BlockStatement
+: LocalVariableDeclarationStatement ;
+: Statement ;
+
+Statement
+: MethodInvocation ;
+
+LocalVariableDeclarationStatement
+: Type VariableDeclarators ";" ;
+
+VariableDeclarators
+: VariableDeclarator ;
+: VariableDeclarators "," VariableDeclarator ;
+
+VariableDeclarator
+: VariableDeclaratorId ;
+: VariableDeclaratorId "=" "v" ;
+
+VariableDeclaratorId
+: "i" ;
+: VariableDeclaratorId "[" "]" ;
+
+MethodInvocation
+: MethodName "(" "a" ")" ;
