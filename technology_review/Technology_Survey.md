@@ -8,7 +8,6 @@
 * http://bitblaze.cs.berkeley.edu/
 * http://code.google.com/p/avalanche/
 * https://bincoa.labri.fr/trac
-* http://code.google.com/p/gdsl-toolkit/wiki/Overview 
 * http://www.jakstab.org/documentation
 * https://code.google.com/p/tree-cbass/
 * https://github.com/bitblaze-fuzzball/fuzzball
@@ -28,7 +27,7 @@
 * https://www.openrce.org/blog/view/1672/Control_Flow_Deobfuscation_via_Abstract_Interpretation ( code: https://www.openrce.org/repositories/users/RolfRolles/BitwiseAI.ml )
 * http://www.irisa.fr/celtique/teaching/PAS/
 
-## General Solvers
+## Logical solvers
 * http://z3.codeplex.com/ 
 * http://alt-ergo.ocamlpro.com/
 * http://yices.csl.sri.com/
@@ -51,17 +50,26 @@
 * http://code.google.com/p/pescrambler/
 * http://www.phrack.org/issues.html?id=13&issue=63
 
-# Decompilers 
-* http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf <- This is really where you should start. I include the others for the sake of prosperity.  
+## Disassemblers
+* http://code.google.com/p/gdsl-toolkit/wiki/Overview 
+* http://www.beaengine.org/
+* http://code.google.com/p/distorm/
+* https://hex-rays.com/products/ida/index.shtml
+* http://www.gnu.org/software/binutils/
+* https://github.com/vmt/udis86
+* http://software.intel.com/en-us/articles/pintool-downloads
+
+## Decompilers 
+* http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
+* http://www.cl.cam.ac.uk/~mom22/thesis.pdf
 * http://code.google.com/p/arm-thumb-decompiler-plugin/
 * https://github.com/EiNSTeiN-/ida-decompiler
 * http://boomerang.sourceforge.net/ 
 
-
 ## Symbolic Virtual Machines
 * http://klee.llvm.org/
 * https://s2e.epfl.ch/
-* https://github.com/turnersr/pysymemu
+* https://github.com/feliam/pysymemu
 
 ## Model Checkers 
 * http://nusmv.fbk.eu/ 
@@ -69,13 +77,38 @@
 * http://mtc.epfl.ch/software-tools/blast/index-epfl.php
 * http://research.microsoft.com/en-us/projects/slam/
 * https://bitbucket.org/arieg/ufo/wiki/Home
+* http://www.cprover.org/boom/
+
+## Reasoning About Finite-state and Pushdown Automata
+* http://www.cs.binghamton.edu/~dima/hpca13.pdf
+* http://www2.informatik.uni-stuttgart.de/fmi/szs/tools/moped/
+* http://www2.informatik.uni-stuttgart.de/fmi/szs/tools/wpds/
+* http://research.cs.wisc.edu/wpis/wpds/opennwa-index.php
+* http://rise4fun.com/rex
+* http://www.cs.bham.ac.uk/~hxt/research/rxxr.shtml
 
 ## Debuggers
 * https://bitbucket.org/khooyp/expositor 
 * http://www.eresi-project.org/
 * http://redmine.corelan.be/projects/mona
 
-## C Code 
+## Interactive Theorem Provers
+* http://research.microsoft.com/en-us/um/people/akenn/coq/LOLA2012.pdf
+* http://research.microsoft.com/en-us/um/people/nick/coqasm.pdf
+* http://dream.inf.ed.ac.uk/
+* http://www.cs.chalmers.se/%7Ehallgren/Alfa/
+* http://coq.inria.fr/
+* http://www.dcs.ed.ac.uk/home/lego
+* http://wiki.portal.chalmers.se/agda/pmwiki.php
+* http://www.comlab.ox.ac.uk/archive/formal-methods/hol.html
+* http://www.cl.cam.ac.uk/Research/HVG/Isabelle/
+* http://www.csl.sri.com/pvs.html
+* http://mizar.org/
+* http://www.lama.univ-savoie.fr/sitelama/Membres/pages_web/RAFFALLI/af2.html
+* http://cvs.metaprl.org:12000/metaprl/
+* http://www.cs.ru.nl/~janz/yarrow/
+
+## C Code / C++ Code (Need to split these at some point) 
 * http://why3.lri.fr/
 * http://pp.ipd.kit.edu/firm/
 * https://code.google.com/p/tanalysis/
@@ -87,6 +120,12 @@
 * http://sixgill.org
 * https://bitbucket.org/khooyp/otter 
 * http://boogie.codeplex.com/
+* https://github.com/jirislaby/stanse
+* https://github.com/dsw/oink-stack/
+* http://delta.tigris.org/
+* http://embed.cs.utah.edu/csmith/
+* http://css.csail.mit.edu/stack/
+* http://embed.cs.utah.edu/creduce/
 
 ## Quantitative Analysis
 * http://www.prismmodelchecker.org/
@@ -100,22 +139,23 @@
 * https://github.com/pakt/ropc
 * https://github.com/JonathanSalwan/ROPgadget
 * https://github.com/0vercl0k/rp
+* https://github.com/trailofbits/bisc
+
+## Dynamic Analysis is an interpretation of the static semantics
+* https://github.com/mrmee/heaper
+* https://github.com/neuroo/runtime-tracer
+* https://github.com/CTSRD-SOAAP/taintgrind
+* https://minemu.org/mediawiki/index.php?title=Main_Page
+* https://github.com/neuroo/runtime-tracer
+* https://github.com/wirepair/IDAPinLogger
 
 ### To be categorized 
 * https://github.com/pdasilva/vtrace_scripts
 * https://github.com/rapid7/metasploit-framework/tree/master/external/source/byakugan
-* https://github.com/trailofbits/bisc
 * https://code.google.com/p/narly/
 * https://code.google.com/p/viscope/
-* https://github.com/jirislaby/stanse
-* https://github.com/dsw/oink-stack/
-* https://github.com/CTSRD-SOAAP/taintgrind
-* https://minemu.org/mediawiki/index.php
 * https://github.com/isislab/Catfish
 * https://github.com/aaronportnoy/toolbag
-* https://github.com/neuroo/runtime-tracer
-* https://github.com/mrmee/heaper
-* https://github.com/wirepair/IDAPinLogger
-
 
 # Acknowledgements
+

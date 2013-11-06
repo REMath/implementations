@@ -1,0 +1,14 @@
+﻿Ceci est un essai de texte unicode codé en utf-8.
+&à éèç öîà&@@ççèèààé1éé
+
+TODO :
+- Coder la fonction screenshot avec répertoire de destination et prise en charge d'une multitude d'images.  
+
+- Régler les retours à ligne du memento/license pour les sytèmes unix, linux et windows (/n, /r...).
+
+        if wx.Platform == "__WXMSW__":
+            text_in = text_in.replace('\n', '\r\n')
+
+- Créer une méthode pour le splashScreenCustom qui permettra la fermeture anticipée via un clic de souris.
+
+- Bogue avec la méthode OnMenu() / SearchCtrl.
