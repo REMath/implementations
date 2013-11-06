@@ -1,0 +1,32 @@
+Module lib_adt_stack Import "lib_nat" "lib_adt_basics";
+[eq : {S|Setoid}(dom S)->(dom S)->Prop
+  = Setoid_eq];
+$[Str_STACK : STR//make_Str_STACK];
+$[make_Str_STACK : {Stack:Setoid}{empty:dom Stack}{push:nat->(dom Stack)->dom Stack}{pop:(dom Stack)->dom Stack}{top:(dom Stack)->nat}Str_STACK];
+$[Str_STACK_elim : {C_Str_STACK:Str_STACK->Type}({Stack:Setoid}{empty:dom Stack}{push:nat->(dom Stack)->dom Stack}{pop:(dom Stack)->dom Stack}{top:(dom Stack)->nat}C_Str_STACK (make_Str_STACK Stack empty push pop top))->{z:Str_STACK}C_Str_STACK z];
+[[C_Str_STACK:Str_STACK->Type][f_make_Str_STACK:{Stack:Setoid}{empty:dom Stack}{push:nat->(dom Stack)->dom Stack}{pop:(dom Stack)->dom Stack}{top:(dom Stack)->nat}C_Str_STACK (make_Str_STACK Stack empty push pop top)][Stack:Setoid][empty:dom Stack][push:nat->(dom Stack)->dom Stack][pop:(dom Stack)->dom Stack][top:(dom Stack)->nat]   Str_STACK_elim C_Str_STACK f_make_Str_STACK (make_Str_STACK Stack empty push pop top)  ==>  f_make_Str_STACK Stack empty push pop top]
+;
+[Stack : {z:Str_STACK}Setoid
+  = Str_STACK_elim ([Str_STACK_var:Str_STACK]Setoid) ([Stack:Setoid][empty:dom Stack][push:nat->(dom Stack)->dom Stack][pop:(dom Stack)->dom Stack][top:(dom Stack)->nat]Stack)];
+[empty : {z:Str_STACK}dom (Stack z)
+  = Str_STACK_elim ([Str_STACK_var:Str_STACK]dom (Stack Str_STACK_var)) ([Stack:Setoid][empty:dom Stack][push:nat->(dom Stack)->dom Stack][pop:(dom Stack)->dom Stack][top:(dom Stack)->nat]empty)];
+[push : {z:Str_STACK}nat->(dom (Stack z))->dom (Stack z)
+  = Str_STACK_elim ([Str_STACK_var:Str_STACK]nat->(dom (Stack Str_STACK_var))->dom (Stack Str_STACK_var)) ([Stack:Setoid][empty:dom Stack][push:nat->(dom Stack)->dom Stack][pop:(dom Stack)->dom Stack][top:(dom Stack)->nat]push)];
+[pop : {z:Str_STACK}(dom (Stack z))->dom (Stack z)
+  = Str_STACK_elim ([Str_STACK_var:Str_STACK](dom (Stack Str_STACK_var))->dom (Stack Str_STACK_var)) ([Stack:Setoid][empty:dom Stack][push:nat->(dom Stack)->dom Stack][pop:(dom Stack)->dom Stack][top:(dom Stack)->nat]pop)];
+[top : {z:Str_STACK}(dom (Stack z))->nat
+  = Str_STACK_elim ([Str_STACK_var:Str_STACK](dom (Stack Str_STACK_var))->nat) ([Stack:Setoid][empty:dom Stack][push:nat->(dom Stack)->dom Stack][pop:(dom Stack)->dom Stack][top:(dom Stack)->nat]top)];
+[EqSTACK : {S:Str_STACK}Prop
+  = [S:Str_STACK]Equivalence%%(dom (Stack S)) (eq|(Stack S))];
+[AxSTACK1 : {S:Str_STACK}Prop
+  = [S:Str_STACK]eq%%(Stack S) (pop S (empty S)) (empty S)];
+[AxSTACK2 : {S:Str_STACK}Prop
+  = [S:Str_STACK]Eq%%nat (top S (empty S)) zero];
+[AxSTACK3 : {S:Str_STACK}Prop
+  = [S:Str_STACK]{n:nat}{s:dom (Stack S)}eq%%(Stack S) (pop S (push S n s)) s];
+[AxSTACK4 : {S:Str_STACK}Prop
+  = [S:Str_STACK]{n:nat}{s:dom (Stack S)}Eq%%nat (top S (push S n s)) n];
+[Ax_STACK : {S:Str_STACK}Prop
+  = [S:Str_STACK]and5 (EqSTACK S) (AxSTACK1 S) (AxSTACK2 S) (AxSTACK3 S) (AxSTACK4 S)];
+[STACK : SPEC
+  = make_SPEC Str_STACK Ax_STACK];

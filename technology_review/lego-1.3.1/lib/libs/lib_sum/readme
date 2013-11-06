@@ -1,0 +1,12 @@
+This directory contains basic material relating to the "sum" datatype
+schema.  Note that the variables SET and TYPE must be defined and a
+definition of equality loaded before these files can be used.
+
+The files in this directory are:
+
+lib_sum.l
+----------
+ o Definition and induction principles
+ o Constructor identifiers and characterizing theorems
+ o Functions on sums
+ o Theorems about sums

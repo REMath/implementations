@@ -1,0 +1,10 @@
+Module lib_eq_inductive Import "lib_logic";
+$[Eq : {t|Type}{x:t}t->Prop//Eqr];
+$[Eqr : {t|Type}{x:t}Eq%%t x x];
+$[Eq_elim : {t|Type}{x:t}{C_Eq:{x1|t}(Eq%%t x x1)->Type}(C_Eq%%x (Eqr%%t x))->{x1|t}{z:Eq%%t x x1}C_Eq%%x1 z];
+Label (!Eq!) Eq;Label (!Eq elim!) Eq_elim;Label (!Eq Eqr!) Eqr;[[t|Type][x:t][C_Eq:{x1|t}(Eq x x1)->Type][f_Eqr:C_Eq (Eqr x)]   Eq_elim x C_Eq f_Eqr (Eqr x)  ==>  f_Eqr]
+;
+[Eq_refl : {t|Type}refl%%t (Eq|t)
+  = [t|Type]Eqr%%t];
+[Eq_subst : {t|Type}{m,n|t}(Eq%%t m n)->{P:t->Type}(P m)->P n
+  = [t|Type][m,n|t][H:Eq%%t m n][P:t->Type][H1:P m]Eq_elim|t m ([y:t][p:Eq%%t m y](P m)->P y) ([H2:P m]H2)%%n H H1];

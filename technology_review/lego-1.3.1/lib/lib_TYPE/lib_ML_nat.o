@@ -1,0 +1,17 @@
+Module lib_ML_nat Import "lib_empty" "lib_unit" "lib_nat";
+[nat_diagonal : {C|Type}{f,g:nat->nat->C}{a,b:nat}C
+  = [C|Type][f,g:nat->nat->C][a,b:nat][f'=f a b][g'=g a b]nat_double_elim ([a'8,b'9:nat]C) f' ([n:nat][H:C]g') ([m:nat][H:{n:nat}C]g') ([m:nat][H:{n:nat}C][n:nat][H1:C]f') a b];
+[nat_diagonal_const : {C|Type}{f,g:C}{a,b:nat}C
+  = [C|Type][f,g:C]nat_diagonal%%C ([_,_:nat]f) ([_,_:nat]g)];
+[nat_filter : {a,b:nat}Type
+  = nat_diagonal_const|(Type) unit empty];
+[f : nat->SET
+  = nat_elim ([_:nat]SET) unit ([x1:nat][x1_ih:SET]injective%%nat%%nat suc)];
+[g : nat->SET
+  = nat_elim ([n:nat]SET) ({n:nat}(Eq%%nat zero (suc n))->empty) ([x1:nat][x1_ih:SET]{n:nat}(Eq%%nat (suc n) zero)->empty)];
+[nat_Thm : {a,b:nat}SET
+  = nat_diagonal|SET ([_:nat]f) ([_:nat]g)];
+[get_filter : {m,n|nat}(Eq%%nat m n)->Type
+  = [m,n|nat][H:Eq%%nat m n]nat_filter m n];
+[nat_thm : {u,v:nat}nat_Thm u v
+  = nat_double_elim nat_Thm void ([n:nat][H:nat_Thm zero n][n1:nat][H1:Eq%%nat (suc n1) zero]Eq_subst%%nat%%zero%%(suc n1) (Eq_sym%%nat%%(suc n1)%%zero H1) ([z:nat]nat_filter z zero) void) ([m:nat][H:{n:nat}nat_Thm m n][n:nat][H1:Eq%%nat zero (suc n)]Eq_subst%%nat%%(suc n)%%zero (Eq_sym%%nat%%zero%%(suc n) H1) ([z:nat]nat_filter z (suc n)) void) ([m:nat][H:{n:nat}nat_Thm m n][n:nat][H1:nat_Thm (suc m) n][x,y:nat][H2:Eq%%nat (suc x) (suc y)]Eq_resp%%nat%%nat pred%%(suc x)%%(suc y) H2)];

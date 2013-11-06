@@ -1,0 +1,24 @@
+Module lib_prod Import "lib_eq_basics";
+$[prod : {A:Type}{B:Type}Type(prod)//Pair];
+$[Pair : {A|Type}{B|Type}{a:A}{b:B}prod A B];
+$[prod_elim : {A|Type}{B|Type}{C_prod:(prod A B)->Type}({a:A}{b:B}C_prod (Pair%%A%%B a b))->{z:prod A B}C_prod z];
+Label (!prod!) prod;Label (!prod elim!) prod_elim;Label (!prod Pair!) Pair;[[A|Type][B|Type][C_prod:(prod A B)->Type][f_Pair:{a:A}{b:B}C_prod (Pair a b)][a:A][b:B]   prod_elim C_prod f_Pair (Pair a b)  ==>  f_Pair a b]
+;
+Generate (!prod is Pair!) [prod_is_Pair : {A|Type}{B|Type}{z:prod A B}Type
+  = [A|Type][B|Type]prod_elim%%A%%B ([_:prod A B]Type) ([a:A][b:B]trivType)];
+Generate (!prod Pair injective!) [prod_Pair_injective : {A|Type}{B|Type}{ix0,iy0|A}{ix1,iy1|B}{Pair_hyp:Eq%%(prod A B) (Pair%%A%%B ix0 ix1) (Pair%%A%%B iy0 iy1)}{P|Type}{Pair_trick:{ix0eq:Eq%%A ix0 iy0}{ix1eq:Eq%%B ix1 iy1}P}P
+  = [A|Type][B|Type][ix0,iy0|A][ix1,iy1|B][Pair_hyp:Eq%%(prod A B) (Pair%%A%%B ix0 ix1) (Pair%%A%%B iy0 iy1)][P|Type][Pair_trick:{ix0eq:Eq%%A ix0 iy0}{ix1eq:Eq%%B ix1 iy1}P]Pair_trick (Eq_subst%%(prod A B)%%(Pair%%A%%B ix0 ix1)%%(Pair%%A%%B iy0 iy1) Pair_hyp ([Pair_term:prod A B]Eq%%A ix0 (prod_elim%%A%%B ([_:prod A B]A) ([a:A][b:B]a) Pair_term)) (Eq_refl%%A ix0)) (Eq_subst%%(prod A B)%%(Pair%%A%%B ix0 ix1)%%(Pair%%A%%B iy0 iy1) Pair_hyp ([Pair_term:prod A B]Eq%%B ix1 (prod_elim%%A%%B ([_:prod A B]B) ([a:A][b:B]b) Pair_term)) (Eq_refl%%B ix1))];
+[pair1 : {A:Type}{B:Type}{a:A}{b:B}prod A B
+  = [A:Type][B:Type][a:A][b:B]Pair%%A%%B a b];
+[prod_rec : {s|Type}{t|Type}{u|Type}(s->t->u)->(prod s t)->u
+  = [s|Type][t|Type][u|Type]prod_elim%%s%%t ([_:prod s t]u)];
+[prod_ind : {s|Type}{t|Type}{P:(prod s t)->Prop}({a:s}{b:t}P (Pair%%s%%t a b))->{p:prod s t}P p
+  = [s|Type][t|Type][P:(prod s t)->Prop]prod_elim%%s%%t P];
+[Fst : {s|Type}{t|Type}(prod s t)->s
+  = [s|Type][t|Type]prod_rec%%s%%t%%s ([a:s][_:t]a)];
+[Snd : {s|Type}{t|Type}(prod s t)->t
+  = [s|Type][t|Type]prod_rec%%s%%t%%t ([_:s][b:t]b)];
+[prod_eta : {s|Type}{t|Type}{p:prod s t}Eq%%(prod s t) p (Pair%%s%%t (Fst%%s%%t p) (Snd%%s%%t p))
+  = [s|Type][t|Type]prod_ind%%s%%t ([p:prod s t]Eq%%(prod s t) p (Pair%%s%%t (Fst%%s%%t p) (Snd%%s%%t p))) ([a:s][b:t]Eq_refl%%(prod s t) (Pair%%s%%t a b))];
+[prod_ext : {s|Type}{t|Type}{p,q:prod s t}(Eq%%s (Fst%%s%%t p) (Fst%%s%%t q))->(Eq%%t (Snd%%s%%t p) (Snd%%s%%t q))->Eq%%(prod s t) p q
+  = [s|Type][t|Type][p,q:prod s t][H:Eq%%s (Fst%%s%%t p) (Fst%%s%%t q)][H1:Eq%%t (Snd%%s%%t p) (Snd%%s%%t q)]Eq_subst%%(prod s t)%%(Pair%%s%%t (Fst%%s%%t p) (Snd%%s%%t p))%%p (Eq_sym%%(prod s t)%%p%%(Pair%%s%%t (Fst%%s%%t p) (Snd%%s%%t p)) (prod_eta%%s%%t p)) ([z:prod s t]Eq%%(prod s t) z q) (Eq_subst%%s%%(Fst%%s%%t q)%%(Fst%%s%%t p) (Eq_sym%%s%%(Fst%%s%%t p)%%(Fst%%s%%t q) H) ([z:s]Eq%%(prod s t) (Pair%%s%%t z (Snd%%s%%t p)) q) (Eq_subst%%t%%(Snd%%s%%t q)%%(Snd%%s%%t p) (Eq_sym%%t%%(Snd%%s%%t p)%%(Snd%%s%%t q) H1) ([z:t]Eq%%(prod s t) (Pair%%s%%t (Fst%%s%%t q) z) q) (Eq_sym%%(prod s t)%%q%%(Pair%%s%%t (Fst%%s%%t q) (Snd%%s%%t q)) (prod_eta%%s%%t q))))];

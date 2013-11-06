@@ -1,0 +1,53 @@
+Module lib_adt_basics Import "lib_sigma" "lib_setoid";
+[STR : Type
+  = Type];
+$[SPEC : Type(SPEC)//make_SPEC];
+$[make_SPEC : {Str:STR}{Ax:Str->Prop}SPEC];
+$[SPEC_elim : {C_SPEC:SPEC->Type}({Str:STR}{Ax:Str->Prop}C_SPEC (make_SPEC Str Ax))->{z:SPEC}C_SPEC z];
+[[C_SPEC:SPEC->Type][f_make_SPEC:{Str:STR}{Ax:Str->Prop}C_SPEC (make_SPEC Str Ax)][Str:STR][Ax:Str->Prop]   SPEC_elim C_SPEC f_make_SPEC (make_SPEC Str Ax)  ==>  f_make_SPEC Str Ax]
+;
+[Str : {z:SPEC}STR
+  = SPEC_elim ([SPEC_var:SPEC]STR) ([Str:STR][Ax:Str->Prop]Str)];
+[Ax : {z:SPEC}(Str z)->Prop
+  = SPEC_elim ([SPEC_var:SPEC](Str SPEC_var)->Prop) ([Str:STR][Ax:Str->Prop]Ax)];
+[Spec : {S:STR}Type
+  = [S:STR]S->Prop];
+[Model : {SP:SPEC}SET
+  = [SP:SPEC]Sigma (Str SP) (Ax SP)];
+[Consistent : {SP:SPEC}Prop
+  = [SP:SPEC]Ex%%(Str SP) ([s:Str SP]Ax SP s)];
+[Impl : {S|STR}{P,P':Spec S}Prop
+  = [S|STR][P,P':Spec S]{s:S}(P' s)->P s];
+[Sat : {SP,SP'|SPEC}{f:(Str SP')->Str SP}Prop
+  = [SP,SP'|SPEC][f:(Str SP')->Str SP]{s':Str SP'}(Ax SP' s')->Ax SP (f s')];
+$[IMPL1 : {SP,SP'|SPEC}Type(IMPL1)//make_IMPL1];
+$[make_IMPL1 : {SP,SP'|SPEC}{refn:(Str SP')->Str SP}{sat:Sat%%SP%%SP' refn}IMPL1%%SP%%SP'];
+$[IMPL1_elim : {SP,SP'|SPEC}{C_IMPL1:(IMPL1%%SP%%SP')->Type}({refn:(Str SP')->Str SP}{sat:Sat%%SP%%SP' refn}C_IMPL1 (make_IMPL1%%SP%%SP' refn sat))->{z:IMPL1%%SP%%SP'}C_IMPL1 z];
+[[SP,SP'|SPEC][C_IMPL1:(IMPL1|SP|SP')->Type][f_make_IMPL1:{refn:(Str SP')->Str SP}{sat:Sat refn}C_IMPL1 (make_IMPL1 refn sat)][refn:(Str SP')->Str SP][sat:Sat refn]   IMPL1_elim C_IMPL1 f_make_IMPL1 (make_IMPL1 refn sat)  ==>  f_make_IMPL1 refn sat]
+;
+[refn : {SP,SP'|SPEC}{z:IMPL1%%SP%%SP'}(Str SP')->Str SP
+  = [SP,SP'|SPEC]IMPL1_elim%%SP%%SP' ([IMPL1_var:IMPL1%%SP%%SP'](Str SP')->Str SP) ([refn:(Str SP')->Str SP][sat:Sat%%SP%%SP' refn]refn)];
+[sat : {SP,SP'|SPEC}{z:IMPL1%%SP%%SP'}Sat%%SP%%SP' (refn%%SP%%SP' z)
+  = [SP,SP'|SPEC]IMPL1_elim%%SP%%SP' ([IMPL1_var:IMPL1%%SP%%SP']Sat%%SP%%SP' (refn%%SP%%SP' IMPL1_var)) ([refn:(Str SP')->Str SP][sat:Sat%%SP%%SP' refn]sat)];
+[IMPL : {SP,SP':SPEC}Type(IMPL1)
+  = [SP,SP':SPEC]IMPL1|SP|SP'];
+[Extend : {SP:SPEC}{ext_str:(Str SP)->STR}[S'=Sigma (Str SP) ([s:Str SP]ext_str s)]{ext_ax:S'->Prop}SPEC
+  = [SP:SPEC][ext_str:(Str SP)->STR][S'=Sigma (Str SP) ([s:Str SP]ext_str s)][ext_ax:S'->Prop]make_SPEC S' ([s':S'](Ax SP (sig_pi1%%(Str SP)%%([s:Str SP]ext_str s) s') /\ ext_ax s'))];
+[Extend_AxOnly : {SP:SPEC}{ext_ax:(Str SP)->Prop}SPEC
+  = [SP:SPEC][ext_ax:(Str SP)->Prop]make_SPEC (Str SP) ([s:Str SP](Ax SP s /\ ext_ax s))];
+[Join : {S|STR}{SP,SP':Spec S}SPEC
+  = [S|STR][SP,SP':Spec S]make_SPEC S ([s:S](SP s /\ SP' s))];
+[Cross : {SP,SP':SPEC}SPEC
+  = [SP,SP':SPEC][S=Prod (Str SP) (Str SP')]make_SPEC S ([s:S](Ax SP (sig_pi1%%(Str SP)%%([_:Str SP]Str SP') s) /\ Ax SP' (sig_pi2%%(Str SP)%%([_:Str SP]Str SP') s)))];
+[SigmaCirc : {SP:SPEC}{P:(Str SP)->SPEC}SPEC
+  = [SP:SPEC][P:(Str SP)->SPEC][S=Sigma (Str SP) ([s:Str SP]Str (P s))]make_SPEC S ([s:S](Ax SP (sig_pi1%%(Str SP)%%([s'5:Str SP]Str (P s'5)) s) /\ Ax (P (sig_pi1%%(Str SP)%%([s'5:Str SP]Str (P s'5)) s)) (sig_pi2%%(Str SP)%%([s'5:Str SP]Str (P s'5)) s)))];
+[Pi : {SP:SPEC}{P:(Str SP)->SPEC}SPEC
+  = [SP:SPEC][P:(Str SP)->SPEC][S={s:Str SP}Str (P s)]make_SPEC S ([f:S]{s:Str SP}(Ax SP s)->Ax (P s) (f s))];
+[Con : {S,S'|STR}{k:S'->S}{P':Spec S'}Spec S
+  = [S,S'|STR][k:S'->S][P':Spec S'][s:S]Ex%%S' ([s':S'](P' s' /\ Eq%%S (k s') s))];
+[Sel : {S,S'|STR}{j:S'->S}{P:Spec S}Spec S'
+  = [S,S'|STR][j:S'->S][P:Spec S][s':S']P (j s')];
+[Abs : {S|STR}{R:S->S->Prop}{P:Spec S}Spec S
+  = [S|STR][R:S->S->Prop][P:Spec S][s:S]Ex%%S ([s':S](P s' /\ R s s'))];
+[Hide : {S|STR}{SP:SPEC}{f:(Str SP)->S}SPEC
+  = [S|STR][SP:SPEC][f:(Str SP)->S]make_SPEC S (Con%%S%%(Str SP) f (Ax SP))];

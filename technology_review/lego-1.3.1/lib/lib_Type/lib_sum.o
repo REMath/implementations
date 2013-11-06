@@ -1,0 +1,31 @@
+Module lib_sum Import "lib_eq_basics";
+$[sum : {A:Type}{B:Type}Type(sum)//in1_exp in2_exp];
+$[in1_exp : {A:Type}{B:Type}A->sum A B];
+$[in2_exp : {A:Type}{B:Type}B->sum A B];
+$[sum_elim : {A:Type}{B:Type}{C_sum:(sum A B)->Type}({x2:A}C_sum (in1_exp A B x2))->({x1:B}C_sum (in2_exp A B x1))->{z:sum A B}C_sum z];
+[sum_double_elim : {A:Type}{B:Type}{T_sum:(sum A B)->(sum A B)->Type}{in1_exp_in1_exp_case:{x2,x2':A}T_sum (in1_exp A B x2) (in1_exp A B x2')}{in1_exp_in2_exp_case:{x2:A}{x1':B}T_sum (in1_exp A B x2) (in2_exp A B x1')}{in2_exp_in1_exp_case:{x1:B}{x2':A}T_sum (in2_exp A B x1) (in1_exp A B x2')}{in2_exp_in2_exp_case:{x1,x1':B}T_sum (in2_exp A B x1) (in2_exp A B x1')}{z,z':sum A B}T_sum z z'
+  = [A:Type][B:Type][T_sum:(sum A B)->(sum A B)->Type][in1_exp_in1_exp_case:{x2,x2':A}T_sum (in1_exp A B x2) (in1_exp A B x2')][in1_exp_in2_exp_case:{x2:A}{x1':B}T_sum (in1_exp A B x2) (in2_exp A B x1')][in2_exp_in1_exp_case:{x1:B}{x2':A}T_sum (in2_exp A B x1) (in1_exp A B x2')][in2_exp_in2_exp_case:{x1,x1':B}T_sum (in2_exp A B x1) (in2_exp A B x1')]sum_elim A B ([z:sum A B]{z':sum A B}T_sum z z') ([x2:A]sum_elim A B ([z:sum A B]T_sum (in1_exp A B x2) z) (in1_exp_in1_exp_case x2) (in1_exp_in2_exp_case x2)) ([x1:B]sum_elim A B ([z:sum A B]T_sum (in2_exp A B x1) z) (in2_exp_in1_exp_case x1) (in2_exp_in2_exp_case x1))];
+Label (!sum!) sum;Label (!sum elim!) sum_elim;Label (!sum in1_exp!) in1_exp;Label (!sum in2_exp!) in2_exp;[[A:Type][B:Type][C_sum:(sum A B)->Type][f_in1_exp:{x2:A}C_sum (in1_exp A B x2)][f_in2_exp:{x1:B}C_sum (in2_exp A B x1)][x2:A][x1:B]   sum_elim A B C_sum f_in1_exp f_in2_exp (in1_exp A B x2)  ==>  f_in1_exp x2|| sum_elim A B C_sum f_in1_exp f_in2_exp (in2_exp A B x1)  ==>  f_in2_exp x1]
+;
+[in1 : {s|Type}{t|Type}s->sum s t
+  = [s|Type][t|Type]in1_exp s t];
+[in2 : {s|Type}{t|Type}t->sum s t
+  = [s|Type][t|Type]in2_exp s t];
+[case : {s|Type}{t|Type}{u|Type}(s->u)->(t->u)->(sum s t)->u
+  = [s|Type][t|Type][u|Type]sum_elim s t ([_:sum s t]u)];
+[sum_ind : {s|Type}{t|Type}{P:(sum s t)->Prop}({x:s}P (in1%%s%%t x))->({y:t}P (in2%%s%%t y))->{z:sum s t}P z
+  = [s|Type][t|Type][P:(sum s t)->Prop]sum_elim s t P];
+[is_in1 : {s|Type}{t|Type}(sum s t)->Prop
+  = [s|Type][t|Type][x:sum s t]Ex%%s ([y:s]Eq%%(sum s t) (in1%%s%%t y) x)];
+[is_in2 : {s|Type}{t|Type}(sum s t)->Prop
+  = [s|Type][t|Type][x:sum s t]Ex%%t ([y:t]Eq%%(sum s t) (in2%%s%%t y) x)];
+[in1_or_in2 : {s|Type}{t|Type}{x:sum s t}(is_in1%%s%%t x \/ is_in2%%s%%t x)
+  = [s|Type][t|Type]sum_ind%%s%%t ([x:sum s t](is_in1%%s%%t x \/ is_in2%%s%%t x)) ([x:s]inl%%(is_in1%%s%%t (in1%%s%%t x))%%(is_in2%%s%%t (in1%%s%%t x)) (ExIntro%%s x ([y:s]Eq%%(sum s t) (in1%%s%%t y) (in1%%s%%t x)) (Eq_refl%%(sum s t) (in1%%s%%t x)))) ([y:t]inr%%(is_in1%%s%%t (in2%%s%%t y))%%(is_in2%%s%%t (in2%%s%%t y)) (ExIntro%%t y ([y'4:t]Eq%%(sum s t) (in2%%s%%t y'4) (in2%%s%%t y)) (Eq_refl%%(sum s t) (in2%%s%%t y))))];
+[in1_not_in2 : {s|Type}{t|Type}{x|s}not (is_in2%%s%%t (in1|s|t x))
+  = [s|Type][t|Type][x|s][h:is_in2%%s%%t (in1|s|t x)]h absurd ([t1:t][h1:Eq%%(sum s t) (in2%%s%%t t1) (in1|s|t x)][IsIn1=case%%s%%t%%Prop ([_:s]trueProp) ([_:t]absurd)]Eq_subst%%(sum s t)%%(in1|s|t x)%%(in2%%s%%t t1) (Eq_sym%%(sum s t)%%(in2%%s%%t t1)%%(in1|s|t x) h1) ([z:sum s t]IsIn1 z) PropId)];
+[in2_not_in1 : {s|Type}{t|Type}{x|t}not (is_in1%%s%%t (in2|s|t x))
+  = [s|Type][t|Type][x|t][h:is_in1%%s%%t (in2|s|t x)]h absurd ([t1:s][h1:Eq%%(sum s t) (in1%%s%%t t1) (in2|s|t x)][IsIn1=case%%s%%t%%Prop ([_:s]absurd) ([_:t]trueProp)]Eq_subst%%(sum s t)%%(in2|s|t x)%%(in1%%s%%t t1) (Eq_sym%%(sum s t)%%(in1%%s%%t t1)%%(in2|s|t x) h1) ([z:sum s t]IsIn1 z) PropId)];
+[in1_inj : {s|Type}{t|Type}{x,y:s}(Eq%%(sum s t) (in1|s|t x) (in1|s|t y))->Eq%%s x y
+  = [s|Type][t|Type][x,y:s][H:Eq%%(sum s t) (in1|s|t x) (in1|s|t y)]Eq_subst%%(sum s t)%%(in1|s|t x)%%(in1|s|t y) H (case%%s%%t%%Prop ([x':s]Eq%%s x x') ([_:t]absurd)) (Eq_refl%%s x)];
+[in2_inj : {s|Type}{t|Type}{x,y:t}(Eq%%(sum s t) (in2|s|t x) (in2|s|t y))->Eq%%t x y
+  = [s|Type][t|Type][x,y:t][H:Eq%%(sum s t) (in2|s|t x) (in2|s|t y)]Eq_subst%%(sum s t)%%(in2|s|t x)%%(in2|s|t y) H (case%%s%%t%%Prop ([_:s]absurd) ([y':t]Eq%%t x y')) (Eq_refl%%t x)];

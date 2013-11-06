@@ -1,0 +1,10 @@
+This directory contains basic material relating to the product datatype 
+"prod". Note that the variables SET and TYPE must be defined and a
+definition of equality loaded before these files can be used.
+
+The files in this directory are:
+
+lib_prod.l
+----------
+ o Definition and induction principles
+ o Various functions and theorems.

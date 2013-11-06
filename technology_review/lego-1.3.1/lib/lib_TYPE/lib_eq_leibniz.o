@@ -1,0 +1,7 @@
+Module lib_eq_leibniz Import "lib_logic";
+[Eq : {T|SET}T->T->Prop
+  = [T|SET][x,y:T]{P:T->Prop}(P x)->P y];
+[Eq_refl : {T|SET}refl%%T (Eq%%T)
+  = [T|SET][t:T][P:T->Prop][h:P t]h];
+[Eq_subst : {T|SET}{x,y|T}(Eq%%T x y)->{P:T->Prop}(P x)->P y
+  = [T|SET][x,y|T][H:Eq%%T x y][P:T->Prop][H1:P x]H P H1];

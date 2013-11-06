@@ -1,0 +1,9 @@
+Module lib_vectors_basics Import "lib_vectors";
+[vsingleton : {T|Type}T->vect T one
+  = [T|Type][H:T]vcons%%T H%%zero (vnil T)];
+[vappend : {m,n|nat}{T|Type}(vect T m)->(vect T n)->vect T (plus m n)
+  = [m,n|nat][T|Type]nat_elim ([m'4:nat](vect T m'4)->(vect T n)->vect T (plus m'4 n)) ([H:vect T zero][H1:vect T n]H1) ([x1:nat][x1_ih:(vect T x1)->(vect T n)->vect T (plus x1 n)][H:vect T (suc x1)][H1:vect T n]vcons%%T (vect_head%%T%%x1 H)%%(nat_elim ([_:nat]nat) n ([_:nat]suc) x1) (x1_ih (vect_tail%%T%%x1 H) H1)) m];
+[vtack : {m|nat}{T|Type}T->(vect T m)->vect T (suc m)
+  = [m|nat][T|Type][e:T][v:vect T m]Eq_subst%%nat%%(plus m one)%%(plus one m) (Eq_sym%%nat%%(plus one m)%%(plus m one) (plus_commutes one m)) ([z:nat]vect T z) (vappend%%m%%one%%T v (vsingleton%%T e))];
+[vect_nth_append : {T|Type}{n|nat}{x:fin n}{s:vect T n}{m|nat}{t:vect T m}Eq%%T (vect_nth%%T%%(plus m n) (f_plus%%n%%m x) (vappend%%m%%n%%T t s)) (vect_nth%%T%%n x s)
+  = [T|Type][n|nat][x:fin n][s:vect T n]vect_elim%%T ([m|nat][t|vect T m]Eq%%T (vect_nth%%T%%(plus m n) (f_plus%%n%%m x) (vappend%%m%%n%%T t s)) (vect_nth%%T%%n x s)) (Eq_refl%%T (vect_nth%%T%%(plus zero n) (f_plus%%n%%zero x) (vappend%%zero%%n%%T (vnil T) s))) ([a:T][n1|nat][v:vect T n1][v_ih:Eq%%T (vect_nth%%T%%(plus n1 n) (f_plus%%n%%n1 x) (vappend%%n1%%n%%T v s)) (vect_nth%%T%%n x s)]Eq_subst%%T%%(vect_nth%%T%%(plus n1 n) (f_plus%%n%%n1 x) (vappend%%n1%%n%%T v s))%%(vect_nth%%T%%n x s) (Eq_sym%%T%%(vect_nth%%T%%n x s)%%(vect_nth%%T%%(plus n1 n) (f_plus%%n%%n1 x) (vappend%%n1%%n%%T v s)) (Eq_sym%%T%%(vect_nth%%T%%(plus n1 n) (f_plus%%n%%n1 x) (vappend%%n1%%n%%T v s))%%(vect_nth%%T%%n x s) v_ih)) ([z:T]Eq%%T (vect_nth%%T%%(plus (suc n1) n) (f_plus%%n%%(suc n1) x) (vappend%%(suc n1)%%n%%T (vcons%%T a%%n1 v) s)) z) (Eq_refl%%T (vect_nth%%T%%(plus (suc n1) n) (f_plus%%n%%(suc n1) x) (vappend%%(suc n1)%%n%%T (vcons%%T a%%n1 v) s))))];
