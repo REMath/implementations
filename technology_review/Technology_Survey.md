@@ -20,6 +20,7 @@
 
 ## Abstract Interpretation
 * http://arxiv.org/abs/0810.2179 (code: http://hal.inria.fr/docs/00/33/23/39/ANNEX/absint.v ) 
+* http://dumas.ccsd.cnrs.fr/docs/00/63/64/45/PDF/Laporte.pdf (Coq code in the paper)
 * http://pop-art.inrialpes.fr/interproc/interprocweb.cgi (code: http://pop-art.inrialpes.fr/people/bjeannet/bjeannet-forge/interproc/index.html ) 
 * http://www.cs.indiana.edu/l/www/classes/b621/abiall.pdf 
 * http://web.mit.edu/afs/athena.mit.edu/course/16/16.399/www/ 
@@ -74,6 +75,7 @@
 * http://code.google.com/p/arm-thumb-decompiler-plugin/
 * https://github.com/EiNSTeiN-/ida-decompiler
 * http://boomerang.sourceforge.net/ 
+* http://decompiler.fit.vutbr.cz/decompilation/
 
 
 
