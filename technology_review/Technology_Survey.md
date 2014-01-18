@@ -46,6 +46,8 @@
 * http://samate.nist.gov/SRD/testsuite.php 
 * http://www.nec-labs.com/research/system/systems_SAV-website/benchmarks.php
 * http://www.debian.org/distrib/packages
+* https://github.com/offensive-security/exploit-database
+
 
 ## Obfuscators 
 * http://cansecwest.com/core03/shiva.ppt
@@ -55,6 +57,7 @@
 * https://github.com/0vercl0k/stuffz/blob/master/llvm-funz/kryptonite/llvm-functionpass-kryptonite-obfuscater.cpp
 * http://code.google.com/p/pescrambler/
 * http://www.phrack.org/issues.html?id=13&issue=63
+* https://github.com/obfuscator-llvm/obfuscator/wiki
 
 ## Disassemblers
 * http://code.google.com/p/gdsl-toolkit/wiki/Overview 
@@ -78,6 +81,7 @@
 * http://klee.llvm.org/
 * https://s2e.epfl.ch/
 * https://github.com/feliam/pysymemu
+* http://pages.cs.wisc.edu/~davidson/fie/
 
 ## Model Checkers 
 * http://nusmv.fbk.eu/ 
@@ -165,6 +169,7 @@
 * https://code.google.com/p/viscope/
 * https://github.com/isislab/Catfish
 * https://github.com/aaronportnoy/toolbag
+* http://www.rise4fun.com/
 
 # Acknowledgements
 
