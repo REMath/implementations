@@ -68,6 +68,7 @@
 * http://www.gnu.org/software/binutils/
 * https://github.com/vmt/udis86
 * http://software.intel.com/en-us/articles/pintool-downloads
+* http://capstone-engine.org/
 
 ## Decompilers 
 * http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
