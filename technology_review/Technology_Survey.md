@@ -206,5 +206,7 @@
 ## Visualization
 ## Anti-Debugging / Anti-Reversing
 
+https://events.ccc.de/congress/2013/wiki/Session:Binary_Analysis
+
 # Acknowledgements
 
