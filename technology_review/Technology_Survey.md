@@ -87,6 +87,9 @@
 
 ## Videos
 * http://media.ccc.de/browse/congress/2013/30C3_-_5224_-_en_-_saal_6_-_201312271400_-_triggering_deep_vulnerabilities_using_symbolic_execution_-_gannimo.html
+* http://www.youtube.com/watch?v=CJccn9d2t5w
+* http://www.youtube.com/watch?v=YUikShiPEg8
+* http://www.youtube.com/watch?v=b8SeZTgwXEY
 * http://www.youtube.com/watch?v=_jq3swTyk_k
 * http://www.youtube.com/watch?v=1lh_DNBZBHQ 
 * https://archive.org/details/Recon2012Keynote-TheCaseForSemantics-basedMethodsInReverseEngineering
