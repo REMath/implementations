@@ -1,0 +1,119 @@
+#+TITLE: Programs to Models Through Measurements
+#+CREATOR:
+#+DATE:
+#+OPTIONS: html-postamble:nil html-preamble:f tex:t
+
+
+* What can be measured? 
+  These are some ways of assigning numbers to objects or events of
+  programs. Dividing these by type (Boolean, float, etc...) as well as
+  adding examples and descriptions is work in
+  progress. Your help is very much appreciated. 
+** General Features 
+*** total number of instructions
+*** number/percentage of load operations
+*** number/percentage of store operations
+*** number/percentage of floating point operations
+*** number/percentage of comparison operations
+*** number/percentage of branch operations
+*** percentage of type conversion operations
+*** number/percentage of indirect memory access operations
+*** percentage of long-size operations
+*** average size of basic block
+*** whether a function is a leaf/non-leaf
+** Loop based features 
+*** The maximum nest level in the method starting with 0.
+*** The total number of loops
+*** The number/percentage of the perfect loops
+*** The percentage of loops with the known number of iterations
+*** The percentage of loops that are normalized
+*** The percentage of loops that are ”well-behaved”
+*** The percentage of loops that are independent
+*** The percentage of the inner-loops
+*** The average statement number per loop
+*** The average jump number per loop
+*** Multi-Dimensional Access in the loops (binary)
+*** The total number of subscripts inside the loops
+*** The total number of references inside the loops
+** Features of the referenced object
+*** size of referenced object
+*** size of the surrounding structure if appropriate
+*** number of objects
+*** number of dereferences
+*** number of references to pointers
+*** number of references to the stack pointer
+*** number of references to the global data pointer
+*** number of additions
+*** number of multiplications
+*** is the referenced object a global?
+*** is it a local variable?
+*** is it a function parameter?
+*** is it an array?
+*** is it a record?
+*** is it a union?
+*** is it a recursive record?
+*** number of points-to targets of the referenced address
+** Features of the indirectly referenced objects
+*** All features listed referenced and indirectly referenced objects; boolean features become count features (e.g., how many indirect references to arrays)
+** Totaled features
+*** Sum of direct and indirect features
+** Features of the surrounding basic block
+*** number of block predecessors
+*** number of block successors
+*** number of instructions
+*** number of memory instructions
+*** number of loads
+*** number of stores
+*** number of calls
+*** frequency of the block (via static branch prediction)
+*** if nesting depth
+** Features of the surrounding loop (if appropriate)
+*** number of surrounding loops
+*** number of contained loops
+*** number of blocks (unweighted and weighted by frequency)
+*** number of instructions (unweighted and weighted)
+*** number of memory instructions (unweighted and weighted)
+*** number of loads (unweighted and weighted)
+*** number of stores (unweighted and weighted)
+*** number of calls (unweighted and weighted)
+** Performance Counter
+*** Hardware interrupts
+*** Cycles stalled on any resource
+*** Cycles with no instruction issue
+*** Total cycles
+*** Instructions completed
+*** Vector/SIMD instructions
+** Floating Point Instruction Statistics
+*** Adds
+*** Multiplies
+*** Total Insns
+*** Total Ops
+*** Cycles Idle
+** Branch Instruction Statistics
+*** Branch instructions
+*** Cond. Branches Mispredicted
+*** Cond. Branches Taken
+** Level 1 Cache Statistics
+*** Data Cache: Accesses, Hits, Misses 
+*** Instruction Cache: Accesses, Hits, Misses, Reads
+*** Load Misses, Store Misses 
+*** Total Cache: Accesses, Hits
+** Level 2 Cache Statistics
+*** Data Cache: Accesses, Hits, Misses, Reads, Writes
+*** Instruction Cache: Accesses, Hits, Misses
+*** Load Misses, Store Misses
+*** Total Cache: Accesses, Hits, Misses
+** Translation Lookaside Buffer Statistics
+*** Data translation lookaside buffer misses 
+*** Instruction translation lookaside buffer misses
+*** Total translation lookaside buffer misses
+** Sources
+*** Breaking the curse of static analyses: Making compilers intelligent via machine learning
+   @inproceedings{alvincz2009breaking,
+     title={Breaking the curse of static analyses: Making compilers
+     intelligent via machine learning},
+       author={Alvincz, Lars and Glesner, Sabine},
+         booktitle={Proceedings of the SMART’09 Workshop},
+	   year={2009}
+	   }
+   
