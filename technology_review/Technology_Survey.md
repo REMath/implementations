@@ -184,8 +184,6 @@
 * Ollydbg http://www.ollydbg.de/
 * Immunity Debugger https://www.immunityinc.com/products-immdbg.shtml
 * Syser http://www.sysersoft.com/
-* Ring0 Debugger
-* SoftICE successor
 * GDB for Windows http://www.equation.com/servlet/equation.cmd?fa=gdb
 
 ## x64
