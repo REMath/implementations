@@ -92,6 +92,7 @@
 * http://www.youtube.com/watch?v=b8SeZTgwXEY
 * http://www.youtube.com/watch?v=_jq3swTyk_k
 * http://www.youtube.com/watch?v=1lh_DNBZBHQ 
+* http://www.youtube.com/watch?v=azTVEwxN8zM
 * https://archive.org/details/Recon2012Keynote-TheCaseForSemantics-basedMethodsInReverseEngineering
 
 ## Model Checkers 
