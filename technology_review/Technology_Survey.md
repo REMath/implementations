@@ -178,5 +178,34 @@
 * https://github.com/aaronportnoy/toolbag
 * http://www.rise4fun.com/
 
+
+## Disassemblers & Debuggers
+### x86 only
+* Ollydbg http://www.ollydbg.de/
+* Immunity Debugger https://www.immunityinc.com/products-immdbg.shtml
+* Syser http://www.sysersoft.com/
+* Ring0 Debugger
+* SoftICE successor
+* GDB for Windows http://www.equation.com/servlet/equation.cmd?fa=gdb
+
+### x64
+* FDBG http://fdbg.x86asm.net/
+* Nanomite https://github.com/zer0fl4g/Nanomite
+* x64_dbg https://bitbucket.org/mrexodia/x64_dbg
+* ArkDasm http://www.arkdasm.com/
+* VirtDbg https://code.google.com/p/virtdbg/
+* BugDbg http://pespin.w.interia.pl/
+* MDebug http://www.mdebug.org/
+* Visual DuxDebugger http://www.duxcore.com/index.php/prod/visual-duxdebugger/overview
+* PEBrowseDbg64 Interactive http://www.smidgeonsoft.prohosting.com/pebrowse-pro-interactive-debugger.html
+## Decompilers
+## Miscellaneous Tools
+## Binary Manipulation Frameworks
+## Binary Analysis Platforms
+## Deobfuscation/Unpacking
+## Cryptography
+## Visualization
+## Anti-Debugging / Anti-Reversing
+
 # Acknowledgements
 
