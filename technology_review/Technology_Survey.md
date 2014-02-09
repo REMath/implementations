@@ -191,6 +191,7 @@
 * https://github.com/isislab/Catfish
 * https://github.com/aaronportnoy/toolbag
 * http://www.rise4fun.com/
+* https://github.com/jbangert/trapcc/
 
 
 ## Disassemblers & Debuggers
