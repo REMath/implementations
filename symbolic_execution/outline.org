@@ -1,0 +1,31 @@
+* Key Ideas
+** SAT Formula
+** Path   
+** SAT
+** Code Execution
+** Concretizing
+** Static
+*** KSETS   
+*** CFGRecovery
+** Concretizing
+** Transfer
+** Jmp
+** Dataflow
+** Transfer
+** OOB
+** Load
+** Code Pointer
+** Model
+** Path Merging
+  UnGammafyExp
+  Merge
+  MeetGammas
+  Gammafy
+  UnGammafy
+** StoreSeed
+** Find Targets
+** Store Seed
+** Forking
+** Online
+** Offline
+** Symbolic Values   
