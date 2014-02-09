@@ -49,7 +49,6 @@
 * http://www.debian.org/distrib/packages
 * https://github.com/offensive-security/exploit-database
 
-
 ## Obfuscators 
 * http://cansecwest.com/core03/shiva.ppt
 * http://diablo.elis.ugent.be/obf_deobfuscation_byhand
@@ -58,7 +57,7 @@
 * https://github.com/0vercl0k/stuffz/blob/master/llvm-funz/kryptonite/llvm-functionpass-kryptonite-obfuscater.cpp
 * http://code.google.com/p/pescrambler/
 * http://www.phrack.org/issues.html?id=13&issue=63
-* https://github.com/obfuscator-llvm/obfuscator/wiki
+* https://github.com/obfuscator-llvm/obfuscator/wiki (https://github.com/obfuscator-llvm/obfuscator/tree/clang-425.0.24)
 
 ## Disassemblers
 * http://code.google.com/p/gdsl-toolkit/wiki/Overview 
@@ -83,11 +82,12 @@
 * http://decompiler.fit.vutbr.cz/decompilation/
 
 
-## Symbolic Virtual Machines
+## Virtual Machines
 * http://klee.llvm.org/
 * https://s2e.epfl.ch/
 * https://github.com/feliam/pysymemu
 * http://pages.cs.wisc.edu/~davidson/fie/
+* http://www.megalith.co.uk/8086tiny/
 
 ## Videos
 * http://media.ccc.de/browse/congress/2013/30C3_-_5224_-_en_-_saal_6_-_201312271400_-_triggering_deep_vulnerabilities_using_symbolic_execution_-_gannimo.html
@@ -241,6 +241,7 @@
 ## Deobfuscation/Unpacking
 ## Cryptography
 ## Visualization
+* http://www2.in.tum.de/votum
 ## Anti-Debugging / Anti-Reversing
 ## CCC Binary Analysis Wiki
 https://events.ccc.de/congress/2013/wiki/Session:Binary_Analysis
