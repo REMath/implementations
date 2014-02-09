@@ -138,6 +138,10 @@
 * http://cvs.metaprl.org:12000/metaprl/
 * http://www.cs.ru.nl/~janz/yarrow/
 
+## Control Flow Integrity
+* https://www.usenix.org/conference/usenixsecurity13/technical-sessions/presentation/Zhang
+
+
 ## C Code / C++ Code (Need to split these at some point) 
 * http://why3.lri.fr/
 * http://pp.ipd.kit.edu/firm/
