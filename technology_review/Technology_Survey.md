@@ -240,11 +240,14 @@
 ## Binary Analysis Platforms
 ## Deobfuscation/Unpacking
 ## Cryptography
+
 ## Visualization
 * http://www2.in.tum.de/votum
+
 ## Anti-Debugging / Anti-Reversing
+
 ## CCC Binary Analysis Wiki
-https://events.ccc.de/congress/2013/wiki/Session:Binary_Analysis
+* https://events.ccc.de/congress/2013/wiki/Session:Binary_Analysis
 
 # Acknowledgements
 
