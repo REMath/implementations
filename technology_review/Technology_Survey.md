@@ -69,6 +69,10 @@
 * https://github.com/vmt/udis86
 * http://software.intel.com/en-us/articles/pintool-downloads
 * http://capstone-engine.org/
+* winSRDF https://github.com/AmrThabet/winSRDF
+* Udis86 http://udis86.sourceforge.net/
+
+
 
 ## Decompilers 
 * http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
@@ -201,7 +205,30 @@
 * BugDbg http://pespin.w.interia.pl/
 * MDebug http://www.mdebug.org/
 * Visual DuxDebugger http://www.duxcore.com/index.php/prod/visual-duxdebugger/overview
-* PEBrowseDbg64 Interactive http://www.smidgeonsoft.prohosting.com/pebrowse-pro-interactive-debugger.html
+* PEBrowseDbg64 Interactive http://www.smidgeonsoft.prohosting.com/pebrowse-pro-interactive-debugger.
+
+## Multi-Architecture
+* IDA Pro https://www.hex-rays.com/products/ida/
+* Hopper http://www.hopperapp.com/
+* radare http://radare.org
+* GUI: Bokken http://inguma.eu/projects/bokken
+* VDB http://visi.kenshoto.com/viki/Vdb
+* Frida https://github.com/frida
+* Online Disassembler (ODA) http://www.onlinedisassembler.com/odaweb/
+
+
+## Java
+* Procyon https://bitbucket.org/mstrobel/procyon
+* SecureTeam Java Decompiler http://www.secureteam.net/Java-Decompiler.aspx
+* Luyten https://github.com/deathmarine/Luyten
+* Krakatau Bytecode Tools https://github.com/Storyyeller/Krakatau
+* DJ Java Decompiler http://www.neshkov.com/
+* reJ http://rejava.sourceforge.net/
+* JSwat https://code.google.com/p/jswat/
+* Dr. Garbage Tools http://www.drgarbage.com/index.html
+* JD-GUI http://jd.benow.ca/ 
+* JAD http://en.wikipedia.org/wiki/JAD_(JAva_Decompiler)
+* dirtyJOE http://dirty-joe.com/
 
 ## Decompilers
 ## Miscellaneous Tools
@@ -211,7 +238,7 @@
 ## Cryptography
 ## Visualization
 ## Anti-Debugging / Anti-Reversing
-
+## CCC Binary Analysis Wiki
 https://events.ccc.de/congress/2013/wiki/Session:Binary_Analysis
 
 # Acknowledgements
