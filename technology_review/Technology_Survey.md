@@ -168,6 +168,7 @@
 * http://www.prismmodelchecker.org/
 * http://software.imdea.org/projects/cacheaudit/
 * http://www-verimag.imag.fr/~tripakis/openkronos.html
+* http://turnersr.github.io/measurements/properties.html
 
 ## Assisted Exploit Engineering
 ### Return-oriented Programming, really this should be under Abstract Interpretation :P 
