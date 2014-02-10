@@ -1,5 +1,3 @@
-# Introduction 
-
 ## Mechanization of Exploits 
 * https://github.com/turnersr/turnersr.github.io/blob/master/mechanization_of_exploits/DARPA_CGC/exploits.org 
 
