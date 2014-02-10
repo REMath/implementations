@@ -260,4 +260,5 @@
 
 # Acknowledgements
 * https://events.ccc.de/congress/2013/wiki/Session:Binary_Analysis
+* http://www.reddit.com/r/ReverseEngineering/comments/1pvqv5/program_analysis_technology_additions_and/cd6tmor
 
