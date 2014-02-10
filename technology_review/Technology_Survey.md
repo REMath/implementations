@@ -27,6 +27,7 @@
 * Relational Reverse Engineering Intermediate Language - http://www2.in.tum.de/bib/files/sepp11precise.pdf
 * VinE Project Documentation - http://bitblaze.cs.berkeley.edu/papers/vine.pdf
 * BIL - http://bap.ece.cmu.edu/doc/bap.pdf
+* LLVM - http://infoscience.epfl.ch/record/149975/files/x86-llvm-translator-chipounov_2.pdf , http://eurosys2013.tudos.org/wp-content/uploads/2013/paper/Anand.pdf
 
 ## Abstract Interpretation
 * http://arxiv.org/abs/0810.2179 (code: http://hal.inria.fr/docs/00/33/23/39/ANNEX/absint.v ) 
