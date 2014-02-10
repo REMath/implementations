@@ -1,10 +1,12 @@
 # Introduction 
 
+## Mechanization of Exploits 
+* https://github.com/turnersr/turnersr.github.io/blob/master/mechanization_of_exploits/DARPA_CGC/exploits.org 
+
 ## Binary Analysis 
 * http://bap.ece.cmu.edu/
 * http://insight.labri.fr/trac
 * https://github.com/neuromancer/SEA
-* http://security.ece.cmu.edu/aeg/index.html
 * http://bitblaze.cs.berkeley.edu/
 * http://code.google.com/p/avalanche/
 * https://bincoa.labri.fr/trac
