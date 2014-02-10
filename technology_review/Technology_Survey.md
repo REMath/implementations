@@ -248,6 +248,7 @@
 * dirtyJOE http://dirty-joe.com/
 
 ## Decompilers
+## Type and Data Structure Recovering
 ## Miscellaneous Tools
 ## Binary Manipulation Frameworks
 ## Binary Analysis Platforms
