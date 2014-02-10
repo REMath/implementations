@@ -258,8 +258,6 @@
 
 ## Anti-Debugging / Anti-Reversing
 
-## CCC Binary Analysis Wiki
-* https://events.ccc.de/congress/2013/wiki/Session:Binary_Analysis
-
 # Acknowledgements
+* https://events.ccc.de/congress/2013/wiki/Session:Binary_Analysis
 
