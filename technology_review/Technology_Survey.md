@@ -83,6 +83,12 @@
 * http://boomerang.sourceforge.net/ 
 * http://decompiler.fit.vutbr.cz/decompilation/
 
+## Intermediate Representations
+* An Intermediate Representation for Integrating Reverse Engineering Analyses (1998) - http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.2766
+* REIL: A platform-independent intermediate representation of disassembled code for static code analys - http://moflow.org/ref/REIL%20-%20A%20platform-independent%20intermediate%20representation%20of%20disassembled%20code%20for%20static%20code%20analysis.pdf
+* Relational Reverse Engineering Intermediate Language - http://www2.in.tum.de/bib/files/sepp11precise.pdf
+* VinE Project Documentation - http://bitblaze.cs.berkeley.edu/papers/vine.pdf
+* BIL - http://bap.ece.cmu.edu/doc/bap.pdf
 
 ## Virtual Machines
 * http://klee.llvm.org/
