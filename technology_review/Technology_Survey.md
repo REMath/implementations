@@ -101,6 +101,7 @@
 * http://www.youtube.com/watch?v=azTVEwxN8zM
 * http://www.youtube.com/watch?v=k1qqNE1xMII
 * https://archive.org/details/Recon2012Keynote-TheCaseForSemantics-basedMethodsInReverseEngineering
+* https://archive.org/details/ApplyingTaintAnalysisAndTheoremProvingToExploitDevelopment-SeanHeelan
 
 ## Model Checkers 
 * http://nusmv.fbk.eu/ 
