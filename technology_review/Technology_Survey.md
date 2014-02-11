@@ -62,6 +62,7 @@
 
 ## Obfuscators 
 * Advanced Polymorphism Primer - http://vxheaven.org/lib/vda01.html
+* http://vxheaven.org/vx.php?id=eidx
 * http://cansecwest.com/core03/shiva.ppt
 * http://diablo.elis.ugent.be/obf_deobfuscation_byhand
 * http://blog.yurichev.com/node/58
