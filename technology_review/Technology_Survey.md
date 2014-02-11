@@ -160,6 +160,7 @@
 
 ## Control Flow Integrity
 * https://www.usenix.org/conference/usenixsecurity13/technical-sessions/presentation/Zhang
+* http://lenx.100871.net/papers/FPGate-bluehat.pdf
 
 
 ## C Code / C++ Code (Need to split these at some point) 
