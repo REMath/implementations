@@ -26,6 +26,7 @@
 * VinE Project Documentation - http://bitblaze.cs.berkeley.edu/papers/vine.pdf
 * BIL - http://bap.ece.cmu.edu/doc/bap.pdf
 * LLVM - http://infoscience.epfl.ch/record/149975/files/x86-llvm-translator-chipounov_2.pdf , http://eurosys2013.tudos.org/wp-content/uploads/2013/paper/Anand.pdf
+* TSL: A System for Generating Abstract Interpreters and its Application to Machine-Code Analysis - http://research.cs.wisc.edu/wpis/papers/toplas13-tsl-final.pdf
 
 ## Abstract Interpretation
 * http://arxiv.org/abs/0810.2179 (code: http://hal.inria.fr/docs/00/33/23/39/ANNEX/absint.v ) 
