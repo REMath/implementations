@@ -30,6 +30,9 @@
 * TSL: A System for Generating Abstract Interpreters and its Application to Machine-Code Analysis - http://research.cs.wisc.edu/wpis/papers/toplas13-tsl-final.pdf
 * Combining Several Analyses into One OR What is a Good Intermediate Language for the Analysis of Executables? - http://www.dagstuhl.de/mat/Files/12/12051/12051.SimonAxel.Slides.pdf
 
+## Binary Rewriting Framework
+* Diablo - http://diablo.elis.ugent.be/
+
 ## Abstract Interpretation
 * http://arxiv.org/abs/0810.2179 (code: http://hal.inria.fr/docs/00/33/23/39/ANNEX/absint.v ) 
 * http://dumas.ccsd.cnrs.fr/docs/00/63/64/45/PDF/Laporte.pdf (Coq code in the paper)
