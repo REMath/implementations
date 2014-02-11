@@ -4,6 +4,7 @@
 ## Binary Analysis 
 * http://bap.ece.cmu.edu/
 * http://insight.labri.fr/trac
+* https://github.com/rose-compiler/rose/tree/master/projects/BinQ
 * https://github.com/neuromancer/SEA
 * http://bitblaze.cs.berkeley.edu/
 * http://code.google.com/p/avalanche/
