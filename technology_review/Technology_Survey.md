@@ -188,6 +188,9 @@
 * https://github.com/0vercl0k/rp
 * https://github.com/trailofbits/bisc
 
+## Random Testing (Fuzzing) 
+* http://embed.cs.utah.edu/csmith/
+
 ## Dynamic Analysis is an interpretation of the static semantics
 * https://github.com/mrmee/heaper
 * https://github.com/neuroo/runtime-tracer
