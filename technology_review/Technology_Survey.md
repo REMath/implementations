@@ -47,6 +47,8 @@
 * Advanced Metamorphic Techniques in Computer Viruses - http://vxheavens.com/lib/apb01.html
 * Metamorphism in practice or "How I made MetaPHOR and what I've learnt" - http://vxheavens.com/lib/vmd01.html
 * Automated reverse engineering: Mistfall engine - http://vxheavens.com/lib/vzo21.html
+* Writing disassembler - http://vxheavens.com/lib/vmd05.html 
+* Benny's Metamorphic Engine for Win32 - http://vxheaven.org/29a/29a-6/29a-6.316
 * Diablo - http://diablo.elis.ugent.be/
 
 ## Abstract Interpretation
