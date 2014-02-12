@@ -199,6 +199,8 @@
 
 ## Random Testing (Fuzzing) 
 * http://embed.cs.utah.edu/csmith/
+* https://code.google.com/p/american-fuzzy-lop/
+* https://bitbucket.org/blackaura/browserfuzz
 
 ## Dynamic Analysis is an interpretation of the static semantics
 * https://github.com/mrmee/heaper
