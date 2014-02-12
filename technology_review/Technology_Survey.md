@@ -31,6 +31,15 @@
 * Combining Several Analyses into One OR What is a Good Intermediate Language for the Analysis of Executables? - http://www.dagstuhl.de/mat/Files/12/12051/12051.SimonAxel.Slides.pdf
 * Jakstab uses an IR described in chapter two of http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf 
 
+
+## Alias Analysis  
+* Alias Analysis for Assembly - http://reports-archive.adm.cs.cmu.edu/anon/anon/usr/ftp/2006/CMU-CS-06-180R.pdf
+* Probabilistic Alias Analysis for ARM Executable Code - https://drive.google.com/file/d/0BymO5h8P3PgAc29nUFBleGFtTnc/edit?usp=sharing
+* WYSINWYX: What You See Is Not What You Execute - http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.76.637&rep=rep1&type=pdf
+* Static Analysis of x86 Executables by Johannes Kinder - http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf
+
+
+
 ## Binary Rewriting Framework
 * Diablo - http://diablo.elis.ugent.be/
 
