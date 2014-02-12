@@ -18,7 +18,10 @@
 * http://doar-e.github.io/blog/2013/09/16/breaking-kryptonites-obfuscation-with-symbolic-execution/
 * https://github.com/tosanjay/BOPFunctionRecognition
 * https://github.com/codelion/pathgrind
-
+* http://doar-e.github.io/blog/2013/09/16/breaking-kryptonites-obfuscation-with-symbolic-execution/
+* http://yurichev.com/writings/z3_rockey.pdf
+* http://eindbazen.net/2013/04/pctf-2013-cone-binary-250-2/
+* http://shell-storm.org/blog/Binary-analysis-Concolic-execution-with-Pin-and-z3/
 
 ## Intermediate Representations
 * An Intermediate Representation for Integrating Reverse Engineering Analyses (1998) - http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.2766
