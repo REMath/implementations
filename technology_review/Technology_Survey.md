@@ -44,6 +44,7 @@
 
 
 ## Binary Rewriting Framework
+* Advanced Metamorphic Techniques in Computer Viruses - http://vxheavens.com/lib/apb01.html
 * Automated reverse engineering: Mistfall engine - http://vxheavens.com/lib/vzo21.html
 * Diablo - http://diablo.elis.ugent.be/
 
