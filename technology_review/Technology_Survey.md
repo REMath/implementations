@@ -49,6 +49,15 @@
 * Automated reverse engineering: Mistfall engine - http://vxheavens.com/lib/vzo21.html
 * Writing disassembler - http://vxheavens.com/lib/vmd05.html 
 * Benny's Metamorphic Engine for Win32 - http://vxheaven.org/29a/29a-6/29a-6.316
+* "Do polymorphism" tutorial - http://vxheavens.com/lib/vwm01.html
+* Introductory Primer To Polymorphism in Theory and Practice - http://vxheaven.org/lib/static/vdat/tupripol.htm
+* http://vxheavens.com/lib/vhe11.html
+* Theme: Metamorphism - http://vxheaven.org/29a/29a-4/29a-4.216
+* Some ideas about metamorphism - http://vxheavens.com/lib/vzo20.html
+* Meta-Level Languages in Viruses - http://vxheavens.com/lib/vsp44.html
+* Metamorphism (part 1) - http://vxheavens.com/lib/vzo10.html
+* Metamorphism - http://vxheavens.com/lib/vlj00.html
+* The Design Space of Metamorphic Malware - http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.69.486&rep=rep1&type=pdf
 * Diablo - http://diablo.elis.ugent.be/
 
 ## Abstract Interpretation
