@@ -45,6 +45,7 @@
 
 ## Binary Rewriting
 * Advanced Metamorphic Techniques in Computer Viruses - http://vxheavens.com/lib/apb01.html
+* Metamorphism in practice or "How I made MetaPHOR and what I've learnt" - http://vxheavens.com/lib/vmd01.html
 * Automated reverse engineering: Mistfall engine - http://vxheavens.com/lib/vzo21.html
 * Diablo - http://diablo.elis.ugent.be/
 
