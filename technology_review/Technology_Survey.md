@@ -44,6 +44,7 @@
 
 
 ## Binary Rewriting Framework
+* Automated reverse engineering: Mistfall engine - http://vxheavens.com/lib/vzo21.html
 * Diablo - http://diablo.elis.ugent.be/
 
 ## Abstract Interpretation
