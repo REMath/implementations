@@ -101,6 +101,7 @@
 * http://code.google.com/p/pescrambler/
 * http://www.phrack.org/issues.html?id=13&issue=63
 * https://github.com/obfuscator-llvm/obfuscator/wiki (https://github.com/obfuscator-llvm/obfuscator/tree/clang-425.0.24)
+* Binary code obfuscation through C++ template metaprogramming - https://www.cisuc.uc.pt/publication/showfile?fn=1357250736_metaobfv3.pdf
 
 ## Hidden Computation
 * http://mainisusuallyafunction.blogspot.com.es/2014/02/x86-is-turing-complete-with-no-registers.html
@@ -108,6 +109,9 @@
 * http://www.cl.cam.ac.uk/~sd601/papers/mov.pdf
 * C++ Templates are Turing Complete - http://ubietylab.net/ubigraph/content/Papers/pdf/CppTuring.pdf
 * https://github.com/elitheeli/stupid-machines
+
+## Deobfuscation
+* Using optimization algorithms for malware deobfuscation - http://os2.zemris.fer.hr/ns/malware/2010_spasojevic/diplomski_spasojevic.pdf
 
 ## Disassemblers
 * http://code.google.com/p/gdsl-toolkit/wiki/Overview 
