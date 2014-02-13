@@ -114,6 +114,7 @@
 
 ## Deobfuscation
 * Using optimization algorithms for malware deobfuscation - http://os2.zemris.fer.hr/ns/malware/2010_spasojevic/diplomski_spasojevic.pdf
+* Unpacking Virtualization Obfuscators - http://static.usenix.org/event/woot09/tech/full_papers/rolles.pdf
 
 ## Disassemblers
 * http://code.google.com/p/gdsl-toolkit/wiki/Overview 
