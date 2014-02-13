@@ -57,6 +57,8 @@
 * Meta-Level Languages in Viruses - http://vxheavens.com/lib/vsp44.html
 * Metamorphism (part 1) - http://vxheavens.com/lib/vzo10.html
 * Metamorphism - http://vxheavens.com/lib/vlj00.html
+* The Viral Darwinism of W32.Evol - http://www.openrce.org/articles/full_view/27 ( http://www.openrce.org/articles/files/evol_disasm.html )
+* The Molecular Virology of Lexotan32: Metamorphism Illustrated - http://www.openrce.org/articles/full_view/29
 * The Design Space of Metamorphic Malware - http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.69.486&rep=rep1&type=pdf
 * Diablo - http://diablo.elis.ugent.be/
 
