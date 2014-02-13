@@ -102,6 +102,13 @@
 * http://www.phrack.org/issues.html?id=13&issue=63
 * https://github.com/obfuscator-llvm/obfuscator/wiki (https://github.com/obfuscator-llvm/obfuscator/tree/clang-425.0.24)
 
+## Hidden Computation
+* http://mainisusuallyafunction.blogspot.com.es/2014/02/x86-is-turing-complete-with-no-registers.html
+* https://github.com/jbangert/trapcc
+* http://www.cl.cam.ac.uk/~sd601/papers/mov.pdf
+* C++ Templates are Turing Complete - http://ubietylab.net/ubigraph/content/Papers/pdf/CppTuring.pdf
+* https://github.com/elitheeli/stupid-machines
+
 ## Disassemblers
 * http://code.google.com/p/gdsl-toolkit/wiki/Overview 
 * http://www.beaengine.org/
