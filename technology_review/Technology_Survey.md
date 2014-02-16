@@ -87,6 +87,12 @@
 * http://fmv.jku.at/boolector/
 * http://mathsat.fbk.eu/
 
+## Probabilistic Logic
+* http://alchemy.cs.washington.edu/
+* https://github.com/opcode81/ProbCog/wiki
+* http://hazy.cs.wisc.edu/hazy/tuffy/
+* https://code.google.com/p/thebeast/
+
 ## String Solvers
 * http://webblaze.cs.berkeley.edu/2010/kaluza/
 * http://people.csail.mit.edu/akiezun/hampi/
