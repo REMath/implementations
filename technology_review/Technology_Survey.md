@@ -32,7 +32,12 @@
 * LLVM - http://infoscience.epfl.ch/record/149975/files/x86-llvm-translator-chipounov_2.pdf , http://eurosys2013.tudos.org/wp-content/uploads/2013/paper/Anand.pdf
 * TSL: A System for Generating Abstract Interpreters and its Application to Machine-Code Analysis - http://research.cs.wisc.edu/wpis/papers/toplas13-tsl-final.pdf
 * Combining Several Analyses into One OR What is a Good Intermediate Language for the Analysis of Executables? - http://www.dagstuhl.de/mat/Files/12/12051/12051.SimonAxel.Slides.pdf
-* Jakstab uses an IR described in chapter two of http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf 
+* Jakstab uses an IR described in chapter two of http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf
+* Wire – A Formal Intermediate Language for Binary Analysis - https://drive.google.com/file/d/0BymO5h8P3PgAakZqY1RQSldzRmM/edit?usp=sharing
+* Automated Synthesis of Symbolic Instruction Encodings from I/O Samples - http://research.microsoft.com/en-us/um/people/pg/public_psfiles/pldi2012.pdf
+
+
+  
 
 
 ## Alias Analysis  
