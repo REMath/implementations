@@ -36,17 +36,11 @@
 * Wire – A Formal Intermediate Language for Binary Analysis - https://drive.google.com/file/d/0BymO5h8P3PgAakZqY1RQSldzRmM/edit?usp=sharing
 * Automated Synthesis of Symbolic Instruction Encodings from I/O Samples - http://research.microsoft.com/en-us/um/people/pg/public_psfiles/pldi2012.pdf
 
-
-  
-
-
 ## Alias Analysis  
 * Alias Analysis for Assembly - http://reports-archive.adm.cs.cmu.edu/anon/anon/usr/ftp/2006/CMU-CS-06-180R.pdf
 * Probabilistic Alias Analysis for ARM Executable Code - https://drive.google.com/file/d/0BymO5h8P3PgAc29nUFBleGFtTnc/edit?usp=sharing
 * WYSINWYX: What You See Is Not What You Execute - http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.76.637&rep=rep1&type=pdf
 * Static Analysis of x86 Executables by Johannes Kinder - http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf
-
-
 
 ## Binary Rewriting
 * Metamorphic Software for Buffer Overflow Mitigation - http://www.cs.sjsu.edu/faculty/stamp/students/cs298report.doc
