@@ -317,6 +317,8 @@
 
 ## Visualization
 * http://www2.in.tum.de/votum
+* http://worrydream.com/MediaForThinkingTheUnthinkable/
+* Cantor Dust - http://www.youtube.com/watch?v=4bM3Gut1hIk
 
 ## Anti-Debugging / Anti-Reversing
 
