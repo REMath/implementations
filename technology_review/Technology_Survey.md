@@ -134,8 +134,6 @@
 * winSRDF https://github.com/AmrThabet/winSRDF
 * Udis86 http://udis86.sourceforge.net/
 
-
-
 ## Decompilers 
 * http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
 * http://www.cl.cam.ac.uk/~mom22/thesis.pdf
@@ -229,6 +227,7 @@
 * http://embed.cs.utah.edu/creduce/
 
 ## Quantitative Analysis
+* Daikon detects likely program invariants - http://plse.cs.washington.edu/daikon/
 * http://www.prismmodelchecker.org/
 * http://software.imdea.org/projects/cacheaudit/
 * http://www-verimag.imag.fr/~tripakis/openkronos.html
