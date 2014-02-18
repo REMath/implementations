@@ -92,7 +92,7 @@
 * Dyna: Extending Datalog For Modern AI - http://cs.jhu.edu/~jason/papers/eisner+filardo.datalog11-long.pd
 * Using Datalog for fast and easy program analysis - http://cgi.di.uoa.gr/~smaragd/doop-datalog2.0.pdf
 * Implementing Dataflow Analyses for Pegasus in Datalog - http://www.cs.cmu.edu/~drl/course/compilers/report.pdf
-* Using Datalog and binary decision diagrams for program analysis - 
+* Using Datalog and binary decision diagrams for program analysis - http://people.csail.mit.edu/mcarbin/papers/aplas05.pdf
 * Datalog for decompilation - https://media.blackhat.com/us-13/US-13-Cesare-Bugalyze.com-Detecting-Bugs-Using-Decompilation-Slides.pdf
 * On Abstraction Reﬁnement for Program Analyses in Datalog - http://www.cs.ox.ac.uk/people/hongseok.yang/paper/pldi14c-submitted.pdf
 * http://arxiv.org/pdf/1203.0160.pdf
@@ -100,7 +100,6 @@
 * http://docs.datomic.com/query.html
 * http://cgi.di.uoa.gr/~smaragd/doop-datalog2.0.pdf
 * http://research.microsoft.com/en-us/um/people/leonardo/muze.pdf
-* http://people.csail.mit.edu/mcarbin/papers/aplas05.pdf
 * http://www.cs.ox.ac.uk/people/hongseok.yang/paper/pldi14c-submitted.pdf
 * http://cgi.di.uoa.gr/~smaragd/doop-datalog2.0.pdf
 * http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.54.8690
