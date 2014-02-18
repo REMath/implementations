@@ -87,6 +87,26 @@
 * http://hazy.cs.wisc.edu/hazy/tuffy/
 * https://code.google.com/p/thebeast/
 
+## Datalog
+Alias Analysis for Assembly - https://users.ece.cmu.edu/~dbrumley/pubs/asm-alias.pdf
+Dyna: Extending Datalog For Modern AI - http://cs.jhu.edu/~jason/papers/eisner+filardo.datalog11-long.pd
+Using Datalog for fast and easy program analysis - http://cgi.di.uoa.gr/~smaragd/doop-datalog2.0.pdf
+Implementing Dataflow Analyses for Pegasus in Datalog - http://www.cs.cmu.edu/~drl/course/compilers/report.pdf
+Using Datalog and binary decision diagrams for program analysis - 
+Datalog for decompilation - https://media.blackhat.com/us-13/US-13-Cesare-Bugalyze.com-Detecting-Bugs-Using-Decompilation-Slides.pdf
+On Abstraction Reﬁnement for Program Analyses in Datalog - http://www.cs.ox.ac.uk/people/hongseok.yang/paper/pldi14c-submitted.pdf
+http://arxiv.org/pdf/1203.0160.pdf
+http://www.cs.jhu.edu/~nwf/datalog20-paper.pdf
+http://docs.datomic.com/query.html
+http://cgi.di.uoa.gr/~smaragd/doop-datalog2.0.pdf
+http://research.microsoft.com/en-us/um/people/leonardo/muze.pdf
+http://people.csail.mit.edu/mcarbin/papers/aplas05.pdf
+http://www.cs.ox.ac.uk/people/hongseok.yang/paper/pldi14c-submitted.pdf
+http://cgi.di.uoa.gr/~smaragd/doop-datalog2.0.pdf
+http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.54.8690
+http://www.eecs.berkeley.edu/Pubs/TechRpts/2009/EECS-2009-173.html
+http://cgi.di.uoa.gr/~smaragd/doop-oopsla09prelim.pdf 
+
 ## String Solvers
 * http://webblaze.cs.berkeley.edu/2010/kaluza/
 * http://people.csail.mit.edu/akiezun/hampi/
@@ -205,7 +225,6 @@
 ## Control Flow Integrity
 * https://www.usenix.org/conference/usenixsecurity13/technical-sessions/presentation/Zhang
 * http://lenx.100871.net/papers/FPGate-bluehat.pdf
-
 
 ## C Code / C++ Code (Need to split these at some point) 
 * http://why3.lri.fr/
