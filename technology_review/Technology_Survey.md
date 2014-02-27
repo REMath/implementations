@@ -11,7 +11,7 @@
 * https://bincoa.labri.fr/trac
 * http://www.jakstab.org/documentation
 * https://code.google.com/p/tree-cbass/
-* https://github.com/bitblaze-fuzzball/fuzzball
+* https://github.com/bitblaze-fuzzball/fuzzball (https://nebelwelt.net/blog/20140114-having_phun_with_SE.html)
 * https://code.google.com/p/decaf-platform/
 * http://esec-lab.sogeti.com/pages/Fuzzgrind
 * http://code.google.com/p/idaocaml/
@@ -22,6 +22,8 @@
 * http://yurichev.com/writings/z3_rockey.pdf
 * http://eindbazen.net/2013/04/pctf-2013-cone-binary-250-2/
 * http://shell-storm.org/blog/Binary-analysis-Concolic-execution-with-Pin-and-z3/
+* An architecture-independent decompiler to LLVM IR - https://github.com/draperlaboratory/fracture
+
 
 ## Intermediate Representations
 * An Intermediate Representation for Integrating Reverse Engineering Analyses (1998) - http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.2766
