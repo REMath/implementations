@@ -23,7 +23,7 @@
 * http://eindbazen.net/2013/04/pctf-2013-cone-binary-250-2/
 * http://shell-storm.org/blog/Binary-analysis-Concolic-execution-with-Pin-and-z3/
 * An architecture-independent decompiler to LLVM IR - https://github.com/draperlaboratory/fracture
-
+* DECAF - https://code.google.com/p/decaf-platform/
 
 ## Intermediate Representations
 * An Intermediate Representation for Integrating Reverse Engineering Analyses (1998) - http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.2766
@@ -162,6 +162,11 @@
 * https://github.com/EiNSTeiN-/ida-decompiler
 * http://boomerang.sourceforge.net/ 
 * http://decompiler.fit.vutbr.cz/decompilation/
+* Retargetable Decompiler http://decompiler.fit.vutbr.cz/index.php
+* C4Decompiler http://www.c4decompiler.com
+* SmartDec decompiler http://decompilation.info/
+* REC Studio 4 http://www.backerstreet.com/rec/rec.htm
+* List of .Net Decompilers: https://code.google.com/p/facile-api/wiki/ListOfDotNetDecompilers
 
 ## Virtual Machines
 * http://klee.llvm.org/
@@ -283,7 +288,12 @@
 * https://github.com/isislab/Catfish
 * https://github.com/aaronportnoy/toolbag
 * http://www.rise4fun.com/
-
+* Apimonitor http://www.rohitab.com/apimonitor
+* efl32mod http://deroko.phearless.org/rce.html
+* Insight http://www.bttr-software.de/products/insight/
+* Malwasm https://code.google.com/p/malwasm/
+* pev http://pev.sourceforge.net/
+* mona.py http://redmine.corelan.be/projects/mona
 
 ## Disassemblers & Debuggers
 ## x86 only
@@ -338,6 +348,7 @@
 * http://www2.in.tum.de/votum
 * http://worrydream.com/MediaForThinkingTheUnthinkable/
 * Cantor Dust - http://www.youtube.com/watch?v=4bM3Gut1hIk
+* GraphDice: A System for Exploring Multivariate Social Networks - http://www.aviz.fr/graphdice/
 
 ## Anti-Debugging / Anti-Reversing
 
