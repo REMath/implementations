@@ -155,6 +155,7 @@
 * http://capstone-engine.org/
 * winSRDF https://github.com/AmrThabet/winSRDF
 * Udis86 http://udis86.sourceforge.net/
+* https://code.google.com/p/optimice/
 
 ## Decompilers 
 * http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
