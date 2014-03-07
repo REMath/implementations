@@ -143,6 +143,7 @@
 ## Deobfuscation
 * Using optimization algorithms for malware deobfuscation - http://os2.zemris.fer.hr/ns/malware/2010_spasojevic/diplomski_spasojevic.pdf
 * Unpacking Virtualization Obfuscators - http://static.usenix.org/event/woot09/tech/full_papers/rolles.pdf
+* https://code.google.com/p/optimice/
 
 ## Disassemblers
 * http://code.google.com/p/gdsl-toolkit/wiki/Overview 
@@ -155,7 +156,6 @@
 * http://capstone-engine.org/
 * winSRDF https://github.com/AmrThabet/winSRDF
 * Udis86 http://udis86.sourceforge.net/
-* https://code.google.com/p/optimice/
 
 ## Decompilers 
 * http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
