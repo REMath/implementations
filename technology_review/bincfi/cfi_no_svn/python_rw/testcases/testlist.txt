@@ -1,0 +1,29 @@
+# FORMAT:
+# config file : file_name : related_files : parameters_to_run_program : cmp_or_not : file to compare
+
+
+#related_file: could be absolute paths or relative paths; note: relative path should regard "testcases/program_name/trans(or origin)" as the current directory
+#cmp_or_not: 0; no comparison with original program, but return value will be checked
+#cmp_or_not: 1; compare with original program output. stdout, stderr and execution result will be compared
+#cmp_or_not: 2; when cmp_or_not is 2, then the next field contains special file to compare
+#cmp_or_not: 3; when cmp_or_not is 3, then the next field contains a special bash script to perform comparison. the script will be run in "testcases/program_name/trans" 
+#cmp_or_not: 4; when cmp_or_not is 4, no comparison, return value won't be checked
+#cmp_or_not: 5; when cmp_or_not is 5, the next field contains the script to launch the program and decide the pass of the test
+
+
+#=============================================================================
+
+./config:/bin/ls:: -l /li:1:
+./config:/bin/ls::  /lib:0:
+./config:/bin/cat:../../config: ./config:1:
+#./config:/usr/bin/perl:../../test/dump2asm.pl ../../config : dump2asm.pl log /bin/ls:1:
+./config:/usr/bin/perl:../../test/dump2asm.pl ../../config : dump2asm.pl log /bin/ls:2:generated_asm.s
+./config:/usr/bin/readelf:: -w /lib/i386-linux-gnu/libc.so.6:1:
+./config:/bin/tar:../tools/cmptar.sh: cvzf test.tgz ../../../test_sample:3:./cmptar.sh
+#./config:/usr/bin/lynx:::0:
+./config:/usr/bin/ssh:: --noprofile cpusrv1 ls -R :0:
+#./config:/usr/bin/lyx:::0:
+#./config:/usr/bin/gedit:::0:
+./config:/usr/bin/gedit:../tools/gedit.py::5:./gedit.py
+#./config:/usr/bin/gnome-system-monitor:../tools/gnome-system-monitor.py::5:./gnome-system-monitor.py
+#./config:/usr/bin/gcalctool:../tools/gcalctool.py::5:./gcalctool.py

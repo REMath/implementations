@@ -1,0 +1,5 @@
+/* GNU ld script
+   Use the shared library, but some functions are only in
+   the static library, so try that secondarily.  */
+OUTPUT_FORMAT(elf32-i386)
+GROUP ( /home/bip/installdir/lib/libpthread.so.0 /home/bip/installdir/lib/libpthread_nonshared.a )

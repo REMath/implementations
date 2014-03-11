@@ -1,0 +1,83 @@
+#first change user to root or pulse
+#then : sh
+#then : cd /usr/cpu2000
+#then : . ./shrc
+#then : use the following commands
+
+runspec --config=ia32.cfg --action=build --tune=base gzip
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 gzip
+runspec --config=ia32.cfg -I --noreportable int
+runspec --config=ia32.cfg --action=build --tune=base vpr 
+
+runspec --config=ia32.cfg --action=build -I --tune=base int
+runspec --config=ia32.cfg --noreportable --iterations=1 -I --tune=base int
+
+
+runspec --config=ia32.cfg --size=ref -I --noreportable --iterations=1 164.gzip 175.vpr 181.mcf 186.crafty 197.parser 252.eon 253.perlbmk 254.gap 256.bzip2 300.twolf
+
+#useful commands:
+
+runspec --config=ia32.cfg --size=ref -I --noreportable --iterations=1 164.gzip 175.vpr 176.gcc 181.mcf 186.crafty  253.perlbmk 254.gap 256.bzip2 300.twolf
+/opt/pin/pin -follow_execv -- runspec --config=ia32.cfg --size=ref -I --noreportable --iterations=1 164.gzip 175.vpr 176.gcc 181.mcf 186.crafty  253.perlbmk 254.gap 256.bzip2 300.twolf
+
+./drrun.sh -- runspec --config=ia32.cfg --size=ref -I --noreportable --iterations=1 164.gzip 175.vpr 176.gcc 181.mcf 186.crafty  253.perlbmk 254.gap 256.bzip2 300.twolf
+
+
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 175.vpr
+runspec  --config=../docs/example-advanced.cfg --action=build --tune=base gcc
+
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 164.gzip
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 181.mcf
+181.mcf
+
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 186.crafty
+186.crafty
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 197.parser
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 176.gcc
+197.parser
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 252.eon
+252.eon
+
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 253.perlbmk
+253.perlbmk
+
+
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 254.gap
+254.gap
+
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 255.vortex
+255.vortex
+
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 256.bzip2
+256.bzip2
+
+runspec --config=ia32.cfg --size=ref --noreportable --iterations=1 300.twolf
+300.twolf
+#for 2006:
+runspec --config=linux32-i386-gcc45.cfg -I --action=build --tune=base int fp
+runspec --config=linux32-i386-gcc45.cfg -I --noreportable fp
+runspec --config=linux32-i386-gcc45.cfg -I --noreportable int
+runspec --config=linux32-i386-gcc45.cfg --action=build 400.perlbench 401.bzip2 403.gcc 429.mcf 445.gobmk 456.hmmer 458.sjeng 462.libquantum 464.h264ref 471.omnetpp 473.astar 483.xalancbmk 
+
+runspec --config=linux32-i386-gcc45.cfg -I --noreportable --iterations=1 400.perlbench 401.bzip2 403.gcc 429.mcf 445.gobmk 456.hmmer 458.sjeng 462.libquantum 464.h264ref 471.omnetpp 473.astar 483.xalancbmk 
+
+#for all tested programs
+runspec --config=linux32-i386-gcc45.cfg -I --noreportable --iterations=1 400.perlbench 401.bzip2 403.gcc 429.mcf 445.gobmk 456.hmmer 458.sjeng 462.libquantum 464.h264ref 471.omnetpp 473.astar  433.milc 444.namd 450.soplex 453.povray 470.lbm 482.sphinx3
+
+runspec --config=linux32-i386-gcc45.cfg -I --action=build --tune=base 400.perlbench 401.bzip2 403.gcc 429.mcf 445.gobmk 456.hmmer 458.sjeng 462.libquantum 464.h264ref 471.omnetpp 473.astar  433.milc 444.namd 450.soplex 453.povray 470.lbm 482.sphinx3
+
+#for all C programs
+runspec --config=linux32-i386-gcc45.cfg -I --noreportable --iterations=1 400.perlbench 401.bzip2 403.gcc 429.mcf 445.gobmk 456.hmmer 458.sjeng 462.libquantum 464.h264ref 473.astar  433.milc 444.namd 470.lbm 482.sphinx3
+
+#for all CPP programs
+runspec --config=linux32-i386-gcc45.cfg -I --noreportable --iterations=1 471.omnetpp 450.soplex 453.povray
+
+#using Native Client:
+runspec --config=linux32-nacl.cfg --action=build 400.perlbench 401.bzip2 403.gcc 429.mcf 445.gobmk 456.hmmer 458.sjeng 462.libquantum 464.h264ref 471.omnetpp 473.astar  433.milc 444.namd 450.soplex 453.povray 470.lbm 482.sphinx3
+
+#using Relocations:
+runspec --config=linux-emit-reloc.cfg --action=build 400.perlbench 401.bzip2 403.gcc 429.mcf 445.gobmk 456.hmmer 458.sjeng 462.libquantum 464.h264ref 471.omnetpp 473.astar  433.milc 444.namd 450.soplex 453.povray 470.lbm 482.sphinx3
+
+
+#using test dataset:
+runspec --config=linux32-i386-gcc46.cfg -I 400.perlbench 401.bzip2 403.gcc 429.mcf 445.gobmk 456.hmmer 458.sjeng 462.libquantum 464.h264ref 471.omnetpp 473.astar  433.milc 444.namd 450.soplex 453.povray 470.lbm 482.sphinx3

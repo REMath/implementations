@@ -1,0 +1,18 @@
+Currently, there are several issues in this approach:
+
+1) about the performance issue
+The indirect jump handling is too expensive due to the binary search. I need to make it a hash table lookup. But hash table look up has the issue of table generation. In particular, in what size, open address or?
+
+
+2) about the instruction bundle
+Since in the reassembled binary, we don't know the size of a jump instruction (could be either a 2-byte jump or a 5-byte one), we have to assume all jumps takes 5-bytes.
+
+Indirect jump must be 16-byte aligned. However, the indirect jump in hash table lookup does not follow this rule since it will perform a jump to the code target which may be in the middle of a bundle. In order to do that, we need to change the way indirect jump is handled. Basically, we create code stubs for each code target. So, the indirect jump in lookup routine will first perform a indirect jump to a stub and then a direct jump to the target.
+
+3) Interrupt Handling
+We need to figure out how to intercept the interrupt handlers.
+
+Future work:
+1) library rewriting
+Currently, the PIE/PIC code is not supported.
+

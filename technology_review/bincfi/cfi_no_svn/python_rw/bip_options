@@ -1,0 +1,31 @@
+#this file specifies the idx with the corresponding option
+#please only append this file
+#idx	len(b)	name
+0	1	transparent_call
+1	1	use_segv
+2	1	enforce_e_cfi
+3	1	only_local_lookup
+4	1	enforce_ret
+5	1	ret_to_orig
+6	1	return2lookup
+7	1	return2lookup_use_ret
+8	1	enforce_plt
+9	1	transform_plt
+10	1	save_eflags
+11	1	speculate_icf
+12	1	translate_jmp_table
+13	1	do_not_trans_syscall
+14	1	hijack_entry
+15	1	init_gs
+16	1	call_to_pushjmp
+17	1	fix_disasm
+18	1	use_local_hash
+19	1	gen_hash
+20	2	bundle_align
+21	1	use_trap_redirect4bundle
+22	1	use_far_jmp
+23	1	pic_change_stack
+24	1	debug_mode
+25	1	disasm_get_icf
+26	1	only_gen_asm
+27	1	dump_direct_cf_target

@@ -1,0 +1,210 @@
+=================
+Brief Description
+=================
+
+BINCFI system contains most of the important files in the following
+directories. 
+
+DIRECTORY: python_rw
+
+This directory contains all the executable scripts used for binary
+instrumentation.
+
+dump2asm.pl:
+This script does the following: 
+1) disassembles the ELF file
+2) fix all disassembly errors
+3) discover all indirect control flow targets
+
+bin_translate.pl:
+This script transform the disassembly and generates new assembly code. CFI
+instrumentation is done in this script. 
+
+
+modify_elf.py:
+This script will take the genereated (and instrumented) assembly and produce a
+new ELF file. In particular, it attaches the new assembly file with some asm
+routines for indirect jmp/call & ret, compile it, extract the code section,
+insert it into the original ELF file and patch all the relocations on the new
+code.
+
+
+DIRECTORY: intercept_glibc
+
+libsig.so:
+This is a library that intercepts sigaction(3) and sigset(3) library call. It
+is needed when the user program wants to set its own signal handler from
+SIGTRAP (int3), SIGSEGV
+
+
+DIRECTORY: glookup_policy
+
+code_no_far_jmp:
+This is the library that performs the "global lookup" for indirect control
+transfer.
+
+
+DIRECTORY: rtld_code
+
+This directory contains: 1) different versions of ld.so. 2) eglibc sourcd code
+to compile our special ld.so. 3) sub directory "bip" used as the environment
+setup for ld.so in BINCFI.
+
+
+
+==========
+HOW TO USE
+==========
+1 How to transform a binary?
+Go to "python_rw" directory and Use the following command:
+./modify_elf.py /program/path/name
+
+The transformed executable is ./target_elf/name/name_final
+
+For example:
+1)
+./modify_elf.py /bin/ls
+Your transformed file will be ./target_elf/ls/ls_final
+
+2)
+./modify_elf.py /usr/bin/vim
+Your transformed file will be ./target_elf/vim/vim_final
+
+
+2 How to run the transformed file?
+0)Before you run the program, Pls go to modify_ldt directory and read the README there.
+
+1) for simple ELF programs such as ls or other binutils, use:
+./program
+
+2) For some programs that override default sigal handlers, use:
+LD_PRELOAD=$PWD/ligsig.so ./program
+e.g.:
+LD_PRELOAD=$PWD/libsig.so ./vim/vim_final
+
+3 How to transform libraries?
+
+Transforming a library is the same as for an executable. 
+
+4 Transformed executable cannot find dependent libraries
+
+You should first transform libraries and then move them into
+/home/bip/installdir/lib 
+
+5 How do I transform dependent libraries in BATCH !?!
+
+APPROACH #1:
+
+STEP1: you could find all dependent libraries using commands:
+
+	cd python_rw
+	./list_ldd_libs.sh your_orig_program >list
+
+Note: your_orig_program is your original program path
+
+STEP2: adding dependent libraries in search path.
+
+You could first create symbolic links in /home/bip/installdir using:
+
+	find `cat list`|xargs -I{} ln -sf {} /home/bip/installdir/lib
+
+STEP3: execute your transformed program.
+
+IF you have no errors, goto STEP4
+IF you encounter errors saying that there is a missing library. Then, first
+figure out where the library is. You could use command: 
+
+	locate missing_lib.so
+
+And choose the possible library path, and execute the following commands:
+	
+	echo path_of_missing_lib.so >>list
+	./list_ldd_libs.sh path_of_missing_lib.so >>list
+	find `cat list`|xargs -I{} ln -sf {} /home/bip/installdir/lib
+	
+Repeat STEP3 until you find no missing libraries.
+
+STEP4: recording all transformed library locations
+
+	find `cat list` |xargs -I{} basename {} | sed 's/^/\/home\/bip\/installdir\/lib\//g' > transformed_libs
+
+STEP5: transforming all libraries in a BATCH:
+
+	find `cat transformed_libs` |xargs -I{} ./instrument_replace.py -ri {}	
+
+STEP6: check whether all libraries have been transformed:
+
+	./dependency_check.sh  -list transformed_libs
+
+
+
+APPROACH #2: (Depreciated)
+
+STEP1: You should know where those libraries are:
+
+	LD_DEBUG=libs ./your_program 2>log
+
+This will save all the library searching/initializing/finalizing behaviours
+into the "log" file. Then you can use a provided script to parse this file and
+get a list of libraries with absolute path names:
+
+	./python_rw/list_libs.sh log >list
+
+Note that using ldd ./your_program could also get a library list, but that will
+only be a subset of libraries used by the program at runtime.
+
+STEP2: adding dependent libraries in search path
+
+You could first create symbolic links in /home/bip/installdir using:
+
+	find `cat list`|xargs -I{} ln -sf {} /home/bip/installdir/lib
+
+In fact, right now, you should be able to run the program. HOWEVER, you are
+running with original libraries, so that is not the end yet.
+
+STEP3: recording all transformed library locations
+
+	find `cat list` |xargs -I{} basename {} | sed 's/^/\/home\/bip\/installdir\/lib\//g' > transformed_libs
+
+STEP4: transforming all libraries in a BATCH:
+
+	cd python_rw
+	find `cat ../transformed_libs` |xargs -I{} ./instrument_replace.py -i {}	
+
+STEP5: recovering libraries transformed (testing purpose)
+
+=======================================================================
+
+./instrument_replace.py
+
+Note that instrument_replace.py is script that helps you "replace" a
+elf file into a transformed one if using option "-i". If you want to
+recover a library/exe file,using the commmand:
+
+	./instrument_replace.py -r your_elf_file_path
+
+If you are sure that the elf file you want to recover is in
+/home/bip/installdir/lib, then you could simply type the name. The only
+difference is to use option "-R"
+
+	./instrument_replace.py -R your_elf_name
+
+Similar meaning applies for "-I" option.
+
+
+=======================================================================
+
+Frequently Asked Questions:
+
+Q: I got the following errors when trying to run transformed program: 
+
+Inconsistency detected by ld.so: dl-deps.c: 622: _dl_map_object_deps: 
+>>> Assertion `nlist > 1' failed!
+
+A: This is because there exist missing libraries. using ldd on original program
+and make sure all libraries are transformed.
+
+Q: ldd doe not work on transformed programs
+
+A: using this command: LD_TRACE_LOADED_OBJECTS=1 ./path/to/transformed_bin
+
