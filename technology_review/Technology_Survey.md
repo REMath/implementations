@@ -46,6 +46,7 @@
 * Static Analysis of x86 Executables by Johannes Kinder - http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf
 
 ## Binary Rewriting
+* Control Flow Integrity - https://github.com/turnersr/turnersr.github.io/blob/master/technology_review/Technology_Survey.md#control-flow-integrity
 * Metamorphic Software for Buffer Overflow Mitigation - http://www.cs.sjsu.edu/faculty/stamp/students/cs298report.doc
 * Advanced Metamorphic Techniques in Computer Viruses - http://vxheavens.com/lib/apb01.html
 * Metamorphism in practice or "How I made MetaPHOR and what I've learnt" - http://vxheavens.com/lib/vmd01.html
