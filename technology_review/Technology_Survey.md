@@ -270,6 +270,7 @@
 * https://github.com/JonathanSalwan/ROPgadget
 * https://github.com/0vercl0k/rp
 * https://github.com/trailofbits/bisc
+* Blind Return Oriented Programming (BROP) - http://www.scs.stanford.edu/~sorbo/brop/
 
 ## Random Testing (Fuzzing) 
 * http://embed.cs.utah.edu/csmith/
