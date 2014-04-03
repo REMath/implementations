@@ -121,6 +121,7 @@
 * http://www.nec-labs.com/research/system/systems_SAV-website/benchmarks.php
 * http://www.debian.org/distrib/packages
 * https://github.com/offensive-security/exploit-database
+* 1.2k bugs discovered by Mayhem - https://bugs.debian.org/cgi-bin/pkgreport.cgi?submitter=alexandre%40cmu.edu
 
 ## Obfuscators 
 * http://vxheaven.org/vx.php?id=eidx
@@ -160,6 +161,7 @@
 
 ## Decompilers 
 * http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
+* http://dagger.repzret.org/
 * http://www.cl.cam.ac.uk/~mom22/thesis.pdf
 * http://code.google.com/p/arm-thumb-decompiler-plugin/
 * https://github.com/EiNSTeiN-/ida-decompiler
