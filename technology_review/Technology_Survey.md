@@ -259,6 +259,7 @@
 
 ## Quantitative Analysis
 * Daikon detects likely program invariants - http://plse.cs.washington.edu/daikon/
+* DIG: A Dynamic Invariant Generator for Polynomial and Array Invariants - https://bitbucket.org/nguyenthanhvuh/dig/src
 * http://www.prismmodelchecker.org/
 * http://software.imdea.org/projects/cacheaudit/
 * http://www-verimag.imag.fr/~tripakis/openkronos.html
