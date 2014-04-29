@@ -1,0 +1,11 @@
+syntax: regexp
+
+\.vo
+\.v.d
+\.glob
+~
+\#
+_build/
+html/
+^extraction/.*\.ml
+.*\.cache
