@@ -46,6 +46,7 @@
 * Static Analysis of x86 Executables by Johannes Kinder - http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf
 
 ## Binary Rewriting
+* Control Flow Integrity - https://github.com/turnersr/turnersr.github.io/blob/master/technology_review/Technology_Survey.md#control-flow-integrity
 * Metamorphic Software for Buffer Overflow Mitigation - http://www.cs.sjsu.edu/faculty/stamp/students/cs298report.doc
 * Advanced Metamorphic Techniques in Computer Viruses - http://vxheavens.com/lib/apb01.html
 * Metamorphism in practice or "How I made MetaPHOR and what I've learnt" - http://vxheavens.com/lib/vmd01.html
@@ -120,6 +121,7 @@
 * http://www.nec-labs.com/research/system/systems_SAV-website/benchmarks.php
 * http://www.debian.org/distrib/packages
 * https://github.com/offensive-security/exploit-database
+* 1.2k bugs discovered by Mayhem - https://bugs.debian.org/cgi-bin/pkgreport.cgi?submitter=alexandre%40cmu.edu
 
 ## Obfuscators 
 * http://vxheaven.org/vx.php?id=eidx
@@ -159,6 +161,7 @@
 
 ## Decompilers 
 * http://users.ece.cmu.edu/~ejschwar/papers/usenix13.pdf
+* http://dagger.repzret.org/
 * http://www.cl.cam.ac.uk/~mom22/thesis.pdf
 * http://code.google.com/p/arm-thumb-decompiler-plugin/
 * https://github.com/EiNSTeiN-/ida-decompiler
@@ -257,6 +260,7 @@
 
 ## Quantitative Analysis
 * Daikon detects likely program invariants - http://plse.cs.washington.edu/daikon/
+* DIG: A Dynamic Invariant Generator for Polynomial and Array Invariants - https://bitbucket.org/nguyenthanhvuh/dig/src
 * http://www.prismmodelchecker.org/
 * http://software.imdea.org/projects/cacheaudit/
 * http://www-verimag.imag.fr/~tripakis/openkronos.html
@@ -270,6 +274,7 @@
 * https://github.com/JonathanSalwan/ROPgadget
 * https://github.com/0vercl0k/rp
 * https://github.com/trailofbits/bisc
+* Blind Return Oriented Programming (BROP) - http://www.scs.stanford.edu/~sorbo/brop/
 
 ## Random Testing (Fuzzing) 
 * http://embed.cs.utah.edu/csmith/
@@ -298,6 +303,7 @@
 * Malwasm https://code.google.com/p/malwasm/
 * pev http://pev.sourceforge.net/
 * mona.py http://redmine.corelan.be/projects/mona
+* http://mlsec.org/
 
 ## Disassemblers & Debuggers
 ## x86 only
