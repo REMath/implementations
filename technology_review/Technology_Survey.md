@@ -234,6 +234,7 @@
 * BinCFI: Control Flow Integrity for COTS Binaries - http://www.seclab.cs.sunysb.edu/seclab/bincfi/
 * https://www.usenix.org/conference/usenixsecurity13/technical-sessions/presentation/Zhang
 * http://lenx.100871.net/papers/FPGate-bluehat.pdf
+* http://lists.cs.uiuc.edu/pipermail/llvmdev/2014-February/070210.html
 
 ## C Code / C++ Code (Need to split these at some point) 
 * http://why3.lri.fr/
