@@ -2,6 +2,7 @@
 * https://github.com/turnersr/turnersr.github.io/blob/master/mechanization_of_exploits/DARPA_CGC/exploits.org 
 
 ## Binary Analysis 
+* https://github.com/bdcht/amoco
 * http://bap.ece.cmu.edu/
 * https://bitbucket.org/simona/mltk
 * http://insight.labri.fr/trac
