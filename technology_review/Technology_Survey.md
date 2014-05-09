@@ -4,6 +4,7 @@
 ## Binary Analysis 
 * https://github.com/bdcht/amoco
 * http://bap.ece.cmu.edu/
+* http://dynamorio.org/
 * https://bitbucket.org/simona/mltk
 * http://insight.labri.fr/trac
 * https://github.com/rose-compiler/rose/tree/master/projects/BinQ
