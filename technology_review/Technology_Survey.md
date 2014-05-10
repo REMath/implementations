@@ -350,10 +350,13 @@
 
 ## Decompilers
 ## Type and Data Structure Recovering
+* Struct Builder: Tool commonly used in game hacking to reverse data structures - http://www.mpcforum.com/showthread.php?128430-Release-StructBuild
 ## Miscellaneous Tools
 ## Binary Manipulation Frameworks
 ## Binary Analysis Platforms
+* Binwalk: Firmware analysis tool - http://binwalk.org/
 ## Deobfuscation/Unpacking
+* PROTECTiON iD: Detects most common application protectors - http://pid.gamecopyworld.com/
 ## Cryptography
 
 ## Visualization
@@ -361,6 +364,7 @@
 * http://worrydream.com/MediaForThinkingTheUnthinkable/
 * Cantor Dust - http://www.youtube.com/watch?v=4bM3Gut1hIk
 * GraphDice: A System for Exploring Multivariate Social Networks - http://www.aviz.fr/graphdice/
+* Gephi: Open Source Graph Visualization Platform - https://gephi.org/
 
 ## Anti-Debugging / Anti-Reversing
 
