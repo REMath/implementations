@@ -28,6 +28,7 @@
 * An architecture-independent decompiler to LLVM IR - https://github.com/draperlaboratory/fracture
 * DECAF - https://code.google.com/p/decaf-platform/
 * Binwalk: Firmware analysis tool - http://binwalk.org/
+* https://code.google.com/p/miasm/
 
 
 ## Analysis of Communication Protocols 
