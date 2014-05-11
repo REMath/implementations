@@ -27,6 +27,8 @@
 * http://shell-storm.org/blog/Binary-analysis-Concolic-execution-with-Pin-and-z3/
 * An architecture-independent decompiler to LLVM IR - https://github.com/draperlaboratory/fracture
 * DECAF - https://code.google.com/p/decaf-platform/
+* Binwalk: Firmware analysis tool - http://binwalk.org/
+
 
 ## Intermediate Representations
 * An Intermediate Representation for Integrating Reverse Engineering Analyses (1998) - http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.2766
@@ -350,13 +352,16 @@
 
 ## Decompilers
 ## Type and Data Structure Recovering
-* Struct Builder: Tool commonly used in game hacking to reverse data structures - http://www.mpcforum.com/showthread.php?128430-Release-StructBuild
+* Struct Builder: Tool commonly used in game hacking to reverse data structures. This tool is closed source. - http://www.mpcforum.com/showthread.php?128430-Release-StructBuild
 ## Miscellaneous Tools
 ## Binary Manipulation Frameworks
+
 ## Binary Analysis Platforms
-* Binwalk: Firmware analysis tool - http://binwalk.org/
+
 ## Deobfuscation/Unpacking
-* PROTECTiON iD: Detects most common application protectors - http://pid.gamecopyworld.com/
+* PROTECTiON iD: Detects most common application protectors. This tool is closed source. - http://pid.gamecopyworld.com/
+
+
 ## Cryptography
 
 ## Visualization
