@@ -28,6 +28,7 @@
 * An architecture-independent decompiler to LLVM IR - https://github.com/draperlaboratory/fracture
 * DECAF - https://code.google.com/p/decaf-platform/
 * Binwalk: Firmware analysis tool - http://binwalk.org/
+* Netzob is an open source tool for reverse engineering, traffic generation and fuzzing of communication protocols. It allows to infer the message format and the state machine of a protocol through passive and active processes. The model can afterward be used to simulate realistic and controllable trafic - http://www.netzob.org/
 
 
 ## Intermediate Representations
