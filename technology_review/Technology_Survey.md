@@ -365,8 +365,6 @@
 ## Miscellaneous Tools
 ## Binary Manipulation Frameworks
 
-## Binary Analysis Platforms
-
 ## Deobfuscation/Unpacking
 * PROTECTiON iD: Detects most common application protectors. This tool is closed source. - http://pid.gamecopyworld.com/
 
