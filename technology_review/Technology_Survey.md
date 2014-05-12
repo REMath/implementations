@@ -133,6 +133,9 @@
 * https://github.com/offensive-security/exploit-database
 * 1.2k bugs discovered by Mayhem - https://bugs.debian.org/cgi-bin/pkgreport.cgi?submitter=alexandre%40cmu.edu
 
+## Ground Truth 
+* http://dwarfstd.org/
+
 ## Obfuscators 
 * http://vxheaven.org/vx.php?id=eidx
 * http://cansecwest.com/core03/shiva.ppt
