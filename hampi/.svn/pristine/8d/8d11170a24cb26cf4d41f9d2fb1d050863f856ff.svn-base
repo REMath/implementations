@@ -1,0 +1,11 @@
+//created from CFGAnalyzer file isocpp_qualid.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg id_expression :=  unqualified_id | qualified_id ;
+cfg unqualified_id :=  "i" | template_id ;
+cfg qualified_id :=  nested_name_specifier unqualified_id ;
+cfg nested_name_specifier :=  class_name "c" nested_name_specifier | class_name "c" ;
+cfg class_name :=  "i" | template_id ;
+cfg template_id :=  "i" "<" template_argument ">" ;
+cfg template_argument :=  id_expression ;
+reg limit := fix(id_expression, 7);
+assert hampiStringVar in limit;

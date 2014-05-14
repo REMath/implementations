@@ -1,0 +1,8 @@
+var v:7;
+cfg S := (Letter)+;
+cfg Letter := ['a'-'z'];
+reg Sbound := fix(S, 7);
+
+assert v in Sbound;
+assert v contains "fred";
+assert v contains "woof";

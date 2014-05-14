@@ -1,0 +1,91 @@
+The TYPENAME ::NAME Problem
+---------------------------
+
+2005-08-14
+
+This document explains the precedence and associativity of "::" in
+cc.gr, and the use of explicit precedence("::") annotations.
+
+The scope qualification operator "::" is syntactically ambiguous,
+because it can be used as either unary (::a) or binary (a::b), and
+C++ syntax allows identifiers to be juxtaposed in the declaration
+syntax (e.g. "a b;" declaring 'b' of type 'a').  For example,
+the syntax
+
+  A :: B :: C :: D :: E;
+
+could be parsed as a declaration four different ways, since any of
+the four "::" could be interpreted as being just after the dividing
+point (and hence a unary qualifier).
+
+(You might object that you don't declare qualified names; but you do
+in a 'friend' declaration, out-of-line member definitions, and in a
+few other places, so the parser basically has to assume qualified
+declarators can occur anywhere.  The type checker then deals with the
+ruling out the bad cases.)
+
+I cannot find any place in the standard that justifies this, but
+every C++ compiler I've experimented with regards "::" as binding
+very tightly, such that any occurrence of an identifier followed
+by "::" is always interpreted as an attempt to use the binary "::",
+even when the identifier is not a class or namespace (in/t0565.cc).
+
+Previously, my solution was to use the keep() function to discard
+parsing alternatives that juxtaposed an identifier with unary "::".
+However, this is too late to prevent a multi-yield problem with
+ElaboratedOrSpecifier (in/t0564.cc), and for performance reasons I do
+not want to allow multi-yield there.
+
+So, the new solution is to use precedence and associativity.  I give
+"::" right associativity.  Then, for all all rules involved in
+constructing qualified names (especially sibling rules of rules that
+include the "::" terminal in their RHS), I make sure all rules have
+the precedence of "::" (with an explicit precedence specification
+where necessary).
+
+The usual way this works is, given a nominal scenario:
+
+  (1) PQName -> Identifier            precedence("::")
+  (2) PQName -> Identifier "::" PQName
+
+after the parser sees an identifier, and the lookahead symbol is
+"::", the parser must choose between reducing by rule (1) or
+shifting the "::" in hopes of eventually reducing by rule (2).  As
+these rules will have the same precedence, the right-associativity
+of "::" means to shift, which is the intended resolution.
+
+(I also give "::" high precedence, in hopes of reducing the
+chances of unintended impacts of this change.  It should not cause
+any problems since, indeed, no operator can bind more tightly.)
+
+There are a few places where rules that have siblings containing
+"::" are not explicitly annotated with precedence("::"):
+
+  - IdExpression: not needed, it's above the S/R
+  - ColonColonOpt: not needed, always followed by "new"
+  - NameAfterDot and friends: I think you can't juxtapose after
+    a dot, so the S/R conflict should not arise.
+  - PQTypeName: above S/R (but PQTypeName_ncc is not, and in fact
+    is the rule that was a problem for ElaboratedOrSpecifier)
+  - PQDtorName: similar reasoning as NameAfterDot
+
+Though I'm not 100% sure about the above reasoning, I think that
+leaving out questionable annotations is less risky than adding
+them.
+
+
+----------
+2005-08-16
+
+I just now discovered that the prec/assoc specification of "::"
+interacts badly with prec/assoc in verifier/annot.gr.  Perhaps
+the solution is to use forbid_next instead of prec/assoc, perhaps
+annot.gr should be changed.  For now I've just hacked it by
+using smbase/codepatch.pl to remove the prec/assoc of "::", as
+the verifier isn't concerned with parsing C++ right now.
+
+This is a perfect example of the potential danger of prec/assoc
+in a modular parser generator, as the spec in cc.gr broke the
+extension in annot.gr.  It would be interesting to consider trying
+to develop a scheme for static conflict resolution that had
+predictable effects across extension modules...

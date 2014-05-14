@@ -1,0 +1,13 @@
+(declare-variable x1 String)
+(declare-variable x2 String)
+(declare-variable y1 String)
+(declare-variable y2 String)
+
+(assert (= (Concat x1 x2) "testhello") )
+(assert (= (Length x1) 1) )
+(assert (= (Concat y1 y2) "testhello") )
+(assert (= (Length y1) 5) )
+
+
+(check-sat)
+(get-model)

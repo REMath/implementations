@@ -1,0 +1,186 @@
+// cdecl2.gr            see license.txt for copyright and terms of use
+// demonstration of resolving C ident/type ambiguity
+// cdecl2 solves the problem using token reclassification (cf. cdecl)
+
+verbatim ParseEnv [
+
+#include "trace.h"         // trace
+#include "locstr.h"        // LocString
+#include "strhash.h"       // StringHash
+#include "objlist.h"       // ObjList
+#include "parssppt.h"      // ParseTreeAndTokens
+
+#define D(msg) \
+  trace("cdecl") << msg << endl
+#define R0 return 0
+
+
+// parsing action state
+class ParseEnv : public UserActions {
+public:
+  StringRef intType;              // "int"
+  ObjList<StringHash> types;      // stack of hashes which identify names of types
+
+public:
+  ParseEnv(StringTable &table);
+  ~ParseEnv();
+
+  void enterScope();
+  void leaveScope();
+  void addType(StringRef type);
+  bool isType(StringRef name);
+
+  // declarations for the generated code
+  #include "cdecl2.gen.h"
+};
+
+
+UserActions *makeUserActions(StringTable &table)
+{
+  return new ParseEnv(table);
+}
+
+ParseEnv::ParseEnv(StringTable &table)
+{
+  intType = table.add("int");
+}
+
+ParseEnv::~ParseEnv()
+{}
+
+
+static char const *identity(void *data)
+{
+  return (char const*)data;
+}
+
+void ParseEnv::enterScope()
+{
+  types.prepend(new StringHash(identity));
+}
+
+void ParseEnv::leaveScope()
+{
+  delete types.removeAt(0);
+}
+
+void ParseEnv::addType(StringRef type)
+{
+  StringHash *h = types.first();
+  if (h->get(type)) {
+    cout << "duplicate entry for " << type << " -- will ignore\n";
+  }
+  else {
+    h->add(type, (void*)type);
+  }
+}
+
+bool ParseEnv::isType(StringRef name)
+{
+  if (name == intType) {
+    return true;
+  }
+
+  FOREACH_OBJLIST(StringHash, types, iter) {
+    if (iter.data()->get(name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+] // end verbatim
+
+
+terminals {
+  // grab the lexer's token list
+  include("cc.tok")
+
+  token[StringRef] L2_NAME {
+    // every time I pull an L2_NAME from the lexer, this code is
+    // run to possibly reclassify the token kind; the semantic
+    // value is passed (and ParseEnv is available as context), but
+    // the same semantic value will be used
+    classify(s) [
+      if (isType(s)) {
+        return L2_TYPE_NAME;
+      }
+      else {
+        return L2_VARIABLE_NAME;
+      }
+    ]
+  }
+
+  token[StringRef] L2_TYPE_NAME;
+  token[StringRef] L2_VARIABLE_NAME;
+}
+
+
+nonterm Start -> Toplevel L2_EOF ;
+
+nonterm Toplevel -> EnterScope Stmts LeaveScope ;
+
+// these are placed at strategic points to get scoping right
+nonterm EnterScope -> empty    [
+  D("entering scope"); 
+  enterScope(); 
+  R0;
+]
+
+nonterm LeaveScope -> empty     [
+  D("exiting scope"); 
+  leaveScope();
+  R0;
+]
+
+nonterm Stmts {
+  -> empty         ;
+  -> Stmts Stmt    ;
+}
+
+nonterm[int] Stmt {
+  -> t:TypeName "(" n:VarName ")" ";"   [    // declaration
+       D("declaration of " << n << ", type " << t); R0;
+     ]
+
+  -> f:VarName "(" a:VarName ")" ";"    [    // function call
+       D("call of " << f << " with arg " << a); R0;
+     ]
+
+  -> Typedef ";" ;
+
+  -> "{" EnterScope Stmts LeaveScope "}" ;    // scope
+}
+
+// this has to be pulled out so its reduction occurs before we
+// finish with the terminating semicolon, so the interaction order
+// is correct (if the token that follows the semicolon is a name,
+// it might be the name in this typedef, so we need to update the
+// environment before attempting to classify it)
+nonterm Typedef
+  -> "typedef" t:TypeName n:Name      [    // typedef: introduce type name
+       D("typedef of " << n << " as type " << t);
+       addType(n);
+       R0;
+     ]
+
+nonterm[StringRef] VarName {
+  -> n:L2_VARIABLE_NAME     [ return n; ]
+}
+
+nonterm[StringRef] TypeName {
+  -> n:L2_TYPE_NAME         [ return n; ]
+
+  // this is a little bit of a hack, but in some sense it's valid
+  // to regard the global strings as another stringtable.. of course,
+  // equality won't work, but I don't need it for the moment
+  -> L2_INT                 [ return intType; ]
+}
+
+// having classified these apart, there are some situations where
+// the name is being defined, so it doesn't matter what kind of
+// thing it might have been before
+nonterm[StringRef] Name {
+  -> n:L2_VARIABLE_NAME     [ return n; ]
+  -> n:L2_TYPE_NAME         [ return n; ]
+}

@@ -1,0 +1,28 @@
+// ite.gr.in      -*- c++ -*-
+// test if-then-else ambiguity (er, lookahead actually)
+
+terminals {
+  i  // if
+  t  // then
+  e  // else
+  x  // variable, x
+  p  // +
+  k  // sKip
+  c  // collect? do something with an expression
+}
+
+nonterm Stmt {
+  -> i Exp t Stmt;
+  -> i Exp t Stmt e Stmt;
+  -> k;
+  -> c Exp;
+}
+
+nonterm Exp {
+  -> x;
+  -> Exp p x;
+}
+
+
+
+

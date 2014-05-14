@@ -1,0 +1,5 @@
+var v : 1 .. 1000 ;
+
+assert v contains "abc";
+assert v contains "cde";
+assert v contains "deg";

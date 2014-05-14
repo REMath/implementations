@@ -1,0 +1,123 @@
+#!/bin/sh
+# use test-parse-buildlog to test Elsa's ability to parse several
+# large packages
+
+# This script really only will work on my machine ....
+
+if [ "$1" = "" ]; then
+  exec $0 smbase ast elkhound elsa doxygen pine e2fsprogs \
+          binutils ddd qt mozilla debian/c debian/c++ headers
+fi
+
+# the lines
+#      if [ $? = 130 ]; then exit 130; fi
+# are to propagate ctrl-C
+
+while [ "$1" != "" ]; do
+  case $1 in
+    smbase)
+      # 39 modules
+      echo "smbase"
+      ./test-parse-buildlog ../smbase/make.out >smbase.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    ast)
+      # 14 modules
+      echo "ast"
+      ./test-parse-buildlog ../ast/make.out >ast.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    elkhound)
+      # 41 modules
+      echo "elkhound"
+      ./test-parse-buildlog ../elkhound/make.out >elkhound.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    elsa)
+      # 36 modules
+      echo "elsa"
+      ./test-parse-buildlog make.out >elsa.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    doxygen)
+      # 80 modules
+      echo "Doxygen 1.2.14"
+      ./test-parse-buildlog $HOME/bld/doxygen-1.2.14/make.out >doxygen.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+        
+    pine)
+      # 80 modules
+      echo "Pine 4.44"
+      ./test-parse-buildlog ~/bld/pine4.44/build.out >pine.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    e2fsprogs)
+      # 184 modules
+      echo "e2fsprogs-1.36"
+      ./test-parse-manyfiles < ~/preproc/scott/bld/e2fsprogs-1.36/build1 >e2fsprogs.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    binutils)
+      # 190 modules
+      echo "Binutils 2.14"
+      ./test-parse-buildlog ~/bld/binutils-2.14/make.out >binutils.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    ddd)
+      # 259 modules
+      echo "DDD 3.3.1"
+      ./test-parse-buildlog $HOME/bld/ddd-3.3.1/make.out >ddd.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    qt)
+      # 710 modules
+      echo "Qt 2.3.2"
+      ./test-parse-buildlog /opt/qt-2.3.2/make.out >qt.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    mozilla)
+      # 2404 modules
+      echo "Mozilla 1.0"
+      ./test-parse-buildlog $HOME/bld/mozilla-1.0/make.out >moz.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    debian/c)
+      echo "debian/c"
+      KEEP_GOING=2 ./test-parse -tr gnu_c89 bigin/debian/c89/*.gz >debian.c.parse.out
+      KEEP_GOING=2 ./test-parse -tr c_lang bigin/debian/c/*.gz >>debian.c.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    debian/c++)
+      echo "debian/c++"
+      KEEP_GOING=2 ./test-parse bigin/debian/c++/*.gz >>debian.c++.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    headers)
+      echo "headers (2nd-to-last is valarray)"
+      KEEP_GOING=2 ./test-parse bigin/headers/*.gz >>headers.parse.out
+      if [ $? = 130 ]; then exit 130; fi
+      ;;
+
+    *)
+      echo "undefined big test: $1"
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+
+# EOF

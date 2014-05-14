@@ -1,0 +1,41 @@
+// ext1.ast
+// an extension module for example.ast
+
+// this should go before any classes in the generated file
+verbatim {
+  // first verbatim in ext1.ast
+}
+
+// another visitor?  now it's an error
+//option visitor ExtVisitor;
+
+class Node (int z) {
+  public int an_annotation;
+}
+
+class Super {
+  -> Sub3(int q);
+  -> Sub4 {
+       public int r;
+     }
+}
+
+class NodeList {
+  -> ASubclass(int x);
+}
+
+// you can extend a given nonterminal several times
+// in an extension file
+class NodeList {
+  -> AnotherSubclass(int x);
+}
+
+verbatim {
+  // verbatim before ANewClass
+}
+
+new class ANewClass(int foo);
+
+
+// extension of an enum
+enum AnEnum { AE_FOUR };

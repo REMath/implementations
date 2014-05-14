@@ -1,0 +1,71 @@
+#!/usr/bin/perl -w
+# read a list of filenames from stdin, one per line, and try
+# to parse them with Elsa
+
+use strict 'subs';
+  
+$SIG{INT} = \&sigIntHandler;
+
+$lineNum = 0;
+$files = 0;
+$success = 0;
+$failures = 0;
+
+
+while (defined($line = <STDIN>)) {
+  chomp($line);
+  $lineNum++;
+
+  print("----------------------\n");
+  print("fname: $line\n");
+
+  if ($line !~ m/\.gz$/) {
+    die("line $lineNum: expected name ending in .gz\n");
+  }
+
+  if (0 != runecho("gunzip -c $line >tmp.i")) {
+    die("gunzip failed\n");
+  }
+
+  $files++;
+  if (0 != runecho("./ccparse -tr c_lang tmp.i")) {
+    print("failed to parse $line\n");
+    print STDERR ("e");
+    $failures++;
+  }
+  else {
+    print STDERR (".");
+    $success++;
+  }
+}
+
+bail();
+exit(0);
+
+sub bail {
+  print("----------------------\n");
+  print("total files: $files\n");
+  print("  succeeded: $success\n");
+  print("     failed: $failures\n");
+
+  print STDERR ("($failures failures)\n");
+}
+
+sub sigIntHandler {
+  bail();
+  exit(130);
+}
+
+sub runecho {
+  print(@_, "\n");
+  
+  my $code = system(@_);
+  if ($code == 2) {
+    # ctrl-c
+    sigIntHandler();
+  }
+  
+  return $code;
+}
+
+# EOF

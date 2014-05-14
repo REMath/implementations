@@ -1,0 +1,9 @@
+Module parameters;
+[SET : Type
+  = Type];
+[TYPE : Type
+  = Type];
+[TYPE_minus1 : TYPE
+  = Type];
+[TYPE_minus2 : TYPE_minus1
+  = Type];

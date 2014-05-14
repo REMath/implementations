@@ -1,0 +1,185 @@
+%***** Non-String CSTR ==================
+(declare-variable  v_9724a98        bool)
+(declare-variable  v_9724b34        bool)
+(declare-variable  v_9724d34        bool)
+(declare-variable  v_9724f5c        bool)
+(declare-variable  v_9724ff0        bool)
+(declare-variable  v_97279d0        bool)
+(declare-variable  v_972ab14        bool)
+(declare-variable  v_972ad6c        bool)
+(declare-variable  v_972b058        bool)
+(declare-variable  v_972b0e8        bool)
+(declare-variable  v_972b3d0        bool)
+(declare-variable  v_972b460        bool)
+(declare-variable  v_972b540        bool)
+(declare-variable  v_convertBool75  bool)
+(declare-variable  v_convertBool76  bool)
+(declare-variable  v_convertBool77  bool)
+(declare-variable  v_9727be4 String)
+(declare-variable  v_972aab4 String)
+%------------- Taint declare -------------
+(declare-variable  T_local__POST                       (_ BitVec 1) )
+(declare-variable  T_local__POST_i_folder              (_ BitVec 1) )
+(declare-variable  T_local__POST_i_name                (_ BitVec 1) )
+(declare-variable  T_local__POST_i_save_as_request     (_ BitVec 1) )
+(declare-variable  T_local__POST_i_text                (_ BitVec 1) )
+(declare-variable  T_v_9724ebc   (_ BitVec 1) )
+(declare-variable  T_v_9729454   (_ BitVec 1) )
+(declare-variable  T_v_9729578   (_ BitVec 1) )
+(declare-variable  T_v_9729654   (_ BitVec 1) )
+(declare-variable  T_v_97296f4   (_ BitVec 1) )
+(declare-variable  T_v_972a86c   (_ BitVec 1) )
+(declare-variable  T_v_972a900   (_ BitVec 1) )
+(declare-variable  T_v_972a990   (_ BitVec 1) )
+(declare-variable  T_v_972ac9c   (_ BitVec 1) )
+(declare-variable  T_v_972afc4   (_ BitVec 1) )
+(declare-variable  T_v_972b33c   (_ BitVec 1) )
+%-------------------------------------------------------------------
+% ASSERT( v_9724b34 <=> v_convertBool75 OR v_9724a98 );
+(assert (= v_9724b34 (or v_convertBool75 v_9724a98) ) )
+% ASSERT( v_9724a98 <=> NOT v_convertBool76 );
+(assert (= v_9724a98 (not v_convertBool76) ) )
+% ASSERT( v_9724d34 <=> TRUE );
+(assert (= v_9724d34 true ) )
+% ASSERT( v_9724ff0 <=> NOT v_9724f5c );
+(assert (= v_9724ff0 (not v_9724f5c) ) )
+% ASSERT( T_local__POST_i_name = T_local__POST );
+(assert (= T_local__POST_i_name T_local__POST ) )
+% ASSERT( T_v_9724ebc = T_local__POST_i_name );
+(assert (= T_v_9724ebc T_local__POST_i_name ) )
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+(assert (= T_local__POST #b1 ) )
+% ASSERT( v_972ad6c <=> v_972aab4 = 0bin00000000000000000000000000000000 );
+(assert (= v_972ad6c (= v_972aab4 "") ) )
+% ASSERT( T_v_972a990 = T_v_972a900);
+(assert (= T_v_972a990 T_v_972a900 ) )
+% ASSERT( T_v_972a900 = T_v_972a86c);
+(assert (= T_v_972a900 T_v_972a86c ) )
+% ASSERT( T_local__POST_i_name = T_local__POST );
+(assert (= T_local__POST_i_name T_local__POST ) )
+% ASSERT( T_v_972a86c = T_local__POST_i_name );
+(assert (= T_v_972a86c T_local__POST_i_name ) )
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+(assert (= T_local__POST #b1 ) )
+% ASSERT( v_972b0e8 <=> NOT v_972b058 );
+(assert (= v_972b0e8 (not v_972b058) ) )
+% ASSERT( T_local__POST_i_folder = T_local__POST );
+(assert (= T_local__POST_i_folder T_local__POST ) )
+% ASSERT( T_v_972afc4 = T_local__POST_i_folder );
+(assert (= T_v_972afc4 T_local__POST_i_folder ) )
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+(assert (= T_local__POST #b1 ) )
+% ASSERT( v_972b460 <=> NOT v_972b3d0 );
+(assert (= v_972b460 (not v_972b3d0) ) )
+% ASSERT( v_972b3d0 <=> IF v_convertBool77 THEN TRUE ELSE FALSE ENDIF);
+(assert (= v_972b3d0 (ite v_convertBool77 true false) ) )
+% ASSERT( T_local__POST_i_save_as_request = T_local__POST );
+(assert (= T_local__POST_i_save_as_request T_local__POST ) )
+% ASSERT( T_v_972b33c = T_local__POST_i_save_as_request );
+(assert (= T_v_972b33c T_local__POST_i_save_as_request ) )
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+(assert (= T_local__POST #b1 ) )
+% ASSERT( v_97279d0 <=> NOT v_972b540 );
+(assert (= v_97279d0 (not v_972b540) ) )
+% ASSERT( T_v_97296f4 = T_v_9729578 | T_v_9729654);
+(assert (= T_v_97296f4 (bvor T_v_9729578 T_v_9729654) ) )
+% ASSERT( T_local__POST_i_folder = T_local__POST );
+(assert (= T_local__POST_i_folder T_local__POST ) )
+% ASSERT( T_v_9729454 = T_local__POST_i_folder );
+(assert (= T_v_9729454 T_local__POST_i_folder ) )
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+(assert (= T_local__POST #b1 ) )
+% ASSERT( T_local__POST_i_name = T_local__POST );
+(assert (= T_local__POST_i_name T_local__POST ) )
+% ASSERT( T_v_9729654 = T_local__POST_i_name );
+(assert (= T_v_9729654 T_local__POST_i_name ) )
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+(assert (= T_local__POST #b1 ) )
+% ASSERT( v_972ab14 <=> NOT (v_9727be4 = 0bin00000000000000000000000000000000) );
+(assert (= v_972ab14 (not (= v_9727be4 "") ) ) )
+% ASSERT( T_v_972ac9c = 0bin00000000000000000000000000000001 );
+(assert (= T_v_972ac9c #b1 ) )
+% ASSERT( T_local__POST_i_text = T_local__POST );
+(assert (= T_local__POST_i_text T_local__POST ) )
+% ASSERT( T_v_972ac9c = T_local__POST_i_text );
+(assert (= T_v_972ac9c T_local__POST_i_text ) )
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+(assert (= T_local__POST #b1 ) )
+% %---------- Reachable condition ----------
+% ASSERT( NOT v_9724b34 );
+(assert (not v_9724b34) )
+% ASSERT( v_9724d34 );
+(assert v_9724d34 )
+% ASSERT( NOT v_9724ff0 );
+(assert (not v_9724ff0) )
+% ASSERT( NOT v_97279d0 );
+(assert (not v_97279d0) )
+% ASSERT( v_972ab14 );
+(assert v_972ab14 )
+% ASSERT( NOT v_972ad6c );
+(assert (not v_972ad6c) )
+% ASSERT( NOT v_972b0e8 );
+(assert (not v_972b0e8) )
+% ASSERT( NOT v_972b460 );
+(assert (not v_972b460) )
+%-------------------------------------------------------------------
+(declare-variable  v_9724978  String)
+(declare-variable  v_9724a08  String)
+(declare-variable  v_9724ebc  String)
+(declare-variable  local__POST_i_name  String)
+(declare-variable  v_972a990  String)
+(declare-variable  v_972a900  String)
+(declare-variable  v_972a86c  String)
+(declare-variable  v_972afc4  String)
+(declare-variable  local__POST_i_folder  String)
+(declare-variable  v_972b33c  String)
+(declare-variable  local__POST_i_save_as_request  String)
+(declare-variable  v_97296f4  String)
+(declare-variable  v_9729454  String)
+(declare-variable  v_9729654  String)
+(declare-variable  v_972ac9c  String)
+(declare-variable  local__POST_i_text  String)
+
+
+% v_convertBool75 := v_9724978 != "CONFIG_SYS_VIEW_ONLY"
+(assert (= v_convertBool75 (not (= v_9724978 "CONFIG_SYS_VIEW_ONLY") ) ) )
+% v_9724978 := "CONFIG_SYS_VIEW_ONLY"
+(assert (= v_9724978 "CONFIG_SYS_VIEW_ONLY") )
+% v_convertBool76 := v_9724a08 == "CONFIG_OPTIONS_EDITABLE"
+(assert (= v_convertBool76 (= v_9724a08 "CONFIG_OPTIONS_EDITABLE") ) )
+% v_9724a08 := "CONFIG_OPTIONS_EDITABLE"
+(assert (= v_9724a08 "CONFIG_OPTIONS_EDITABLE") )
+% local__POST_i_name := zYh_aNyStR
+% v_9724ebc := local__POST_i_name
+(assert (= v_9724ebc local__POST_i_name) )
+% v_972a990 := v_972a900
+(assert (= v_972a990 v_972a900) )
+% v_972a900 := v_972a86c
+(assert (= v_972a900 v_972a86c) )
+% v_972a86c := local__POST_i_name
+(assert (= v_972a86c local__POST_i_name) )
+% local__POST_i_folder := zYh_aNyStR
+% v_972afc4 := local__POST_i_folder
+(assert (= v_972afc4 local__POST_i_folder) )
+% v_convertBool77 := v_972b33c != ""
+(assert (= v_convertBool77 (not (= v_972b33c "") ) ) )
+% local__POST_i_save_as_request := zYh_aNyStR
+% v_972b33c := local__POST_i_save_as_request
+(assert (= v_972b33c local__POST_i_save_as_request) )
+% v_97296f4 := v_9729654
+(assert (= v_97296f4 v_9729654) )
+% v_9729454 := local__POST_i_folder
+(assert (= v_9729454 local__POST_i_folder) )
+% v_9729654 := local__POST_i_name
+(assert (= v_9729654 local__POST_i_name) )
+% v_9727be4 := v_97296f4
+(assert (= v_9727be4 v_97296f4) )
+% local__POST_i_text := zYh_aNyStR
+% v_972ac9c := local__POST_i_text
+(assert (= v_972ac9c local__POST_i_text) )
+
+
+%===================================================================
+
+(check-sat) 
+(get-model)

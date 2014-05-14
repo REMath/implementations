@@ -1,0 +1,39 @@
+// testRR.gr.in   -*- c++ -*-
+// test reduce/reduce behavior
+
+// S -> a B1 c d
+// S -> a B2 c e
+// B1 -> b
+// B2 -> b
+
+option useGCDefaults;
+
+terminals {
+  a
+  b
+  c
+  d
+  e
+  
+  precedence {
+    // assign both 'B' productions the same precedence; there was a
+    // bug in Elkhound that would cause it to drop one of the
+    // productions in this case (now it is fixed, as this test
+    // confirms)
+    prec  200 b;
+  }
+}
+
+nonterm S {
+  -> a B1 c d ;
+  -> a B2 c e ;
+}
+
+nonterm B1 {
+  -> b ;
+}
+
+nonterm B2 {
+  -> b ;
+}
+

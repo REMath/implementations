@@ -1,0 +1,7 @@
+//created from CFGAnalyzer file pascal_begin.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg compound_stmt :=  "(" statements ")" ;
+cfg statements :=  statements ";" statement | statement ;
+cfg statement :=  | compound_stmt ;
+reg limit := fix(compound_stmt, 7);
+assert hampiStringVar in limit;

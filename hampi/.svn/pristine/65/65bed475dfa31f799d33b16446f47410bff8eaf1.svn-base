@@ -1,0 +1,4 @@
+S : A B ;
+A : "a" A B C ;
+B : "b" B A C ;
+C : ;

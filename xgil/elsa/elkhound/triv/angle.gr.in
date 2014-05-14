@@ -1,0 +1,51 @@
+// angle.gr.in  -*- c++ -*-
+// abstracted problem with templates and angle brackets
+
+terminals {
+  60 : LANGLE "<";
+  61 : EQUAL  "=";
+  62 : RANGLE ">";
+  38 : AND    "&";
+  49 : ONE    "1";
+  59 : SEMI   ";";
+  40 : LPAREN "(";
+  41 : RPAREN ")";
+  43 : PLUS   "+";
+
+  precedence {
+    left 100 "+";
+    //left  80 ">";
+    left  60 "&";
+  }
+}
+
+// declaration
+nonterm D {
+  // main rule of interest
+  -> "<" e:E_low ">" ";";
+
+  // just to test parsing of exprs in another context
+  -> "=" e:E_low ";";
+}
+
+// exprs with higher precedence than ">"
+nonterm E_high {
+  -> "1";
+  -> e1:E_high "+" e2:E_high;
+  -> "(" e:E_low ")";
+}
+
+// exprs with ">"
+nonterm E_mid {
+  -> e:E_high;
+  -> e1:E_mid ">" e2:E_high;
+  -> e1:E_mid "<" e2:E_high;
+}
+
+// exprs with lower precedence than ">"
+nonterm E_low {
+  -> e:E_mid;
+  -> e1:E_low "&" e2:E_mid;
+}
+
+

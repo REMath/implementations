@@ -1,0 +1,10 @@
+#!/bin/sh
+# hack for in/t0151.cc
+
+if ./ccparse "$@" | grep -v 'left side of ->' | grep 'error:'; then
+  # an error remained after removing the known ones
+  false
+else
+  true
+fi
+

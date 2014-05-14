@@ -1,0 +1,6 @@
+var v:10;
+reg sigmaStar := star(['a'-'z']);
+reg r := concat(sigmaStar, "x", star(['a'-'z']), or("foo", "dogg"));
+assert v in r;
+assert v contains "fred";
+assert v contains "reddog";

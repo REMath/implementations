@@ -1,0 +1,52 @@
+/* UNAMBIGUOUS
+
+Grammar 'java_arrays' (Java arrays) taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+in turn inspired by:
+
+[ http://java.sun.com/docs/books/jls/first_edition/html/19.doc.html#44543 ]
+
+tokens = {
+'[', ']', ';', '=',
+'n'=Name
+'v'=VariableDeclarators
+'e'=Expression
+'a'=AssignmentExpression
+}
+*/
+
+
+Type
+: "n" ;
+: ReferenceType ;
+
+ReferenceType
+: ArrayType ;
+
+ArrayType
+: Type "[" "]" ;
+
+BlockStatement
+: Assignment ;
+: LocalVariableDeclarationStatement ;
+
+LocalVariableDeclarationStatement
+: LocalVariableDeclaration ";" ;
+
+LocalVariableDeclaration
+: Type "v" ;
+
+ArrayAccess
+: "n" "[" "e" "]" ;
+
+Assignment
+: LeftHandSide AssignmentOperator "a" ;
+
+LeftHandSide
+: ArrayAccess ;
+
+AssignmentOperator
+: "=" ;

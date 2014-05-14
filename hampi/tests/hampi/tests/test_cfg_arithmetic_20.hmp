@@ -1,0 +1,9 @@
+//created from CFGAnalyzer file arithmetic.cfg (see there for origin info)
+var hampiStringVar : 20;
+cfg E :=  E "+" E | E "*" E | "(" E ")" | Z ;
+cfg Z :=  "0" | N V ;
+cfg U :=  "0" | N ;
+cfg N :=  "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+cfg V :=  U V | ;
+reg limit := fix(E, 20);
+assert hampiStringVar in limit;

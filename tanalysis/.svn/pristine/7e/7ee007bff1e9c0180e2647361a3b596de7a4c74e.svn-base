@@ -1,0 +1,7 @@
+Parsing
+[preprocessing] running gcc -C -E -I.   ftpls/strcmp_bad.c
+[preprocessing] running gcc -C -E -I.   stubs.c
+Cleaning unused parts
+Symbolic link
+Starting semantical analysis
+Analyzing results for function main

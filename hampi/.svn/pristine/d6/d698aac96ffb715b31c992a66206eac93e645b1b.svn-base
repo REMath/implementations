@@ -1,0 +1,25 @@
+/*CFG Analyzer, version 03/12/2007
+
+The intersection of L(G1) ... L(G2) is empty when restricted  to words of length k with 5 <= k <= 5.
+*/
+var hampiStringVar : 5;
+cfg S0 :=  A0 ;
+cfg A0 :=  B0 C0 | B0 ;
+cfg B0 :=  "b" ;
+cfg C0 :=  | "c" ;
+reg limit0 := fix(S0, 5);
+assert hampiStringVar in limit0;
+cfg Type1 :=  TypeName1 ;
+cfg TypeName1 :=  "i" | PackageName1 "." "i" ;
+cfg PackageName1 :=  "i" | PackageName1 "." "i" ;
+cfg MethodName1 :=  "i" | AmbiguousName1 "." "i" ;
+cfg AmbiguousName1 :=  "i" | AmbiguousName1 "." "i" ;
+cfg BlockStatement1 :=  LocalVariableDeclarationStatement1 | Statement1 ;
+cfg Statement1 :=  MethodInvocation1 ;
+cfg LocalVariableDeclarationStatement1 :=  Type1 VariableDeclarators1 ";" ;
+cfg VariableDeclarators1 :=  VariableDeclarator1 | VariableDeclarators1 "," VariableDeclarator1 ;
+cfg VariableDeclarator1 :=  VariableDeclaratorId1 | VariableDeclaratorId1 "=" "v" ;
+cfg VariableDeclaratorId1 :=  "i" | VariableDeclaratorId1 "[" "]" ;
+cfg MethodInvocation1 :=  MethodName1 "(" "a" ")" ;
+reg limit1 := fix(Type1, 5);
+assert hampiStringVar in limit1;

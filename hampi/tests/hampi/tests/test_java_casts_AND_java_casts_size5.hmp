@@ -1,0 +1,14 @@
+/*CFG Analyzer, version 03/12/2007
+
+The intersection of L(G1) ... L(G2) is empty when restricted  to words of length k with 5 <= k <= 5.
+*/
+var hampiStringVar : 5;
+cfg PrimitiveType :=  "n" ;
+cfg Expression :=  UnaryExpression ;
+cfg UnaryExpression :=  UnaryExpressionNotPlusMinus ;
+cfg UnaryExpressionNotPlusMinus :=  PostfixExpression | CastExpression ;
+cfg PostfixExpression :=  Primary | "n" ;
+cfg Primary :=  "(" Expression ")" ;
+cfg CastExpression :=  "(" PrimitiveType ")" UnaryExpression ;
+reg limit := fix(PrimitiveType, 5);
+assert hampiStringVar in limit;

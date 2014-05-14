@@ -1,0 +1,10 @@
+//created from CFGAnalyzer file 03_09_027.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg lines :=  fred ;
+cfg fred :=  declaration "f" declare_length ;
+cfg declare_length :=  "n" "c" ;
+cfg declaration :=  label_identifier_seq | "s" "f" label_identifier_seq ;
+cfg label_identifier :=  "q" "i" "q" ;
+cfg label_identifier_seq :=  label_identifier | label_identifier_seq "f" label_identifier ;
+reg limit := fix(lines, 7);
+assert hampiStringVar in limit;

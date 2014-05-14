@@ -1,0 +1,28 @@
+#!/usr/bin/perl -w
+use strict;
+
+# filter out the source locations from the printAST
+while(<STDIN>) {
+  next if /^\s*loc =/;
+  next if /^.*:\d+:\d+: warning:/; # xml de-serialization does not reproduce the warnings
+  next if /^\s*parse=.* tcheck=.* integ=.* elab=.*/;
+  next if /^\s*typechecking results:/;
+  next if /^\s*errors:/;
+  next if /^\s*succ=/;
+  next if /^\s*warnings:/;
+  next if /^\s*no-typecheck/;
+  next if /^\s*no-elaborate/;
+
+  # with addresses
+  s|\b\S+\.cc:\d+:\d+ \(0x.*\)||g;
+  s|<init>:\d+:\d+ \(0x.*\)||g;
+  s|<noloc>:\d+:\d+ \(0x.*\)||g;
+  # without
+  s|\b\S+\.cc:\d+:\d+||g;
+  s|<init>:\d+:\d+||g;
+  s|<noloc>:\d+:\d+||g;
+  # well, we filter other junk too
+  s| \(\d+ overloadings?\)$||;
+
+  print;
+}

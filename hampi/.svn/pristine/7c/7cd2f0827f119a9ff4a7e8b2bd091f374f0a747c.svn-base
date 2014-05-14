@@ -1,0 +1,28 @@
+/* AMBIGUOUS
+
+Grammar '03-01-011' (C# syntax) taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+tokens = { '[', ']', 'o'=OBJECT, 's'=STRING }
+*/
+
+
+ArrayType
+: ReferenceType RankSpecifiers ;
+
+ReferenceType
+: ClassType ;
+: ArrayType ;
+
+ClassType
+: "o" ;
+: "s" ;
+
+RankSpecifiers
+: RankSpecifier ;
+: RankSpecifiers RankSpecifier ;
+
+RankSpecifier
+: "[" "]" ;

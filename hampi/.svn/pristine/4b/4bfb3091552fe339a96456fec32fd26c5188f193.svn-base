@@ -1,0 +1,4 @@
+//this is badly formed there are no asserts
+var x:2;
+reg r := "foo";
+reg r2 := fix(grammar, 6);

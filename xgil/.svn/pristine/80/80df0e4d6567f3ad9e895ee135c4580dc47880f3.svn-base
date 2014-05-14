@@ -1,0 +1,623 @@
+Date: 8/10/03
+Author: Scott McPeak
+
+
+             Convertibility and Operator Overloading
+
+
+--- Introduction ---
+
+This is a characterization of (standard) convertibility relation (C++
+standard, section 4), and its role in operator overload analysis. 
+The first part builds a partial order on types, R, to describe
+convertibility.  The second part uses R to assist in the
+implementation of operator overload resolution.
+
+(I refrain from saying "subtyping" here because in C++ subtyping is
+context-dependent; convertibility is a particular form of subtyping.)
+
+What we want is a (reflexive) partial order:
+  - reflexive         R(a,a)
+  - transitive        R(a,b) & R(b,c) => R(a,c)
+  - anti-symmetric    R(a,b) => not R(b,a)
+
+In this context, R(a,b) means a is convertible to b.
+
+The reason we want a partial order is it will help simplify the
+analysis.  Among other things, transitivity is useful when trying to
+select a "best" candidate from an infinite set, and anti-symmetry
+avoids ambiguity through circularity (more on this below).
+
+In what follows, I make reference to the C++ standard:
+  International Organization for Standardization.
+  ISO/IEC 14882:1998: Programming languages -- C++.
+  International Organization for Standardization, Geneva,
+  Switzerland, September 1998.
+
+
+--- Atomic Types ---
+
+The atomic types are:
+  - simple types
+    - char, unsigned char, signed char, wchar_t
+    - bool
+    - short int, unsigned short int
+    - int, unsigned int
+    - long int, unsigned long int
+    - long long int, unsigned long long int (GNU, C99)
+    - float, double, long double
+    - void
+  - bitfields
+  - enums
+  - classes (by which I mean class, struct, or union)
+
+First, unify all the arithmetic types into a single representative,
+AR.  AR includes chars, bool, ints, floats, and bitfields.  All the
+things inside AR are inter-convertible, so would defy convertibility
+being a partial order.  Note that I do *not* unify them when under
+a pointer constructor, e.g. int* != float*.
+
+Nothing is convertible to or from void.  But in this context, nothing
+has type void anyway, so it doesn't much matter.
+
+Every enum type is convertible to AR, and to itself.  Nothing is
+convertible to the enum besides itself.
+
+Every class type is convertible only to and from itself.
+
+Thus, the partial order on atomic types looks like this:
+
+           AR
+        /  |      \        class1 class2 ... classN   void
+   enum1 enum2 ... enumN
+
+(Note that inheritance isn't relevant until we start talking about
+pointers or references.)
+
+
+--- Constructed Types ---
+
+The constructed types are:
+  - pointer
+  - function
+  - array
+  - pointer to member
+  - reference
+
+While there is a standard conversion from function types to
+pointer to function types, we can eliminate that conversion from
+consideration by:
+  - normalizing all parameters to accept pointers to function
+    rather than function
+  - noting that conversion operators cannot yield functions
+    (12.3.2 paragraph 4)
+
+Therefore, we can regard each function type as only convertible
+to and from itself.
+
+Similarly, array types can be normalized out of parameters, and
+cannot be returned from conversion operators, and so are isolated.
+
+
+--- Pointers ---
+
+Two things factor into pointer convertibility: inheritance, and
+cv-qualification.
+
+Inheritance lets C* convert to P* when C is a child of P.  (It does
+not matter whether P is private or ambiguous; those concerns come
+after all decisions regarding convertibility and overloading.)
+
+cv-qualification lets const and volatile be added anywhere with
+a pointer type, provided that the *resulting* type has 'const'
+at all levels above the lowest changed qualifier.  For example,
+
+  int *                      ->  int const *
+  int volatile *             ->  int volatile *
+  int **                     ->  int const * const volatile *
+  int **                     ->  int volatile * const *
+  int ****                   ->  int volatile * const * const * const *
+
+but not
+
+  int **                     ->  int const **
+
+These two combine, but inheritance only works when there is exactly
+one level of pointer. For example
+
+  C *                        -> P const *
+  C const *                  -> P const volatile *
+
+but not
+
+  C **                       -> P **
+
+or even
+
+  C **                       -> P const * const *
+
+even though this last example would not violate soundness of the type
+system, were it allowed in the language and given the obvious
+semantics.  (Perhaps a design oversight, or maybe just an intentional
+simplification of an already complex language.)
+
+The order induced by the conversion is straightforward.  For one-level
+pointers, it is the product of the inheritance order and the cv
+subset lattice:
+
+  R(A cv *, B cv' *) iff
+    A inherits from B and
+    cv is a subset of cv'
+
+For two- or more level pointers, it's the union of all cartesian products
+of the cv subset lattice, plus the restriction ($) about adding const
+above changed qualifiers:
+
+  R(T cv1 * cv2 * ... cvN *, T cv1' * cv2' * ... cvN' *) iff
+    cv1 is a subset of cv1' and
+    cv2 is a subset of cv2' and
+      ...
+    cvN is a subset of cvN'
+  and
+    for all I in 1..N,                           ($)
+      if cvI != cvI', then
+        for all J in I+1..N,
+          cvJ' contains const
+
+Ignoring the restriction ($), we have the union of products of partial
+orders, and the sets of objects they relate are disjoint, so the
+result is also a partial order.  The effect of ($) is to make the
+relation smaller, but it won't break transitivity anywhere (it
+monotonically adds const), and reflexivity and anti-symmetry are
+obviously preserved.
+
+Finally (4.10 para 2), for any T, R(T cv *, void cv *) (i.e., any
+pointer can be converted to a void pointer).  This doesn't
+compromise the partial order; it's a one-way trip to void-land.
+
+Also note that pointers cannot convert to or from any of the atomic
+types.  (TODO: What about convertibility from the null literal?  I
+probably need to treat that like a class with conversions to int and
+T* (for any T), though Elsa at the moment does not.  Hmm...)
+
+
+--- Pointers to members ---
+
+Pointers to members behave very much like pointers, except the
+order induced by inheritance is opposite what it is for pointers:
+T P::* (pointer to member of P with type T) can convert to T C::*,
+when C is a child of P.
+
+The interaction with the cv-lattice is analogous to the pointer
+case.  Furthermore, types constructed from a mix of pointer and
+pointer to member also have this analagous behavior.  For example,
+
+  int C::*                   ->  int const C::*
+  int C::* D::*              ->  int const C::* const D::*
+  int C::* *                 ->  int volatile C::* const *
+  int * C::* * D::*          ->  int volatile * const C::* const * const D::*
+
+For one level pointer to member, we have the order:
+
+  R(T cv A::*, T cv' B::*) iff
+    B inherits from A and            // reversed from pointer case
+    cv is a subset of cv'
+
+and for multi-level and mixed we have:
+
+  R(T cv1 P1 cv2 P2 ... cvN PN, T cv1' P1 cv2' P2 ... * cvN' PN) iff
+    cv1 is a subset of cv1' and
+    cv2 is a subset of cv2' and
+      ...
+    cvN is a subset of cvN'
+  and
+    Every Pi is either * (ordinary pointer) or C::* (pointer to
+    member) for some class C (not necessarily the same class for
+    every i).
+
+(This order includes the order described above for multi-level
+ordinary pointers.)
+
+Again, it's clear that we have a partial order.
+
+
+--- References ---
+
+References act like ordinary pointers.  The order on references is
+obtained from the order on pointers by substituting the word
+"reference" for "pointer" when "pointer" is the topmost type
+constructor.  For example:
+
+  int &                      ->  int const &
+  int volatile &             ->  int volatile &
+  int *&                     ->  int const * const &
+  int *&                     ->  int volatile * const &
+  int ***&                   ->  int volatile * const * const * const &
+  C &                        ->  P const &
+
+There's no conversion to 'void &', however.
+
+(TODO: I'm not 100% sure about this, but it's what my implementation
+does for now.)
+
+
+--- Order on conversions ---
+
+Now, the above partial order on types is a key component to the
+analysis, but is not enough.  The rules for overload resolution do not
+talk about comparing *types*, but rather comparing *conversions*
+between types.
+
+For example, consider 13.3.3.2, paragraph 3 (excerpt):
+
+  "Standard conversion sequence S1 is a better conversion sequence than
+  S2 if ...  S1 and S2 differ only in their qualification conversion and
+  yield similar types T1 and T2 (4.4), respectively, and the
+  cv-qualification signature of type T1 is a proper subset of the
+  cv-qualification signature of T2".
+
+What we need is an order on conversions that takes advantage of
+the order on types.  Luckily, the relation S appears to be equal
+to the order given in 13.3.3.2, paragraphs 3 and 4:
+
+  S("A->B", "A->C") iff R(B,C)                   ($$)
+
+That is, "A->B" (the standard conversion from A to B) is better than
+"A->C" if and only if B is convertible to C (using the convertibility
+relation R defined above, where the atomic types are unified, etc.).
+For the excerpt quoted, the order is the same: that induced by the cv
+subset lattice.  (Technical point: I want S to be nonreflexive, so
+I really mean the nonreflexive version of R.)
+
+Now, proving this for all types A, B and C requires a detailed
+analysis of the specific rules provided in 13.3.3.2.  I think it's
+right, but I'm not completely sure.  I haven't so far been able to
+adequately formalize those rules in a way that would allow a formal
+proof (not that I've tried much).  In any case, it's close enough that
+I'm confident if a discrepancy is found, it won't be difficult to hack
+around it in the implementation.
+
+Update: Here's one counterexample: If the hierarchy is
+
+         A
+        /
+       B
+      /
+     C
+
+then the conversion "B* -> A*" is better than "C* -> A*" (13.3.3.2
+para 4), but (A*,A*) is not in the nonreflexive R.  This doesn't
+appear to compromise the analysis, but I'm not sure how to build the
+argument.
+
+
+--- Application to operator overload resolution ---
+
+Where this analysis becomes useful is when we try to implement
+operator overload resolution.  The difficulty arises from section
+13.6, which says (paragraph 14, for example):
+
+  "For every T, where T is a pointer to object type, there exist
+  candidate operator functions of the form
+  
+    ptrdiff_t  operator- (T, T);"
+    
+Two things make this difficult.  First, this is an infinite set
+of candidate functions; we can't straightforwardly materialize all
+of the candidates and hand them to overload resolution.  
+
+Second, the types of the arguments are *correlated*; in fact, they
+have to be equal.  If they were not correlated (as in e.g. 13.6
+paragraph 12), then we could simply analyze the arguments separately:
+ambiguity in either argument would imply ambiguity for the entire
+analysis.  But for operator-, it is in fact possible to have (naive)
+ambiguity in *both* arguments but still an unambiguous call:
+
+  struct A {
+    operator int* ();
+    operator float* ();
+  };
+  
+  struct B {
+    operator float* ();
+    operator char* ();
+  };
+  
+  int f()
+  {
+    A a;
+    B b;
+    return a-b;     // overloaded operator call
+  };
+
+Both arguments can convert to "pointer to object type", but only one
+such type (float*) can be converted-to by both arguments.  So the
+candidate
+
+  ptrdiff_t  operator- (float*,float*);
+  
+is the unambiguous best candidate, and the call site has implicit
+calls to A::operator float*() and B::operator float*().
+
+These examples can get more complicated, where the winning candidate
+instantiates the pattern function with a type that does not explicitly
+appear anywhere in the program.  For example:
+
+  struct C {
+    operator int const **();
+  };
+  
+  struct D {
+    operator int volatile **();
+  };
+  
+  int g()
+  {
+    C c;
+    D d;
+    return c-d;     // overloaded operator call
+  }
+
+The winning candidate is
+
+  ptrdiff_t  operator- (int const volatile * const *,
+                        int const volatile * const *);
+                        
+even though that parameter type doesn't appear in the program.  In
+fact, current versions of GCC (through 3.3 at least) mistakenly
+believe the expression above is illegal, because GCC only tries (a
+subset of) types that do appear in the program.
+
+So what's the answer?  Well, consider any pair of types to which both
+arguments can convert (directly).  If the ultimate resolution picks
+those two conversions, what would the instantiation of the operator
+function be? 
+
+Suppose the first argument to operator- has a conversion to U, and the
+second has a conversion to V.  We need a type T such that both U and V
+can convert to T (existence).  We also need (for uniqueness) that for
+any T' not equal to T, such that U and V can convert to T':
+
+  U->T' is not better than U->T, and
+  V->T' is not better than V->T, and
+  either
+    U->T is better than U->T', or
+    V->T is better than V->T' (or both are better)
+
+(These rules paraphrase the relevant parts of 13.3.3 paragraph 1.)
+Applying equation ($$) above, rewrite this as
+
+  not R(T',T), and
+  not R(T',T), and
+  either
+    R(T,T') or
+    R(T,T')
+
+Applying antisymmetry and simplifying, we have
+
+  R(T,T')
+
+Ok!  Now this is a familiar algebraic question: do U and V have a
+least upper bound (LUB) w.r.t. the partial order R?  By definition,
+the LUB(U,V) is the T that satisfies the existence and uniqueness
+requirements above.  Consequently, it is the only possible
+instantiation of T that could yield a winning candidate function, if
+the arguments are converted to U and V.
+
+Based on the characterization of R given above, computing the LUB is
+fairly easy.  For single-level pointers, we need the LUB in the class
+hierarchy, which is straightforward to compute.  For single-level
+pointers to members, we need the greatest lower bound (GLB); but see
+the note about this at the end.  Then in all cases, we simply union
+the cv flags (only down to the first non-pointer,
+non-pointer-to-member type constructor), adding const at all levels
+above the deepest difference.  That is, the LUB in R is essentially
+the product of the underlying LUBs, just as the order itself is the
+product of underlying orders.
+
+But not all pairs of types have a LUB.  First, there might not be
+any types to which both can convert; 'int*' and 'int' are such
+a pair.  In that case, the pair cannot possibly be the pair selected
+for the winning candidate; the set of viable candidates to which
+that conversion pair corresponds is empty.
+
+Second, there may not be a least element for the set of types to which
+U and V can convert.  For example, if classes C1 and C2 both inherit
+from P1 and P2, but P1 and P2 are not related by inheritance, then
+'C1*' and 'C2*' can both convert to 'P1*' and 'P2*', but these latter
+two types are not comparable under R.
+
+When the upper bound set is not empty, but there is no least element,
+resolution among the set of candidates generated by the pattern is
+guaranteed to be ambiguous.  To see why, select any two elements T and
+T' from the upper bound set, for which T and T' do not convert (such a
+pair must exist; the upper bound set is finite).  There will be
+candidates
+
+  ptrdiff_t  operator-(T, T);
+  ptrdiff_t  operator-(T', T');
+
+and to compare the candidates, we'll have to compare conversions
+
+  U->T with U->T' and/or
+  V->T with V->T'
+
+but by ($$), this won't be possible.  (Just do the original reduction
+to R(T,T') backwards.)
+
+Furthermore, no other pairs of conversions (U',V') can yield a
+candidate that can beat either of these candidates, because they will
+use different user-defined conversion functions, and hence be
+incomparable as implicit conversion sequences (13.3.3.2, para 3,
+final bullet).
+
+(Note that the reason we *can* choose among user-defined conversion
+functions when instantiating for a particular pair is that it's the
+situation covered by 13.3.3 para 1, final bullet.  But once we're
+looking across pairs, that provision no longer applies.)
+
+However, though there cannot be a clear winner from among the pattern
+(built-in) candidates if the LUB is ambiguous, there might be a
+non-built-in (i.e. user-defined) candidate that is better than any of
+the built-in candidates, so the algorithm must take that into account.
+
+
+--- An algorithm for candidate instantiation ---
+
+Thus, to summarize, the algorithm for generating a finite set of
+built-in operator candidates, when the infinite set has correlated
+types, is:
+
+  - consider every pair (U,V) of types to which the arguments can
+    convert
+    - compute the LUB(U,V) w.r.t. the order R
+    - if the LUB exists, instantiate the pattern with it
+    - if the UB set is empty, do nothing with that pair
+    - if the UB set is nonempty, generate a fake candidate, both
+      of whose arguments are converted by the ambiguous conversion
+      sequence (13.3.3.1 para 10); this effectively summarizes
+      the built-in candidate set
+
+Then, run the usual overload resolution algorithm on this finite
+candidate set (plus member and non-member user-defined candidates; see
+13.3.1.2 paragraph 3).  If the fake candidate is chosen, report an
+ambiguity.  Otherwise, if a winner arises, it is certain that that
+winner is better than any of the pattern candidates, even those that
+were not instantiated, because of (among other things) the
+transitivity of R.
+
+Two comments are in order regarding instantiation.  First, if the
+LUB(U,V) = LUB(U',V') for distinct pairs (U,V) and (U',V'), do not
+instantiate the pattern twice with the same type.  The standard is
+clear about there being only one candidate with a given signature;
+we're computing an instantiation sub*set*, not a multiset.
+
+Second, a given LUB type might not fit the requirements of the
+pattern.  Taking the operator- example, it says T has "pointer to
+object type".  That means (1.8 para 1) that T is not a pointer to
+function type, nor pointer to void.  This can be implemented simply by
+filtering types before instantiating, because those types are at the
+top of the hierarchy; they represent the best type from a (small) set
+of upper bound types, none of which are admissable to the pattern.
+(The admissability rules always respect R, in the sense that if T is
+not admissable, than neither is any T' for which R(T,T').)
+
+
+--- Performance, etc. ---
+
+The algorithm given above requires O(n*m) LUB computations, where n
+and m are the number of types to which the arguments can (directly)
+convert.  That is, it can be at least quadratic in the size of the
+program.
+
+In practice, memoization is a very good way to ensure this does not
+become a problem.  Even if a program contains classes with many
+conversion functions, the program is very likely to use the same
+(pairs of) classes over and over in expressions.
+
+But the question remains: could this algorithm be improved to use
+fewer LUB calls?  I don't know.  I certainly don't see how, but also
+don't see an argument (such as a constructive adversary) to say that
+it could not be done.  
+
+Another interesting question: GCC's (current) algorithm appears to be
+linear, but it is also wrong.  Does that matter?  Do users need or
+want the correct analysis?  Might there be hidden ambiguities or other
+problems due to the incomplete analysis?  Or is this a good practical
+corner to cut?  I have relatively little experience with programs that
+make heavy use of conversion operators, so I just don't know.
+
+
+--- GLB in the class hierarchy ---
+
+The greatest lower bound (GLB) is a bit of a pain to compute, for two
+reasons.  First, this is the only place that the GLB is relevant to
+type checking in C++, so the necessary map (parent -> children)
+doesn't already exist in the type checker implementation.  Adding this
+map is not hard, but care should be taken to ensure this map isn't
+mistaken for the whole-program version: any one translation unit need
+not contain all classes.
+
+Second, because classes may be added at any time, GLB queries cannot
+be memoized in the obvious way.  The query memoization infrastructure
+needs to be able to partly invalidate its old results when new classes
+are added.  (This is essentially a single-translation-unit version of
+the problem identified in the previous paragraph: the GLB changes as
+you see more code.)
+
+Finally, I think the need for GLB is evidence of a language design
+mistake.  Consider this example that requires the GLB:
+
+  struct A { int x; };         //      A   B        .
+  struct B { int y; };         //       \ /         .
+  struct C : A,B { int z; };   //        C          .
+
+  // use some operator functions so that the compiler's
+  // static-semantic decisions have run-time consequences
+  struct PTMA {
+    operator int A::* ();      // return pointer to member of A
+  };
+  struct PTMB {
+    operator int B::* ();      // return pointer to member of B
+  };
+
+  bool f()
+  {
+    PTMA a;
+    PTMB b;
+
+    // equivalent to:
+    //   return  a.operator A::*()  ==  b.operator B::*();
+    // where the two arguments are converted to int C::* for comparison,
+    // i.e. the chosen candidate operator function is
+    //   bool operator== (int C::*, int C::*);
+    return a==b;
+  }
+
+In the first place, note that the equality could never be true when
+the original classes are not related by inheritance.  But then suppose
+that we follow this code (in the same translation unit) with:
+
+  //      A  B        .
+  //      |\/|        .
+  //      |/\|        .
+  //      C  D        .
+  struct D : A,B { int w; };
+
+  bool g()
+  {
+    PTMA a;
+    PTMB b;
+
+    // error!  cannot decide whether to convert the arguments to
+    // int C::* or int D::*; that is, these candidates conflict:
+    //   bool operator== (int C::*, int C::*);
+    //   bool operator== (int D::*, int D::*);
+    return a==b;
+  }
+
+Now, function g() is no more bizarre than f() was--its comparison is
+also guaranteed to be false--and yet the compiler must reject it.  The
+programmer is forced to be aware of the *entire* class hierarchy visible
+at each program point where the GLB might come into play, and not just
+those classes (and their superclasses) that the programmer is actually
+using.
+
+It's not clear to me what the best language fix is.  I think that
+pointer-to-member (with its current semantics) should not be in the
+language at all (it's the one feature I would remove if I could).  But
+given its presence, I don't see a quick fix to (e.g.) 13.6.  To attack
+the problem directly, e.g. "you don't need GLB" or "you don't need to
+instantiate the pattern with types outside such-and-such finite set",
+could easily make things worse.  To require that pointer-to-member
+conversions down the hierarchy be done with (e.g.) an explicit cast
+would go against the philosophy of minimal annotation for natural
+subtyping.  It's a dark, angry corner of the language, and it does
+not want to behave.
+
+Side note: In Elsa, I don't implement the GLB analysis.  If the
+classes in a single-level pointer-to-member pair aren't equal, I
+reject the pair (the pair does not lead to an instantiation).  I pity
+the fool whose code this breaks.  I'd be surprised if such code even
+exists, outside C++ test suites.
+

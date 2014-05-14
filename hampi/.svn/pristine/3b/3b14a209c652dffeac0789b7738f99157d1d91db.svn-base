@@ -1,0 +1,1 @@
+(PROGRAM (VAR v 2) (CFG (CFGPROD x (CFGPRODELEMSET "foo"))))

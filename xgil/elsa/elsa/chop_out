@@ -1,0 +1,28 @@
+#!/usr/bin/perl -w
+# -*-perl-*-
+use strict;
+
+# Chop out part of a file.
+
+# Daniel S. Wilkerson dsw@cs.berkeley.edu
+
+my $start = "---- START ----";  # NOTE: a filename can come after
+my $stop  = "---- STOP ----";
+
+# sm: I want to use this with some other delimiters
+if (@ARGV) {
+  $start = $ARGV[0];
+  $stop = $ARGV[1];
+}
+
+while(<STDIN>) {
+    last if /${start}/;
+}
+
+while(<STDIN>) {
+    last if /${stop}/;
+    print;
+}
+
+while(<STDIN>) {
+}

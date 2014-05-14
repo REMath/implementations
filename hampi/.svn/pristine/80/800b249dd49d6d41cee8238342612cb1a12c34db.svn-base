@@ -1,0 +1,11 @@
+//created from CFGAnalyzer file ada_is.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg declarative_part :=  subprogram_body | body_stub | generic_instantiation ;
+cfg subprogram_body :=  subprogram_specification "I" declarative_part_opt ;
+cfg declarative_part_opt :=  ;
+cfg body_stub :=  subprogram_specification "I" "s" ;
+cfg subprogram_specification :=  "p" "i" formal_part_opt ;
+cfg formal_part_opt :=  ;
+cfg generic_instantiation :=  "p" "i" "I" "n" "g" ;
+reg limit := fix(declarative_part, 7);
+assert hampiStringVar in limit;

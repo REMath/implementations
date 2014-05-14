@@ -1,0 +1,94 @@
+#/* qsort.c (translated to C) */
+#/* quicksort for mutation testing  */
+
+##include <stdlib.h>     /* rand() */
+
+#/* ------------ FUNCTIONALITY ------------------- */
+#/* sort 'array' into ascending order */
+#/* bugs: this has especially bad behavior when the array is mostly */
+#/*       one element, but a single other element with lower value */
+#/*       than the rest.  e.g., 2 2 2 2 2 1 2 2 2 2 2 2 2 2 */
+void quickSort(int *array, int len)
+{
+  int pivotIndex, pivot, low, high;
+
+  #/* base case */
+  if (len <= 1) {
+    return;
+  }
+
+  #/* select pivot */
+  pivotIndex = rand() % len;
+  pivot = array[pivotIndex];
+
+  #/* partition */
+  low = 0;
+  high = len-1;
+  while (low < high) {
+    while (low < len &&
+           array[low] <= pivot) {
+      low++;
+    }
+    while (high >= 0 &&	       #/* ATAC: high >= 0 is never false */
+           array[high] > pivot) {     #/* pivots move to low parition */
+      high--;
+    }
+
+    if (low < high) {
+      #/* both low and high are in the wrong places -- swap them */
+      int temp = array[low];
+      array[low] = array[high];
+      array[high] = temp;
+
+      low++;
+      high--;
+    }
+  }
+
+  #/* ATAC: four uses of 'low' below here are never defined from low=0  */
+  #/*       at start of loop					       */
+
+  #/* 'low' is either pointing at the last elt. of the low partition, or */
+  #/* the first elt. of the high partition */
+  if (low < len &&
+      array[low] <= pivot) {
+    low++;     #/* make it point at first elt. of high partition */
+      #/* ATAC: never a use of low++ in first inner while loop */
+  }
+
+  if (low == len) {
+    #/* the entire array is in the low partition.. we check to see if it's already */
+    #/* sorted, because in particular if the array contains the same element in */
+    #/* every position, then we never accomplish anything by partitioning */
+
+    #/* is it already sorted? */
+    int i;
+    for (i=1; i<len; i++) {
+      if (array[i-1] > array[i]) {
+        break;   #/* not sorted */
+      }
+    }
+
+    if (i == len) {
+      #/* array is already sorted */
+      return;
+    }
+
+    #/* tail-recurse and try again */
+    quickSort(array, len);
+    return;
+  }
+
+  #/* recursively sort partitions */
+  quickSort(array, low);
+  quickSort(array+low, len-low);
+}
+
+
+#/* linkage */
+void sortAlgorithm(int *array, int len)
+{
+  quickSort(array, len);
+}
+
+

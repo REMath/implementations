@@ -1,0 +1,9 @@
+#for segfault.c:
+ gcc -Wall -o segfault segfault.c
+ LD_PRELOAD=./assfault.so ./segfault
+
+#for assfault.c:
+ gcc -Wall -O2 -fPIC -DDEBUG -c assfault.c
+ ld -Bshareable -o assfault.so assfault.o -ldl
+ LD_PRELOAD=./assfault.so netscape &
+

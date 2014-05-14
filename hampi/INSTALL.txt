@@ -1,0 +1,35 @@
+#********************************************************************
+# Copyright 2008 Adam Kiezun, Vijay Ganesh
+#********************************************************************
+# AUTHORS: Adam Kiezun, Vijay Ganesh
+#
+# BEGIN DATE: October/November 2008
+#
+# This file belongs to the Hampi string solver project (solver for
+# equations over regular expressions)
+# 
+# LICENSE: Please view LICENSE file in the home dir of this Program
+#********************************************************************
+
+
+Make sure the system has Java, Ant, and Perl
+--------------------------------------------
+
+Installation
+------------
+
+#modify the configure file to use correct Java path for your system
+
+./configure
+make clean
+make all
+
+Verifying installation
+----------------------
+
+make verify
+
+Clean the installation
+----------------------
+
+make clean

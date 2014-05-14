@@ -1,0 +1,38 @@
+(declare-variable T_local__POST         (_ BitVec 1) )
+(declare-variable T_s1083_99c4e38       (_ BitVec 1) )
+(declare-variable T_s1083_99c4ec8       (_ BitVec 1) )
+(declare-variable T_s1083_99c4f64       (_ BitVec 1) )
+(declare-variable T_s1083_99c5004       (_ BitVec 1) )
+(declare-variable T_s1083_99c51d8       (_ BitVec 1) )
+(declare-variable T_s1083_99c5274       (_ BitVec 1) )
+
+%-------------------------------------------------------------------
+(assert (= T_local__POST #b1) )
+(assert (= T_s1083_99c5004 (bvor T_s1083_99c4f64 #b0 ) ) )
+(assert (= T_s1083_99c4f64 (bvor T_s1083_99c4e38 T_s1083_99c4ec8 ) ) )
+(assert (= T_s1083_99c4e38 #b0) )
+(assert (= T_s1083_99c5274 #b1) )
+(assert (= T_s1083_99c5274 (bvor #b0 T_s1083_99c51d8 ) ) )
+(assert (= T_local__POST #b1) )
+%-------------------------------------------------------------------
+(declare-variable s1083_91920a4  String )
+(declare-variable s1083_9192004  String )
+(declare-variable s1083_9191f64  String )
+(declare-variable s1083_9191e38  String )
+(declare-variable s1083_9191ec8  String )
+(declare-variable s1083_9192274  String )
+(declare-variable s1083_91921d8  String )
+
+(assert (= s1083_91920a4 s1083_9192004) )
+(assert (= s1083_9192004 (Concat s1083_9191f64 "data.php") ) )
+(assert (= s1083_9191f64 (Concat s1083_9191e38 s1083_9191ec8) ) )
+(assert (= s1083_9191e38 "ajax_create_folder_all.php") )
+(assert (= s1083_9191ec8 "DIRECTORY_SEPARATOR") )
+(assert (= s1083_9192274 (Concat "<n><n>" s1083_91921d8) ) )
+(assert (= s1083_91921d8 "d_M_Y_H_i_s") )
+
+
+(check-sat) 
+(get-model)
+
+

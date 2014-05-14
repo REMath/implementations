@@ -1,0 +1,27 @@
+/* UNAMBIGUOUS (LR(2))
+
+Grammar '98-05-215' taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+tokens = { ',', ':', ';', 't'=TEXT, 'm'=model_name, 'e'=math_expr}
+*/
+
+
+start
+: declaration ;
+: full_expr ;
+
+var_list
+: "t" ;
+: "t" "," var_list ;
+
+declaration
+: var_list ":" "m" ";" ;
+
+label
+: "t" ":" ;
+
+full_expr
+: label "e" ;

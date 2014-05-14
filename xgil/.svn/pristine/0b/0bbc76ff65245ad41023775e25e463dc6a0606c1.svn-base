@@ -1,0 +1,33 @@
+%%% parse-tree: 
+  Expr -> CastExpr
+    2 ALTERNATIVE PARSES for nonterminal CastExpr:
+      ---- alternative 1 ----
+      CastExpr -> AtomExpr
+        AtomExpr -> AtomExpr ( Expr )
+          AtomExpr -> ( Expr )
+            (
+            Expr -> CastExpr
+              CastExpr -> AtomExpr
+                AtomExpr -> x
+                  x
+            )
+          (
+          Expr -> CastExpr
+            CastExpr -> AtomExpr
+              AtomExpr -> x
+                x
+          )
+      ---- alternative 2 ----
+      CastExpr -> ( Type ) CastExpr
+        (
+        Type -> x
+          x
+        )
+        CastExpr -> AtomExpr
+          AtomExpr -> ( Expr )
+            (
+            Expr -> CastExpr
+              CastExpr -> AtomExpr
+                AtomExpr -> x
+                  x
+            )

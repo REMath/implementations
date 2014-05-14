@@ -1,0 +1,5 @@
+expr = "(" op expr expr ")" 
+ | "(" "let" "(" "(" <alpha> expr ")" ")" expr ")" 
+ | <alpha> 
+ | <digit> ;
+op = "+" | "-" | "*" | "/";

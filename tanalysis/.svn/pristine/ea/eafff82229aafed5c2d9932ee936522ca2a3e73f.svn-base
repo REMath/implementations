@@ -1,0 +1,65 @@
+-= CVE-2006-6749 =-
+
+Vulnerable versions: OpenSER <= 1.1.0
+File(s): openser-1.1.0-tls/modules/permissions/parse_config.c
+Download from:
+  http://www.openser.org/pub/openser/1.1.0/
+  src/openser-1.1.0-tls_src.tar.gz
+
+Domain: SIP (Session Initiation Protocol)
+
+_ Vulnerable Functions and Buffers _
+
+Due to the lack of bounds checking, the buffers str2 
+in parse_expression() and str2 in parse_expression_list() 
+can both be overflowed.
+
+str2 in parse_expression() is overflowed by a call to 
+strcpy(); reaching this call depends on the outcome 
+of a call to strstr().
+
+str2 in parse_expression_list() is also overflowed by 
+a call to strncpy(); however, the overflow depends on 
+several branches made according to the value of the 
+characters in the input buffer -- including stripping 
+of characters from both ends of the substring.
+
+_ Decomposed Programs _
+
+stubs.h
+  Defines LINE_LENGTH and EXPRESSION_LENGTH
+
+parse_expression/
+  guard_random_index_bad.c
+  guard_strchr_e_bad.c
+  guard_strstr_e_bad.c
+  guard_strstr_eee_bad.c
+  guard_strstr_except_bad.c
+
+parse_expression_list/
+  single_strip_spaces_copy_bad.c
+  single_strip_full_copy_bad.c
+
+  copy_zero_bad.c
+  copy_bad.c
+  copy_apost_bad.c
+  copy_strip_spaces_bad.c
+  copy_strip_full_bad.c
+
+complete/
+  parse_config_bad.c
+
+pel2/
+  cases{1,2,3}_strip{None,SpacesStart,SpacesBoth,FullStart,FullBoth}_{arr,ptr}_{ok,bad}.c
+  cases1 - switch has only EOS case
+  cases2 - switch has EOS and , cases
+  cases3 - switch has EOS and , and " cases
+  None - no whitespace stripping
+  Spaces - strip only spaces
+  Full - strip spaces, tabs, and quote marks
+  Start - strip only from the start
+  Both - strip from both sides
+  arr - using array indexing (original)
+  ptr - using pointers
+
+  relevant assertion is an explicit assert before strncpy

@@ -1,0 +1,7 @@
+var somevar : 2 ;
+cfg  NT1 := "a";
+cfg  NT2 := | NT2 NT1 ;
+
+reg limit0 := fix( NT2, 2) ;
+
+assert somevar in limit0 ; 

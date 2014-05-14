@@ -1,0 +1,2 @@
+reg r := "foo";
+reg r2 := fix(grammar, 6);

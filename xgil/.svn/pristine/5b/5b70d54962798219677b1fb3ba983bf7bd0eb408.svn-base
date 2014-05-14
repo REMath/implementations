@@ -1,0 +1,429 @@
+// kandr.gr            see license.txt for copyright and terms of use
+// derived from oink.gr
+// nominal author: dsw
+
+// this is as extension module to cc.gr, to add support for
+// K&R extensions to the grammar
+
+
+// expected statistics
+option shift_reduce_conflicts 127;
+option reduce_reduce_conflicts 180;
+
+
+// this verbatim section is appended to the one in cc.gr
+verbatim {
+  #include "kandr.h"      // makeKandRdefn, etc.
+}
+
+
+// KandR stuff ****************************************************************
+
+// only allow K&R func defns at toplevel
+nonterm(TopForm*) Declaration {
+  -> k:KandRFunctionDefinition             { return new TF_func(loc, k); }
+  -> k:KandRFunctionDefinition_implInt     { return new TF_func(loc, k); }
+}
+
+nonterm(Function*) KandRFunctionDefinition {
+  // K&R function:
+
+  // return type        name/params
+  -> rds:DeclSpecifier  id:KandRDeclarator
+  //     parameters in K&R style
+         ds:KandRSimpleDeclarationSeq
+  //     body
+         b:FunctionBody
+    {
+      return makeKandRdefn(loc, rds, id, ds, b);
+    }
+}
+
+// split from above so ambiguity will bubble up to the Declaration level
+nonterm(Function*) KandRFunctionDefinition_implInt {
+  // no return type!      name/params
+  ->                      id:KandRDeclarator
+  //     parameters in K&R style
+         ds:KandRSimpleDeclarationSeq
+  //     body
+         b:FunctionBody
+    {
+      // FIX: otherwise this is a parse error; what should we do in
+      // that case?
+      xassert(lang.allowImplicitInt);
+
+      // the return type defaults to int
+      Declaration *rds = new Declaration(DF_NONE, new TS_simple(loc, loc, ST_IMPLINT), NULL);
+      return makeKandRdefn(loc, rds, id, ds, b);
+    }
+
+  // one more, for "static" (etc.)
+  -> m:UberModifierSeq id:KandRDeclarator ds:KandRSimpleDeclarationSeq b:FunctionBody
+    {
+      xassert(lang.allowImplicitInt);
+      DeclFlags df = uberDeclFlags(m);
+      CVFlags cv = uberCVFlags(m);
+      Declaration *rds = new Declaration(df, new_TS_simple(loc, cv, ST_IMPLINT), NULL);
+      return makeKandRdefn(loc, rds, id, ds, b);
+    }
+}
+
+nonterm(S_compound*) KandRSimpleDeclarationSeq {
+  // don't allow empty, as the empty parameter list is also not
+  // allowed; Scott says to do it this way; I prevents an ambiguity
+  // with the usual C++ no-arg function declaration
+//    -> empty
+//         { return new S_compound(loc, loc, NULL); }
+  -> s:KandRSimpleDeclaration
+    { S_compound *c = new S_compound(loc, loc, NULL);
+      c->stmts.append(new S_decl(loc, loc, s));
+      return c;
+    }
+  -> c:KandRSimpleDeclarationSeq s:KandRSimpleDeclaration
+       { c->stmts.append(new S_decl(loc, loc, s)); return c; }
+}
+
+
+nonterm(Declaration*) KandRSimpleDeclaration {
+  // destructive action on 'spec'
+  //e.g.: int                x                  ;
+  -> spec:DeclSpecifier list:KandRInitDeclaratorList ";"
+       { spec->decllist = list; return spec; }
+}
+
+
+nonterm(FakeList<Declarator>*) KandRInitDeclaratorList {
+  -> d:KandRInitDeclarator
+       { return FakeList<Declarator>::makeList(d); }
+  -> d:KandRInitDeclarator "," list:KandRInitDeclaratorList
+       { d->setNext(list->first());
+         return FakeList<Declarator>::makeList(d); }
+}
+
+
+nonterm(Declarator*) KandRInitDeclarator {
+  // ambiguous:
+  //   int f(x *y);
+  // could be declaring a variable called "f" with ctor-initializer "(x*y)",
+  // or it could be declaring a function called "f" which accepts a pointer
+  // to an 'x' as a parameter
+  //
+  // another example:
+  //   int m(int (n));
+  // could be declaring a variable called "m" with ctor-initializer "int (n)"
+  // which itself is a call to the constructor for "int", or it could be
+  // declaring a function called "m" with an integer parameter called "n",
+  // the latter surrounded by a redundant set of parens
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> d:Declarator                       // (int)  x
+       { return new Declarator(d, NULL); }
+
+  // The whole point is to omit this possibility
+//    -> d:Declarator i:Initializer         // (int)  x = 5
+//         { return new Declarator(d, i); }
+}
+
+
+// for K&R function definitions
+nonterm(IDeclarator*) KandRDeclarator {
+  -> "*" cv:CVQualifierSeqOpt d:KandRDeclarator
+       { return new D_pointer(loc, cv, d); }
+  -> d:KandRDirectDeclarator
+       { return d; }
+}
+
+// for K&R function definitions
+nonterm(IDeclarator*) KandRDirectDeclarator {
+  fun keep(x) { return x!=NULL; }
+
+  // FIX: not sure I'm not ruling out something in the grammar that
+  // should be legal here
+//    -> n:IdExpression_no_colon_colon
+//         { return new D_name(loc, n); }
+
+  // function declarator; the return type comes from the type
+  // specifier that precedes this
+//    -> d:KandRDirectDeclarator    // name of function
+
+  // FIX: see note above
+  -> d:KandRIdExpression    // name of function
+         // Scott said don't allow the empty list
+     "(" kAndR_params:KandRIdentifierList ")"// parameters
+//       ql:QLiterals                      // qualifier literals
+//       cv:CVQualifierSeqOpt
+      { return new_D_func_kandr
+          (lang, 
+           loc,
+           d,
+           NULL/* no normal params*/,
+           CV_NONE /*cv*/,
+           NULL /*exception spec*/,
+           kAndR_params
+           );
+      }
+      
+  // sm: for in/c/k0003.c; the KandR declarator structure is
+  // pretty messed up, but when I made a few tweaks it introduced
+  // quite a few conflicts...
+  -> "(" d:KandRIdExpression ")"     // name of function, in parens
+         // Scott said don't allow the empty list
+     "(" kAndR_params:KandRIdentifierList ")"// parameters
+//       ql:QLiterals                      // qualifier literals
+//       cv:CVQualifierSeqOpt
+      { return new_D_func_kandr
+          (lang,
+           loc,
+           d,
+           NULL/* no normal params*/,
+           CV_NONE /*cv*/,
+           NULL /*exception spec*/,
+           kAndR_params
+           );
+      }
+
+  // function declarator; the return type comes from the type
+  // specifier that precedes this
+  -> d:KandRDirectDeclarator    // name of function
+     "(" params:ParameterDeclarationClause ")" // parameters
+//       cv:CVQualifierSeqOpt                      // optional "const"
+//       e:ExceptionSpecificationOpt               // optional "throw" clause
+    { return new_D_func_kandr
+        (lang,
+         loc,
+         d,
+         params,
+         CV_NONE,
+         NULL/*exception spec*/,
+         NULL/*kAndR_params*/
+         );
+    }
+
+  // sm: for in/c/k0009.c
+  -> d:KandRDirectDeclarator "[" sz:ConstantExpressionOpt "]"
+       { return new_D_array(loc, d, sz); }
+
+  // precedence grouping; must be recorded in the AST for disambiguation
+  -> "(" d:KandRDeclarator ")"
+       { return new D_grouping(loc, d); }
+}
+
+// FIX: see note above; not sure this is necessary nor that it is not
+// too strict
+nonterm(IDeclarator*) KandRIdExpression {
+  -> n:KandRIdentifier
+       { return new D_name(loc, n); }
+}
+
+//  nonterm(FakeList<StringRef>*) IdentifierListOpt {
+//    -> empty               { return FakeList<StringRef>::emptyList(); }
+//    -> il:IdentifierList   { return il; }
+//  }
+
+//  nonterm(FakeList<StringRef>*) IdentifierList {
+nonterm(FakeList<PQ_name>*) KandRIdentifierList {
+  -> i:KandRIdentifier
+       { return FakeList<PQ_name>::makeList(i); }
+  -> i:KandRIdentifier "," e:KandRIdentifierList
+       { i->setNext(e->first()); 
+         return FakeList<PQ_name>::makeList(i); }
+}
+
+
+nonterm(PQ_name*) KandRIdentifier {
+  -> i:Identifier { return new PQ_name(loc, i); }
+}
+
+// implicit-int ****************
+                            
+// modifiers that can precede a function decl/defn in C; note
+// that the only intersection with CDtorModifier is "inline"
+nonterm(UberModifiers) CFuncModifier_no_inline {
+  -> "static"                              { return UM_STATIC; }
+  -> "extern"                              { return UM_EXTERN; }
+  -> "const"                               { return UM_CONST; }
+  -> "volatile"                            { return UM_VOLATILE; }
+}
+
+nonterm(UberModifiers) CFuncModifier {
+  -> m:CFuncModifier_no_inline             { return m; }
+  -> "inline"                              { return UM_INLINE; }
+}
+
+nonterm(UberModifiers) CFuncModifierSeq {
+  -> m:CFuncModifier                       { return m; }
+  -> s:CFuncModifierSeq m:CFuncModifier    { return uberCombine(loc, s, m); }
+}
+
+nonterm(UberModifiers) CFuncModifierSeqOpt {
+  -> empty                                 { return UM_NONE; }
+  -> m:CFuncModifier                       { return m; }
+}
+
+
+// most instances of implicit-int in function definitions are
+// covered by the existing syntax for constructors; but if the
+// 'static' keyword is used, that isn't legal for ctors, so we
+// need a special rule
+nonterm(Function*) ImplIntFunctionDefinition {
+  // make it look like the existing ctor AST, since those get
+  // converted into implicit-int
+  -> m:CFuncModifier_no_inline d:Declarator b:FunctionBody
+       {
+         DeclFlags df = uberDeclFlags(m);
+         CVFlags cv = uberCVFlags(m);
+         return new Function(
+           df,                                // decl flags
+           new_TS_simple(loc, cv, ST_CDTOR),  // type specifier: ctor or dtor
+           new Declarator(d, NULL),           // declarator with fn name, params
+           NULL,                              // ctor member inits
+           b,                                 // function body statement
+           NULL                               // exception handlers
+         );
+       }
+
+  // in/k0006.c: need some more variants; I spell them out to avoid
+  // introducing too many conflicts
+  -> m1:CFuncModifier_no_inline m2:CFuncModifierSeq d:Declarator b:FunctionBody
+       {                              
+         UberModifiers m = uberCombine(loc, m1, m2);
+         DeclFlags df = uberDeclFlags(m);
+         CVFlags cv = uberCVFlags(m);
+         return new Function(
+           df,                                // decl flags
+           new_TS_simple(loc, cv, ST_CDTOR),  // type specifier: ctor or dtor
+           new Declarator(d, NULL),           // declarator with fn name, params
+           NULL,                              // ctor member inits
+           b,                                 // function body statement
+           NULL                               // exception handlers
+         );
+       }
+
+  // "inline" is the common prefix with CDtorModifierSeq; so a defn
+  // that begins with it will not cause a parser split until the next
+  // modifier is seen; if no modifier follows "inline", it will be
+  // parsed as a constructor, and later changed into implicit-int
+  -> "inline" m1:CFuncModifier_no_inline m2:CFuncModifierSeqOpt
+     d:Declarator b:FunctionBody
+       {
+         UberModifiers m = uberCombine(loc, m1, m2);
+         DeclFlags df = uberDeclFlags(m) | DF_INLINE;
+         CVFlags cv = uberCVFlags(m);
+         return new Function(
+           df,                                // decl flags
+           new_TS_simple(loc, cv, ST_CDTOR),  // type specifier: ctor or dtor
+           new Declarator(d, NULL),           // declarator with fn name, params
+           NULL,                              // ctor member inits
+           b,                                 // function body statement
+           NULL                               // exception handlers
+         );
+       }
+}
+
+nonterm(TopForm*) Declaration {
+  fun keep(x) { return x!=NULL; }
+
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  // only allow implicit-int func defns at toplevel
+  -> f:ImplIntFunctionDefinition
+    { return new TF_func(loc, f); }
+
+  -> m1:UberModifierSeqOpt /*implicit-int*/ list:InitDeclaratorList ";"
+    {
+      if (!lang.allowImplicitInt) {
+        trace("cancel") << loc
+          << ": implicit-int top-level Declaration in non-implicit-int language\n";
+        return NULL;
+      }
+      return new TF_decl
+        (loc,
+         new Declaration(uberDeclFlags(m1), new TS_simple(loc, loc, ST_IMPLINT), list));
+    }
+}
+
+
+nonterm(Declaration*) KandRSimpleDeclaration {
+  fun keep(x) { return x!=NULL; }
+
+  // I'm sure this production introduces an unhandled ambiguity,
+  // but I have not yet constructed an example...
+
+  // (in/c/dC0026.c)
+  -> "register" /*implicit-int*/ list:KandRInitDeclaratorList ";"
+     {
+       if (!lang.allowImplicitInt) {
+         trace("cancel") << loc
+           << ": implicit-int KandRSimpleDeclaration in non-implicit-int language\n";
+         return NULL;
+       }
+       return new Declaration(DF_REGISTER,
+                              new TS_simple(loc, loc, ST_IMPLINT),
+                              list);
+     }
+}
+
+nonterm(Statement*) Statement {
+  fun keep(x) { return x!=NULL; }
+
+  -> m1:UberModifierSeq /*implicit-int*/ list:InitDeclaratorList ";"
+    {
+      if (!lang.allowImplicitInt) {
+        trace("cancel") << loc
+          << ": implicit-int statement-level Declaration in non-implicit-int language\n";
+        return NULL;
+      }
+      return new S_decl (loc, loc,
+        new Declaration(uberDeclFlags(m1), new TS_simple(loc, loc, ST_IMPLINT), list));
+    }
+}
+
+nonterm(ASTTypeId*) ParameterDeclaration {
+  fun keep(x) { return x!=NULL; }
+
+  -> /*implicit-int*/ d:UnqualifiedDeclarator
+    {
+      // if this isn't K&R C, throw it out
+      if (!lang.allowImplicitInt) {
+        trace("cancel") << loc
+          << ": implicit-int parameter definition in non-implicit-int language\n";
+        return NULL;
+      }
+      return new ASTTypeId
+        (new TS_simple(loc, loc, ST_IMPLINT),
+         new Declarator(d, NULL /*init*/));
+    }
+
+  -> "register" /*implicit-int*/ d:UnqualifiedDeclarator
+    {
+      // if this isn't K&R C, throw it out
+      if (!lang.allowImplicitInt) {
+        trace("cancel") << loc
+          << ": implicit-int parameter definition in non-implicit-int language\n";
+        return NULL;
+      }
+      return new ASTTypeId
+        (new TS_simple(loc, loc, ST_IMPLINT),
+         new Declarator(d, NULL /*init*/));
+    }
+}
+
+
+// ------ implicit int for cast expressions ------
+nonterm(Expression*) CastExpression {
+  -> "(" t:ImplicitIntTypeId ")" e:CastExpression
+       { return new E_cast(t, e); }
+}
+
+nonterm(TypeSpecifier*) ImplicitIntTypeSpecifier {
+  -> m:UberCVQualifierSeq
+       { UberModifiers k = uberCombine(loc, UM_INT, m);
+         return new_TS_simple(loc, uberCVFlags(m), uberSimpleType(loc, k)); }
+}
+
+nonterm(ASTTypeId*) ImplicitIntTypeId {
+  -> spec:ImplicitIntTypeSpecifier
+       { return new ASTTypeId(spec, new Declarator(new D_name(loc, NULL), NULL)); }
+}
+
+

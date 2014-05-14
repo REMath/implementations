@@ -1,0 +1,347 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>cc_type</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+</HEAD>
+
+<body>
+
+<center><h2>
+cc_type: Type Representation
+</h2></center>
+
+<p>
+This page documents <a href="../cc_type.h">cc_type.h</a> and
+<a href="../cc_type.cc">cc_type.cc</a>, the files which make up the type
+representation module in <a href="../index.html">Elsa</a>.  You
+should look at cc_type.h as you read this file.
+
+<p>
+Note that Diagram 1 of
+<a href="cpp_er.html">C++ Entities and Relationships</a> puts the concepts
+on this page in context with the rest of the language, in particular the
+lookup infrastructure.
+
+<h2>1. Introduction</h2>
+
+<p>
+The broad intent of cc_type is to represent types in a way that's easy
+to understand and manipulate.  The abstract syntax of C/C++ type
+declarations is very much <em>not</em> amenable to either, because it
+shares type specifiers among declarators in a declaration, and because
+declarators are inside-out (see the description of <a
+href="cc.ast.html#declarator">Declarator in cc.ast.html</a>).  The
+type checker has the responsibility of interpreting the C/C++ syntax,
+and constructing corresponding Type objects so that subsequent
+analyses don't have to deal with the actual syntax.
+
+<p>
+Another goal of the type representation is general independence from
+syntax.  Ideally, cc_type would not refer to cc.ast at all, but
+I haven't quite been able to achieve that.  Nevertheless, it remains
+a goal to minimize the knowledge cc_type has about cc.ast.  Types
+are concepts that exist independently from any particular syntax used
+to describe them, and I want the module dependencies to reflect that
+basic fact to the extent possible.
+
+<p>
+One major decision I made for this module was to translate typedefs
+away entirely.  This means I don't have a node for some kind of
+arbitrary "named type", which would have to be "unwrapped" every
+place a type is inspected.  The potential disadvantage is that I
+won't use the programmer's names when referring to types in error
+messages, but there's an easy solution to that too: every constructed
+type could have a field saying what name, if any, the programmer had
+been using as an alias for this type.  That's not implemented, but I'm
+confident it would eliminate any advantage to retaining typedefs.
+(Update: It has recently been implemented, see Type::typedefAliases.)
+
+<p>
+Types are divided into two major classes: atomic types and constructed
+types.  Atomic types (my terminology) are types atop which type
+constructors (like "*" or "[]") might be applied, but which themselves
+do not have any constructors, so cannot be further "deconstructed"
+(for example, by template pattern matching).
+They consist of built-in types like "int", enums, structs, classes and
+unions.  I regard the aggregation of structs/classes/unions to form
+an atomic wrapper around their members, in part because two (e.g.) struct
+types are equal only if they arise from the exact same declaration; there 
+is no structural equality for structs.  Each kind of atomic type
+is explained in Section 2.
+
+<p>
+Constructed types, by constrast, are whatever is built on top of
+atomic types by applying type constructors such as "*".  
+These types <em>can</em> be deconstructed by template unification
+<pre>
+  template &lt;class T&gt;
+  void foo(T *p) { ... }      // could pull "int" out of "int *"
+</pre>
+and typedefs can be used to build them in pieces
+<pre>
+  typedef int myint;
+  myint const *p;             // builds "int const"
+</pre>
+(again, in contrast to the AtomicTypes).
+Each type constructor is explained in Section 3.
+
+<p>
+If you're really bothered by the apparent contradiction that
+CompoundType is an AtomicType, think of the "struct { ... }"
+syntax as wrapping the members in an opaque container, thus
+forming an indivisble unit (i.e. an "atom").  This is of 
+course exactly what happens from the compiler's point of
+view, and the basis for the terminology.  Quoting from
+Dennis Ritchie's
+<a href="http://cm.bell-labs.com/cm/cs/who/dmr/chist.html">The
+Development of the C Language</a>, section "Embryonic C":
+<blockquote>
+  The central notion I captured from Algol was a type structure based
+  on atomic types (including structures), composed into arrays,
+  pointers (references), and functions (procedures).
+</blockquote>
+
+
+<h2>2. Atomic Types</h2>
+
+<center><img src="atomic_types.png" alt="Atomic Type Hierarchy"></center>
+
+<p>
+<b>AtomicType</b> is the root of the atomic type hierarchy.  It just
+contains methods to figure out what kind of type it actually is.
+
+<p>
+<b>SimpleType</b> is represents simple types built-in to C/C++, like
+"int".  <a href="../cc_flags.h">cc_flags.h</a> contains the definition of
+SimpleTypeId.  Note that there is no attempt to break down primitive
+types along dimensions like "signed" or "long", since the set of types
+is not orthogonal w.r.t. those dimensions (e.g. there is no "signed
+float" or "long char").  If an analysis wants (e.g.) an "isSigned"
+function, it should provide it itself, and make the associated
+decisions about what "isSigned(ST_FLOAT)" returns.
+
+<p>
+There are some SimpleTypeId codes that do not correspond to
+primitive C/C++ types, but are used instead by the front-end for
+various intermediate communication purposes.  For example, ST_ERROR
+represents the type of an expression that contained an error, and
+is used to try to reduce the amount of error cascading.  There
+are also some ids used to help implement section 13.6 of the C++
+standard.  Analyses generally won't have to concern themselves
+with such oddball values, since they shouldn't be visible outside
+the type checker implementation.
+
+<p>
+<b>CompoundType</b> is certainly the most complex of all the type classes.
+It represents a class, struct, or union.  Storage of class members is
+done by inheriting a Scope (<a href="../cc_scope.h">cc_scope.h</a>).
+Thus, CompoundType itself is mostly concerned with representing
+the inheritance hierarchy.
+
+<p>
+To get the name lookup semantics right, we must be able to tell when
+names are ambiguous and also know the inheritance path used to arrive
+at any base.  This is complicated by the presence of virtual
+inheritance.  Each class contains its own, independent representation
+of its particular inheritance DAG; this representation is a graph of
+<b>BaseClassSubobj</b> objects.  A base class subobject corresponds
+one-to-one to some particular (contiguous) range of byte offsets in
+the final object's layout.
+
+<p>
+CompoundType knows how to print out its DAG to
+<a href="http://www.research.att.com/sw/tools/graphviz/">Dot</a> format;
+see CompoundType::renderSubobjHierarchy.
+For example, <a href="../in/std/3.4.5.cc">in/std/3.4.5.cc</a> yields
+<a href="../gendoc/3.4.5.png">3.4.5.png</a>.
+
+<p>
+<b>EnumType</b> represents an enum.  It has a list of enumerator
+values, which are also added to the Env 
+(<a href="../cc_env.h">cc_env.h</a>) during type checking.
+
+
+<h2>3. Constructed Types</h2>
+
+<center><img src="constructed_types.png" alt="Constructed Type Hierarchy"></center>
+
+<p>
+<b>Type</b> is the root of the constructed type hierarchy.  Like
+<b>AtomicType</b>, it has methods to find out which kind
+of type a particular object is (roll-my-own RTTI).  It also has
+a variety of query methods (like isVoid()), and entry points for
+printing types.
+
+<p>
+<b>CVAtomicType</b> is always the leaf of a constructed type.
+It just wraps an AtomicType, but possibly with <tt>const</tt>
+or <tt>volatile</tt> qualifiers.
+
+<p>
+<b>PointerType</b> represents a pointer type,
+possibly qualified with <tt>const</tt> or <tt>volatile</tt>.
+
+<p>
+<b>ReferenceType</b> represents a reference type.  It has
+no qualifiers.  Note that in the original design, PointerType
+was used for <em>both</em> pointers and references, so you
+might find the occasional comment incorrectly referring to
+that state of affairs.  However, you can still treat pointers
+and references uniformly if you want, by using 
+<tt>isPtrOrRef()</tt>, <tt>getCVFlags()</tt>, and
+<tt>getAtType()</tt>.
+
+<p>
+<b>FunctionType</b> represents a function type.  The parameters
+are represented as a list of Variable
+(<a href="../variable.h">variable.h</a>) objects.  Nonstatic
+member functions have the <tt>isMember</tt> flag set, in which
+case their first parameter is called "this" and has type
+"C <i>cv</i> &", where "C" is the name of the class of which the
+function is a member, and <i>cv</i> is optional const/volatile flags.
+FunctionType also has a flag to indicate if it accepts a
+variable number of arguments, and a way (ExnSpec) to represent
+exception specifications.
+
+<p>
+Finally, function templates have a list of template parameters.  As I
+think about it, it's kind of strange to imagine a function
+<em>type</em> being templatized, so maybe I should have put that list
+someplace else (Variable?).  On the other hand, maybe it will work to
+treat templates as having polymorphic types.  Until the template
+implementation matures, it's not clear what the best strategy is.
+
+<p>
+4/19/04: The above description is out of date; the template
+parameters have indeed been moved into Variable.  However the
+template design remains in a state of flux so I'm waiting for
+it to settle before thoroughly documenting it.
+
+<p>
+<b>ArrayType</b> represents an array type.  Types with no
+size specified have size <tt>NO_SIZE</tt>.
+
+<p>
+<b>PointerToMemberType</b> represents a C++ pointer-to-member.
+It says which class' member it thinks it points at, the type
+of the referred-to thing, and some optional const/volatile
+qualifiers.  This is used for both pointers to both member
+functions and member data.
+
+<p>
+Note that creating a Pointer to a Function that happens to have
+<tt>isMember</tt> be true is not the same thing as a PointerToMember
+to a Function (without <tt>isMember</tt>).  The former is a concept
+that I think would be useful, but does not exist in C++.  The latter
+is C++'s pointer-to-member (to a function), and has the "heterogeneous
+array" semantics.
+
+<h2>4. Templates</h2>
+
+<p>
+The template design is still somewhat incomplete.  I'd like to
+have a pass that can fully instantiate templates, and so some
+of this is looking forward to the existence of such a pass.
+
+<p>
+<b>TypeVariable</b> is used for template functions and classes
+to stand for a type which is unknown because it's a parameter
+to the template.  It should point at its corresponding
+Variable, rather than just having a StringRef name...
+
+<p>
+<b>TemplateParams</b> is a list of template parameters.  I
+pulled this out into its own class for reasons I now don't 
+remember...
+
+<p>
+<b>ClassTemplateInfo</b> is intended to contain information about
+template instantiations.  It's not used right now.
+
+
+<h2>5. TypeFactory</h2>
+    
+<p>
+When the type checker 
+(<a href="../cc_tcheck.cc">cc_tcheck.cc</a>)
+constructs types, it actually does so via the
+<b>TypeFactory</b> interface.  This is to make it possible for someone
+to build annotations on top of my Types, instead of going in and
+mucking about in cc_type.h.  It has several core functions that
+must be defined by a derived class, and a variety of other functions
+with default implementations when such an implementation is "obvious"
+in terms of the core functions.
+
+<p>
+The present form of TypeFactory is driven by the existence of one
+project that has such an annotation system.  As new analyses arise
+that may need to customize the way types are built, I'll add new entry
+points to TypeFactory and modify cc_tcheck.cc to use them.
+
+<p>
+I consider the presence of the SourceLoc parameter in most of the
+TypeFactory functions to be a wart on the design.  I don't even know
+what that location should be, if the type is constructed outside
+the context of interpreting a type denotation in the AST.  The base
+Elsa front end itself always ignores that value, and passes
+<tt>SL_UNKNOWN</tt> whenever there isn't a location handy.  I'd
+like to eventually revisit the decisions that led to the presence
+of those parameters.
+
+<p>
+<b>BasicTypeFactory</b> is an implementation of TypeFactory that
+just builds the types defined in cc_type.h in the obvious way.
+
+
+<a name="basetype"></a>
+<h2>6. BaseType and Type</h2>
+
+<p>
+While the <b>TypeFactory</b> mechanism makes it easy to annotate the leaf
+types, like FunctionType and PointerType, it doesn't offer a way
+to effectively annotate Type itself, because that class is in the
+middle of the inheritance hierarchy.
+
+<p>
+So, Type is actually split into two classes, <b>BaseType</b> and <b>Type</b>.
+Type inherits from BaseType, and by default, adds almost nothing
+to BaseType.  However, clients of Elsa are allowed to
+replace Type's definition with one that includes additional
+annotations.
+
+<p>
+To replace Type's definition, make a header file that contains the
+new class definition (make a copy of the existing Type definition as a
+starting point).  Then arrange for the preprocessor symbol
+<code>TYPE_CLASS_FILE</code> to be set to the name (in quotes) of
+the file containing the new definition.
+
+<p>
+The key requirement of class Type is that it must <em>not</em> allow the
+name "BaseType" to leak out into its interface.  I do not want
+to have to deal with more than one name for "generic type" in
+analyses like the type checker.  Some care is required to achieve
+this, as I don't want to make the inheritance private (since that
+would necessitate repeating all of BaseType's member declarations).
+<!--
+This requirement is the reason that Type, and not BaseType, has
+the declaration of <code>anyCtorSatisfies()</code>.  Were it in BaseType,
+then <code>TypePred</code> would expose the BaseType name.
+-->
+
+
+<p>
+  <a href="http://validator.w3.org/check/referer"><img border="0"
+      src="valid-html401.png"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+
+</body>
+
+</HTML>
+
+
+

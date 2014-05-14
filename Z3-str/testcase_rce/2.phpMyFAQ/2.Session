@@ -1,0 +1,408 @@
+(declare-variable  v_0_87f3410  bool )
+(declare-variable  v_0_87f34a0  bool )
+(declare-variable  v_0_87f3684  bool )
+(declare-variable  v_0_87f3724  bool )
+(declare-variable  v_0_87f39dc  bool )
+(declare-variable  v_0_87f3b0c  bool )
+(declare-variable  v_0_87f3ba0  bool )
+(declare-variable  v_0_8801790  bool )
+(declare-variable  v_0_8801820  bool )
+(declare-variable  v_0_8801e58  bool )
+(declare-variable  v_0_8801ee8  bool )
+(declare-variable  v_0_88020cc  bool )
+(declare-variable  v_0_88048f4  bool )
+(declare-variable  v_0_88024e8  bool )
+(declare-variable  v_0_fileNameBool0  bool )
+(declare-variable  v_0_phiBool360  bool )
+(declare-variable  v_0_phiBool361  bool )
+(declare-variable  v_0_phiBool362  bool )
+(declare-variable  v_0_phiBool363  bool )
+(declare-variable  v_0_phiBool364  bool )
+(declare-variable  v_0_phiBool365  bool )
+(declare-variable  v_0_phiBool366  bool )
+(declare-variable  v_0_phiBool367  bool )
+(declare-variable  v_0_phiBool368  bool )
+(declare-variable  v_0_phiBool369  bool )
+(declare-variable  v_0_phiBool370  bool )
+(declare-variable  v_0_phiBool371  bool )
+(declare-variable  v_8809174       bool )
+%--------------------------------------------------------
+(declare-variable  T_arg_8808830    (_ BitVec 1)  )
+(declare-variable  T_local__SERVER    (_ BitVec 1)  )
+(declare-variable  T_local__SERVER_i_HTTP_REFERER    (_ BitVec 1)  )
+(declare-variable  T_local__SERVER_i_HTTP_USER_AGENT    (_ BitVec 1)  )
+(declare-variable  T_local__SERVER_i_QUERY_STRING    (_ BitVec 1)  )
+(declare-variable  T_local__SERVER_i_REMOTE_ADDR    (_ BitVec 1)  )
+(declare-variable  T_local__SERVER_i_REQUEST_TIME    (_ BitVec 1)  )
+(declare-variable  T_v_0_87eeed8    (_ BitVec 1)  )
+(declare-variable  T_v_0_87f3410    (_ BitVec 1)  )
+(declare-variable  T_v_0_87f3600    (_ BitVec 1)  )
+(declare-variable  T_v_0_87f3784    (_ BitVec 1)  )
+(declare-variable  T_v_0_87f3824    (_ BitVec 1)  )
+(declare-variable  T_v_0_87f38c4    (_ BitVec 1)  )
+(declare-variable  T_v_0_87f3cd8    (_ BitVec 1)  )
+(declare-variable  T_v_0_87f3d74    (_ BitVec 1)  )
+(declare-variable  T_v_0_87f3e14    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801790    (_ BitVec 1)  )
+(declare-variable  T_v_0_88019a8    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801a38    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801ac8    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801b70    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801c00    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801c90    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801d20    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801dc8    (_ BitVec 1)  )
+(declare-variable  T_v_0_8801e58    (_ BitVec 1)  )
+(declare-variable  T_v_0_8802048    (_ BitVec 1)  )
+(declare-variable  T_v_0_8802230    (_ BitVec 1)  )
+(declare-variable  T_v_0_8802338    (_ BitVec 1)  )
+(declare-variable  T_v_0_8802454    (_ BitVec 1)  )
+(declare-variable  T_v_0_8802590    (_ BitVec 1)  )
+(declare-variable  T_v_0_8802648    (_ BitVec 1)  )
+(declare-variable  T_v_0_8804888    (_ BitVec 1)  )
+(declare-variable  T_v_0_8804b78    (_ BitVec 1)  )
+(declare-variable  T_v_0_8804bfc    (_ BitVec 1)  )
+(declare-variable  T_v_0_8804ca8    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805174    (_ BitVec 1)  )
+(declare-variable  T_v_0_88052f4    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805394    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805520    (_ BitVec 1)  )
+(declare-variable  T_v_0_88055bc    (_ BitVec 1)  )
+(declare-variable  T_v_0_880565c    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805708    (_ BitVec 1)  )
+(declare-variable  T_v_0_88057a4    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805844    (_ BitVec 1)  )
+(declare-variable  T_v_0_88059b8    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805a60    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805afc    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805b9c    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805d1c    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805dbc    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805e50    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805eec    (_ BitVec 1)  )
+(declare-variable  T_v_0_8805f80    (_ BitVec 1)  )
+(declare-variable  T_v_8808cf8     (_ BitVec 1)  )
+(declare-variable  T_v_8808e74     (_ BitVec 1)  )
+(declare-variable  T_v_8808fb8     (_ BitVec 1)  )
+(declare-variable  T_v_8809048     (_ BitVec 1)  )
+(declare-variable  T_v_88090d8     (_ BitVec 1)  )
+
+(declare-variable  v_0_8802454  String)
+(declare-variable  v_88090d8    String)
+(declare-variable  v_0_8802590  Int)
+(declare-variable  v_0_8802648  Int)
+(declare-variable  v_0_87f3600  Int)
+(declare-variable  v_8808e74    Int)
+(declare-variable  local__SERVER_i_REQUEST_TIME Int)
+%-------------------------------------------------------------------
+% ASSERT( v_8809174 <=> (v_88090d8 = 0bin00000000000000000000000000000000) );
+(assert (= v_8809174 (= v_88090d8 "") ) )
+% ASSERT( T_v_88090d8 = 0bin00000000000000000000000000000000); 
+(assert (= T_v_88090d8 #b0 ) )
+% ASSERT( T_v_8809048 = 0bin00000000000000000000000000000000); 
+(assert (= T_v_8809048 #b0 ) )
+% ASSERT( T_v_8808fb8 = 0bin00000000000000000000000000000000); 
+(assert (= T_v_8808fb8 #b0 ) )
+% ASSERT( T_v_8808cf8 = 0bin00000000000000000000000000000000);
+(assert (= T_v_8808cf8 #b0 ) )
+% ASSERT( v_8808e74 = BVSUB(32, local__SERVER_i_REQUEST_TIME, 0bin00000000000000010101000110000000 ) );
+(assert (= v_8808e74 (- local__SERVER_i_REQUEST_TIME 172800) ) )
+% ASSERT( T_v_8808e74 = T_local__SERVER_i_REQUEST_TIME | 0bin00000000000000000000000000000000);
+(assert (= T_v_8808e74 (bvor T_local__SERVER_i_REQUEST_TIME #b0) ) )
+% ASSERT( T_local__SERVER_i_REQUEST_TIME = T_local__SERVER );
+(assert (= T_local__SERVER_i_REQUEST_TIME T_local__SERVER ) )
+% ASSERT( v_0_8801820 <=> v_0_8801790 );
+(assert (= v_0_8801820 v_0_8801790 ) )
+% ASSERT( T_v_0_8801790 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801790 #b0 ) )
+% ASSERT( v_0_87f39dc <=> v_0_87f3684 AND v_0_87f3724 );
+(assert (= v_0_87f39dc (and v_0_87f3684 v_0_87f3724) ) )
+% ASSERT( v_0_87f3684 <=> (0bin00000000000000000000000000000000 = v_0_8802648) );
+(assert (= v_0_87f3684 (= v_0_8802648 0) ) )
+% ASSERT( v_0_phiBool360 <=>  v_0_88024e8  AND  v_0_8801820  );
+(assert (= v_0_phiBool360 (and v_0_88024e8 v_0_8801820) ) )
+% ASSERT( v_0_8802648 = IF v_0_phiBool360 THEN v_0_8802590 ELSE v_0_8802648 ENDIF );
+(assert (=> v_0_phiBool360 (= v_0_8802648 v_0_8802590)  ) )
+% ASSERT( T_v_0_8802648 = IF v_0_phiBool360 THEN T_v_0_8802590 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8802648 (ite v_0_phiBool360 T_v_0_8802590 #b0)  ) )
+% ASSERT( v_0_phiBool361 <=>  v_0_8801820  );
+(assert (= v_0_phiBool361 v_0_8801820 ) )
+% ASSERT( v_0_8802648 = IF v_0_phiBool361 THEN 0bin00000000000000000000000000000000 ELSE v_0_8802648 ENDIF );
+(assert (=> v_0_phiBool361 (= v_0_8802648 0) ) )
+% ASSERT( T_v_0_8802648 = IF v_0_phiBool361 THEN 0bin00000000000000000000000000000000 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8802648 (ite v_0_phiBool361 #b0 #b0)  ) )
+% ASSERT( v_0_88024e8 <=> NOT(v_0_8802454 = 0bin00000000000000000000000000000000) );
+(assert (= v_0_88024e8 (not (= v_0_8802454 "" ) ) ) )
+% ASSERT( T_v_0_8802454 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8802454 #b0 ) )
+% ASSERT( T_local__SERVER_i_HTTP_USER_AGENT = T_local__SERVER );
+(assert (= T_local__SERVER_i_HTTP_USER_AGENT T_local__SERVER ) )
+% ASSERT( T_v_0_8802338 = T_v_0_87eeed8);
+(assert (= T_v_0_8802338 T_v_0_87eeed8 ) )
+% ASSERT( v_0_8802590 = BVPLUS(32, 0bin00000000000000000000000000000000, 0bin00000000000000000000000000000001) );
+(assert (= v_0_8802590 (+ 0 1) ) )
+% ASSERT( T_v_0_8802590 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8802590 #b0 ) )
+% ASSERT( v_0_87f3724 <=> (0bin00000000000000000000000000000000 = v_0_87f3600) );
+(assert (= v_0_87f3724 (= v_0_87f3600 0) ) )
+% ASSERT( v_0_phiBool362 <=>  v_0_87f34a0  AND  v_0_8801820  );
+(assert (= v_0_phiBool362 (and v_0_87f34a0 v_0_8801820) ) )
+% ASSERT( v_0_87f3600 = IF v_0_phiBool362 THEN 0bin00000000000000000000000000000001 ELSE v_0_87f3600 ENDIF );
+(assert (=> v_0_phiBool362 (= v_0_87f3600 1) ) )
+% ASSERT( T_v_0_87f3600 = IF v_0_phiBool362 THEN 0bin00000000000000000000000000000000 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (=> v_0_phiBool362 (= T_v_0_87f3600 #b0) ) )
+% ASSERT( v_0_phiBool363 <=>  v_0_8801820  );
+(assert (= v_0_phiBool363 v_0_8801820 ) )
+% ASSERT( v_0_87f3600 = IF v_0_phiBool363 THEN 0bin00000000000000000000000000000000 ELSE v_0_87f3600 ENDIF );
+(assert (=> v_0_phiBool363 (= v_0_87f3600 0) ) )
+% ASSERT( T_v_0_87f3600 = IF v_0_phiBool363 THEN 0bin00000000000000000000000000000000 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_87f3600 (ite v_0_phiBool363 #b0 #b0)  ) )
+% ASSERT( v_0_87f34a0 <=> NOT v_0_87f3410 );
+(assert (= v_0_87f34a0 (not v_0_87f3410) ) )
+% ASSERT( T_v_0_87f3410 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_87f3410 #b0 ) )
+% ASSERT( T_local__SERVER_i_REMOTE_ADDR = T_local__SERVER );
+(assert (= T_local__SERVER_i_REMOTE_ADDR T_local__SERVER ) )
+% ASSERT( T_v_0_8805dbc = 0bin00000000000000000000000000000001 );
+(assert (= T_v_0_8805dbc #b0 ) )
+% ASSERT( v_0_fileNameBool0 );
+(assert v_0_fileNameBool0)
+% ASSERT( T_v_0_8805eec = 0bin00000000000000000000000000000000 | T_v_0_8805e50);
+(assert (= T_v_0_8805eec (bvor #b0 T_v_0_8805e50) ) )
+% ASSERT( T_v_0_8805e50 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8805e50 #b0 ) )
+% ASSERT( T_v_0_8805dbc = T_v_0_8805d1c | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8805dbc (bvor #b0 T_v_0_8805d1c) ) )
+% ASSERT( T_v_0_8805d1c = T_v_0_8805b9c | T_local__SERVER_i_REQUEST_TIME);
+(assert (= T_v_0_8805d1c (bvor T_v_0_8805b9c T_local__SERVER_i_REQUEST_TIME) ) )
+% ASSERT( T_v_0_8805b9c = T_v_0_8805afc | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8805b9c (bvor #b0 T_v_0_8805afc) ) )
+% ASSERT( T_v_0_8805afc = T_v_0_8805844 | T_v_0_8805a60);
+(assert (= T_v_0_8805afc (bvor T_v_0_8805844 T_v_0_8805a60) ) )
+% ASSERT( T_v_0_8805844 = T_v_0_88057a4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8805844 (bvor T_v_0_88057a4 #b0) ) )
+% ASSERT( T_v_0_88057a4 = T_v_0_880565c | T_v_0_8805708);
+(assert (= T_v_0_88057a4 (bvor T_v_0_880565c T_v_0_8805708) ) )
+% ASSERT( T_v_0_880565c = T_v_0_88055bc | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_880565c (bvor T_v_0_88055bc #b0) ) )
+% ASSERT( T_v_0_88055bc = T_v_0_8805394 | T_v_0_8805520);
+(assert (= T_v_0_88055bc (bvor T_v_0_8805394 T_v_0_8805520) ) )
+% ASSERT( T_v_0_8805394 = T_v_0_88052f4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8805394 (bvor T_v_0_88052f4 #b0) ) )
+% ASSERT( T_v_0_88052f4 = T_v_0_8805174 | T_local__SERVER_i_REMOTE_ADDR);
+(assert (= T_v_0_88052f4 (bvor T_v_0_8805174 T_local__SERVER_i_REMOTE_ADDR) ) )
+% ASSERT( T_v_0_8805174 = T_v_0_87f38c4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8805174 (bvor T_v_0_87f38c4 #b0) ) )
+% ASSERT( T_v_0_87f38c4 = T_v_0_87f3824 | T_arg_8808830);
+(assert (= T_v_0_87f38c4 (bvor T_v_0_87f3824 T_arg_8808830) ) )
+% ASSERT( T_v_0_87f3824 = T_v_0_87f3784 | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_87f3824 (bvor T_v_0_87f3784 #b0) ) )
+% ASSERT( T_v_0_87f3784 = T_v_0_8804bfc | T_v_0_8804ca8);
+(assert (= T_v_0_87f3784 (bvor T_v_0_8804bfc T_v_0_8804ca8) ) )
+% ASSERT( T_v_0_8804bfc = T_v_0_8804888 | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8804bfc (bvor T_v_0_8804888 #b0) ) )
+% ASSERT( v_0_phiBool364 <=>  v_0_87f3ba0  AND  v_0_87f39dc  AND  v_0_8801820  );
+(assert (= v_0_phiBool364 (and v_0_87f3ba0 (and v_0_87f39dc v_0_8801820) ) ) )
+% ASSERT( T_v_0_8804888 = IF v_0_phiBool364 THEN T_v_0_87f3e14 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8804888 (ite v_0_phiBool364 T_v_0_87f3e14 #b0) ) )
+% ASSERT( v_0_phiBool365 <=>  v_0_87f39dc  AND  v_0_8801820  );
+(assert (= v_0_phiBool365 (and v_0_87f39dc v_0_8801820 ) ) )
+% ASSERT( T_v_0_8804888 = IF v_0_phiBool365 THEN T_v_0_8802230 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8804888 (ite v_0_phiBool364 T_v_0_8802230 #b0) ) )
+% ASSERT( v_0_87f3ba0 <=> NOT v_0_87f3b0c );
+(assert (= v_0_87f3ba0 (not v_0_87f3b0c ) ) )
+% ASSERT( v_0_87f3b0c <=> TRUE );
+(assert (= v_0_87f3b0c true ) )
+% ASSERT( v_0_phiBool366 <=>  v_0_88020cc  AND  v_0_8801820  );
+(assert (= v_0_phiBool366 (and v_0_88020cc v_0_8801820 ) ) )
+% ASSERT( T_v_0_8802230 = IF v_0_phiBool366 THEN 0bin00000000000000000000000000000000 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8802230 (ite v_0_phiBool366 #b0 #b0) ) )
+% ASSERT( v_0_phiBool367 <=>  v_0_8801820  );
+(assert (= v_0_phiBool367 v_0_8801820 ) )
+% ASSERT( T_v_0_8802230 = IF v_0_phiBool367 THEN T_v_0_8802048 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8802230 (ite v_0_phiBool367 T_v_0_8802048 #b0) ) )
+% ASSERT( v_0_phiBool368 <=>  v_0_8801ee8  AND  v_0_8801820  );
+(assert (= v_0_phiBool368 (and v_0_8801ee8 v_0_8801820) ) )
+% ASSERT( T_v_0_8802048 = IF v_0_phiBool368 THEN T_v_0_8801dc8 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8802048 (ite v_0_phiBool368 T_v_0_8801dc8 #b0) ) )
+% ASSERT( v_0_phiBool369 <=>  v_0_8801820  );
+(assert (= v_0_phiBool369 v_0_8801820 ) )
+% ASSERT( T_v_0_8802048 = IF v_0_phiBool369 THEN T_v_0_8801b70 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8802048 (ite v_0_phiBool369 T_v_0_8801b70 #b0) ) )
+% ASSERT( v_0_8801ee8 <=> NOT v_0_8801e58 );
+(assert (= v_0_8801ee8 (not v_0_8801e58) ) )
+% ASSERT( T_v_0_8801e58 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801e58 #b0 ) )
+% ASSERT( T_v_0_8801dc8 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801dc8 #b0 ) )
+% ASSERT( T_v_0_8801c00 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801c00 #b0 ) )
+% ASSERT( T_v_0_8801c90 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801c90 #b0 ) )
+% ASSERT( T_v_0_8801d20 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801d20 #b0 ) )
+% ASSERT( T_v_0_8801b70 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801b70 #b0 ) )
+% ASSERT( T_v_0_88019a8 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_88019a8 #b0 ) )
+% ASSERT( T_v_0_8801a38 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801a38 #b0 ) )
+% ASSERT( T_v_0_8801ac8 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8801ac8 #b0 ) )
+% ASSERT( T_v_0_87f3e14 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_87f3e14 #b0 ) )
+% ASSERT( T_v_0_87f3d74 = T_v_0_87f3cd8 | 0bin00000000000000000000000000000000);
+(assert (= T_v_0_87f3d74 (bvor T_v_0_87f3cd8 #b0) ) )
+% ASSERT( T_v_0_87f3cd8 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_87f3e14 #b0 ) )
+% ASSERT( T_v_0_8804ca8 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8804ca8 #b0 ) )
+% ASSERT( T_local__SERVER_i_REMOTE_ADDR = T_local__SERVER );
+(assert (= T_local__SERVER_i_REMOTE_ADDR T_local__SERVER ) )
+% ASSERT( T_v_0_8805520 = T_local__SERVER_i_QUERY_STRING);
+(assert (= T_v_0_8805520 T_local__SERVER_i_QUERY_STRING ) )
+% ASSERT( T_local__SERVER_i_QUERY_STRING = T_local__SERVER );
+(assert (= T_local__SERVER_i_QUERY_STRING T_local__SERVER ) )
+% ASSERT( T_v_0_8805708 = T_v_0_8804b78);
+(assert (= T_v_0_8805708 T_v_0_8804b78 ) )
+% ASSERT( v_0_phiBool370 <=>  v_0_88048f4  AND  v_0_87f39dc  AND  v_0_8801820  );
+(assert (= v_0_phiBool370 (and v_0_88048f4 (and v_0_87f39dc v_0_8801820) ) ) )
+% ASSERT( T_v_0_8804b78 = IF v_0_phiBool370 THEN T_local__SERVER_i_HTTP_REFERER ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8804b78 (ite v_0_phiBool370 T_local__SERVER_i_HTTP_REFERER #b0 ) ) )
+% ASSERT( v_0_phiBool371 <=>  ( NOT v_0_88048f4 )  AND  v_0_87f39dc  AND  v_0_8801820  );
+(assert (= v_0_phiBool371 (and (not v_0_88048f4) (and v_0_87f39dc v_0_8801820) ) ) )
+% ASSERT( T_v_0_8804b78 = IF v_0_phiBool371 THEN 0bin00000000000000000000000000000000 ELSE 0bin00000000000000000000000000000000 ENDIF);
+(assert (= T_v_0_8804b78 (ite v_0_phiBool371 #b0 #b0 ) ) )
+% ASSERT( v_0_88048f4 <=> TRUE );
+(assert (= v_0_88048f4 true ) )
+% ASSERT( T_local__SERVER_i_HTTP_REFERER = T_local__SERVER );
+(assert (= T_local__SERVER_i_HTTP_REFERER T_local__SERVER ) )
+% ASSERT( T_v_0_8805a60 = T_v_0_88059b8);
+(assert (= T_v_0_8805a60 T_v_0_88059b8 ) )
+% ASSERT( T_v_0_88059b8 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_88059b8 #b0 ) )
+% ASSERT( T_local__SERVER_i_HTTP_USER_AGENT = T_local__SERVER );
+(assert (= T_local__SERVER_i_HTTP_USER_AGENT T_local__SERVER ) )
+% ASSERT( T_local__SERVER_i_REQUEST_TIME = T_local__SERVER );
+(assert (= T_local__SERVER_i_REQUEST_TIME T_local__SERVER ) )
+% ASSERT( T_v_0_8805f80 = 0bin00000000000000000000000000000000);
+(assert (= T_v_0_8805f80 #b0 ) )
+% ASSERT( v_8809174 );
+(assert v_8809174)
+%===================================================================
+
+(declare-variable  v_0_8802338  String)
+(declare-variable  v_0_87eeed8  String)
+(declare-variable  tmp1  String)
+(declare-variable  v_0_fileName0  String)
+(declare-variable  v_0_8805eec  String)
+(declare-variable  v_0_8805e50  String)
+(declare-variable  v_0_8805dbc  String)
+(declare-variable  v_0_8805d1c  String)
+(declare-variable  v_0_8805b9c  String)
+(declare-variable  local__SERVER_i_REQUEST_TIME1  String)
+(declare-variable  v_0_8805afc  String)
+(declare-variable  v_0_8805844  String)
+(declare-variable  v_0_8805a60  String)
+(declare-variable  v_0_88057a4  String)
+(declare-variable  v_0_880565c  String)
+(declare-variable  v_0_8805708  String)
+(declare-variable  v_0_88055bc  String)
+(declare-variable  v_0_8805394  String)
+(declare-variable  v_0_8805520  String)
+(declare-variable  v_0_88052f4  String)
+(declare-variable  v_0_8805174  String)
+(declare-variable  local__SERVER_i_REMOTE_ADDR  String)
+(declare-variable  v_0_87f38c4  String)
+(declare-variable  v_0_87f3824  String)
+(declare-variable  arg_8808830  String)
+(declare-variable  v_0_87f3784  String)
+(declare-variable  v_0_8804bfc  String)
+(declare-variable  v_0_8804ca8  String)
+(declare-variable  v_0_8804888  String)
+(declare-variable  v_0_87f3e14  String)
+(declare-variable  v_0_8802230  String)
+(declare-variable  v_0_8802048  String)
+(declare-variable  v_0_8801dc8  String)
+(declare-variable  v_0_8801b70  String)
+(declare-variable  v_0_87f3d74  String)
+(declare-variable  v_0_87f3cd8  String)
+(declare-variable  local__SERVER_i_QUERY_STRING  String)
+(declare-variable  v_0_8804b78  String)
+(declare-variable  local__SERVER_i_HTTP_REFERER  String)
+(declare-variable  v_0_88059b8  String)
+
+% v_0_8802338 := v_0_87eeed8
+(assert (= v_0_8802338 v_0_87eeed8) )
+% v_0_fileName0 := tmp1 ".php"
+(assert (= v_0_fileName0 (Concat tmp1 ".php") ) )
+% v_0_fileNameBool0 := v_0_8805eec == v_0_fileName0
+(assert (= v_0_fileNameBool0 (= v_0_8805eec v_0_fileName0) ) )
+% v_0_8805eec := "./data/tracking" v_0_8805e50
+(assert (= v_0_8805eec (Concat "./data/tracking" v_0_8805e50) ) )
+% v_0_8805e50 := "dmY"
+(assert (= v_0_8805e50 "dmY") )
+
+% v_0_8805dbc := v_0_8805d1c ";\n"
+(assert (= v_0_8805dbc (Concat v_0_8805d1c "_^c_^n") ) )
+% v_0_8805d1c := v_0_8805b9c local__SERVER_i_REQUEST_TIME
+(assert (= v_0_8805d1c (Concat v_0_8805b9c local__SERVER_i_REQUEST_TIME1) ) )
+% v_0_8805b9c := v_0_8805afc ";"
+(assert (= v_0_8805b9c (Concat v_0_8805afc "^c") ) )
+% v_0_8805afc := v_0_8805844 v_0_8805a60
+(assert (= v_0_8805afc (Concat v_0_8805844 v_0_8805a60) ) )
+% v_0_8805844 := v_0_88057a4 ";"
+(assert (= v_0_8805844 (Concat v_0_88057a4 "^c") ) )
+% v_0_88057a4 := v_0_880565c v_0_8805708
+(assert (= v_0_88057a4 (Concat v_0_880565c v_0_8805708) ) )
+% v_0_880565c := v_0_88055bc ";"
+(assert (= v_0_880565c (Concat v_0_88055bc "^c") ) )
+% v_0_88055bc := v_0_8805394 v_0_8805520
+(assert (= v_0_88055bc (Concat v_0_8805394 v_0_8805520) ) )
+% v_0_8805394 := v_0_88052f4 ";"
+(assert (= v_0_8805394 (Concat v_0_88052f4 "^c") ) )
+% v_0_88052f4 := v_0_8805174 local__SERVER_i_REMOTE_ADDR
+(assert (= v_0_88052f4 (Concat v_0_8805174 local__SERVER_i_REMOTE_ADDR) ) )
+% v_0_8805174 := v_0_87f38c4 ";"
+(assert (= v_0_8805174 (Concat v_0_87f38c4 "^c") ) )
+% v_0_87f38c4 := v_0_87f3824 arg_8808830
+(assert (= v_0_87f38c4 (Concat v_0_87f3824 arg_8808830) ) )
+% v_0_87f3824 := v_0_87f3784 ";"
+(assert (= v_0_87f3824 (Concat v_0_87f3784 "^c") ) )
+% v_0_87f3784 := v_0_8804bfc v_0_8804ca8
+(assert (= v_0_87f3784 (Concat v_0_8804bfc v_0_8804ca8) ) )
+% v_0_8804bfc := v_0_8804888 ";"
+(assert (= v_0_8804bfc (Concat v_0_8804888 "^c") ) )
+% v_0_phiBool364 | v_0_phiBool365 ? v_0_8804888 := v_0_87f3e14 | v_0_8802230
+(assert (=> v_0_phiBool364 (= v_0_8804888 v_0_87f3e14) ) )
+(assert (=> v_0_phiBool365 (= v_0_8804888 v_0_8802230) ) )
+% v_0_phiBool366 | v_0_phiBool367 ? v_0_8802230 := "" | v_0_8802048
+(assert (=> v_0_phiBool366 (= v_0_8802230 "") ) )
+(assert (=> v_0_phiBool367 (= v_0_8802230 v_0_8802048) ) )
+% v_0_88020cc := "old_session" == "old_session"
+(assert (= v_0_88020cc (= "old_session" "old_session") ) )
+% v_0_phiBool368 | v_0_phiBool369 ? v_0_8802048 := v_0_8801dc8 | v_0_8801b70
+(assert (=> v_0_phiBool368 (= v_0_8802048 v_0_8801dc8) ) )
+(assert (=> v_0_phiBool369 (= v_0_8802048 v_0_8801b70) ) )
+% v_0_87f3d74 := v_0_87f3cd8 "faqsessions"
+(assert (= v_0_87f3d74 (Concat v_0_87f3cd8 "faqsessions") ) )
+% v_0_8804ca8 := "old_session"
+(assert (= v_0_8804ca8 "old_session") )
+% v_0_8805520 := local__SERVER_i_QUERY_STRING
+(assert (= v_0_8805520 local__SERVER_i_QUERY_STRING) )
+% v_0_8805708 := v_0_8804b78
+(assert (= v_0_8805708 v_0_8804b78) )
+% v_0_phiBool370 | v_0_phiBool371 ? v_0_8804b78 := local__SERVER_i_HTTP_REFERER | ""
+(assert (=> v_0_phiBool370 (= v_0_8804b78 local__SERVER_i_HTTP_REFERER) ) )
+(assert (=> v_0_phiBool371 (= v_0_8804b78 "") ) )
+% v_0_8805a60 := v_0_88059b8
+(assert (= v_0_8805a60 v_0_88059b8) )
+
+
+
+
+
+
+
+(check-sat) 
+(get-model)

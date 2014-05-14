@@ -1,0 +1,772 @@
+// cc_tcheck.ast            see license.txt for copyright and terms of use
+// extension module for cc.ast that defines the entry points
+// for the type checker, and the annotations it produces
+
+// the implementations for the functions declared here are in
+// cc_tcheck.cc and cc_ast_aux.cc
+
+
+// extension modules' first "verbatim" section goes after
+// the initial verbatims from the base, but before any
+// of the classes from the base
+verbatim {
+  #include "variable.h"      // Variable
+  #include "cc_type.h"       // Type, FunctonType, CompoundType
+  #include "template.h"      // STemplateArgument
+  #include "const_eval.h"    // ConstEval
+  #include "macros.h"        // Restorer
+
+  class Env;                 // cc_env.h
+  class ArgumentInfo;        // overload.h
+
+  inline string toXml(DeclaratorContext id) {
+    return stringc << static_cast<int>(id);
+  }
+
+  inline void fromXml(DeclaratorContext &out, string str) {
+    out = static_cast<DeclaratorContext>(atoi(str));
+  }
+
+}
+
+
+custom ASTVisitor {
+public:      // custom data extensions
+  // this is true when we are inside the body of a template function
+  // or class (uninstantiated)
+  bool inTemplate;
+}
+custom ASTVisitor_ctor { inTemplate=false; }
+
+
+class TranslationUnit {
+  // This is the type checker entry point at the top level.  It
+  // writes error messages (if any) into 'env' and annotations
+  // directly into the AST fields declared below.
+  //
+  // Most of the AST classes have their own 'tcheck' or similar
+  // function, though the exact calling convention (params, etc.)
+  // varies.
+  //
+  // Some classes have an 'itcheck' (internal type check) for the
+  // subclasses, meaning the superclass 'tcheck' does some common
+  // processing and then delegates to the per-subclass 'itcheck.
+  public void tcheck(Env &env);
+}
+
+
+class TopForm {
+  public /*no_ignore*/ TopForm *tcheck(Env &env);
+  pure_virtual void itcheck(Env &env);
+}
+
+
+class Function {
+  // since 'nameAndParams->var' might refer to a previous declaration,
+  // and therefore might have differently-named parameters, I'll add
+  // another field specifically for a version of the FunctionType
+  // which has the parameters for *this* definition
+  public(xml_TY) FunctionType *funcType = NULL;
+
+  // since the body of the function (if a class member) may refer
+  // to the receiver object, I need to write it down so client
+  // analyses can find it
+  //
+  // 7/29/04: combined this with the old 'ctorReceiver'
+  public(xml_TY) Variable *receiver = NULL;
+
+  public void printExtras(ostream &os, int indent) const;
+  custom debugPrint { printExtras(os, indent); }
+
+  // if this Function is intended to be a clone of a template body,
+  // but we have not actually cloned the init/body/handlers, then
+  // this is a pointer to the Function to eventually clone, acting
+  // as a thunk; otherwise it is NULL
+  //
+  // 2005-08-07: Don't traverse this!  It would make the resulting
+  // structure not a tree, and isn't for external consumption anyway.
+  // ("const" implies "serf" implies non-tree)
+  public Function const *cloneThunkSource = NULL;
+
+  // return a copy of this Function, but with just a clone thunk
+  public Function *shallowClone() const;
+  custom substituteClone { return shallowClone(); }
+
+  // if 'cloneThunkSource' is not NULL, clone its body elements
+  // to fill out 'this' object; otherwise, do nothing
+  public void finishClone();
+
+  // if 'instV' is not NULL, then force the declarator 'nameAndParams'
+  // to refer to it instead of using the usual lookup/creation
+  // mechanism
+  public void tcheck(Env &env, Variable *instV = NULL);
+
+  // this is where we end up if 'env.checkFunctionBodies' is true
+  public void tcheckBody(Env &env);
+
+  private CompoundType *verifyIsCtor(Env &env, char const *context);
+  private void tcheck_memberInits(Env &env);
+  private void tcheck_handlers(Env &env);
+
+  // this returns true if this is an instantiation of a template 
+  // function that has not yet been tcheck'd
+  public bool instButNotTchecked() const;
+  
+  // true if this is a function template (uninstantiated)
+  public bool isTemplate() const;
+}
+
+
+class MemberInit {
+  // if this is initializing a data member, tcheck will set this
+  public(xml_TY) Variable *member = NULL;
+
+  // if it's a base class ctor call, tcheck will set this instead
+  public(xml_TY) CompoundType *base = NULL;
+
+  // the constructor used to initialize the member or subobject
+  // (can't call it "ctor".. that's an astgen keyword.. doh)
+  public(xml_TY) Variable *ctorVar = NULL;
+
+  public void printExtras(ostream &os, int indent) const;
+  custom debugPrint { printExtras(os, indent); }
+
+  custom clone {
+    ret->member = member;
+    ret->base = base;
+    ret->ctorVar = ctorVar;
+  }
+
+  public void tcheck(Env &env, CompoundType *enclosing);
+}
+
+
+class Declaration {                                   
+  public void tcheck(Env &env, DeclaratorContext context);
+}
+
+
+class ASTTypeId {
+  // tcheck params for ASTTypeId
+  public struct Tcheck {
+    // when non-NULL, we're in an E_new, and this points to an
+    // Expression* which should be set to the expression which denotes
+    // the number of elements for new[] to allocate
+    Expression **newSizeExpr;
+
+    // additional declflags to attach to the resulting Variable;
+    // when this includes DF_PARAMETER, it's a function parameter,
+    // which knowledge can be applied towards disambiguation
+    DeclFlags dflags;
+    
+    // syntactic context
+    DeclaratorContext context;
+
+  public:
+    Tcheck(DeclFlags df, DeclaratorContext dc)
+      : newSizeExpr(NULL), dflags(df), context(dc) {}
+  };
+
+  // the return value is the ASTTypeId* to store in place of the
+  // one used to invoke the function, to resolve ambiguities
+  public ASTTypeId *tcheck(Env &env, Tcheck &tc);
+  public void mid_tcheck(Env &env, Tcheck &tc);
+
+  public Type *getType() const;      // can use after calling 'tcheck'
+}
+
+
+class PQName {
+  // typecheck the template arguments buried in this PQName
+  //
+  // 8/01/04: Go all the way to looking up the scopes denoted by the
+  // qualifiers.  'scope' is the scope denoted by the qualifiers seen
+  // so far, or NULL to mean "current scope", and 'lflags' might be
+  // LF_DECLARATOR if this PQName is the name of a declarator.
+  //
+  // 2005-03-14: Do not call this directly if the name might be
+  // ambiguous; use 'tcheckPQName' (in cc_tcheck.cc) instead.
+  pure_virtual void tcheck_pq(Env &env, Scope *scope = NULL, 
+                              LookupFlags lflags = LF_NONE);
+
+  -> PQ_qualifier {
+       // record the result of looking up just the 'qualifier' portion
+       // (without considering template arguments); this is only set
+       // for the *first* PQ_qualifier in a PQName; it is needed for
+       // applyArgumentMap, since it should not be doing lookup
+       public(xml_TY) Variable *qualifierVar = NULL;
+       custom debugPrint {
+         ind(os, indent) << "qualifierVar: " << refersTo(qualifierVar) << "\n";
+       }
+
+       // digested template arguments
+       public(xml_OL,xmlEmbed_List) ObjList<STemplateArgument> sargs;
+     }
+
+  -> PQ_template {
+       public(xml_OL,xmlEmbed_List) ObjList<STemplateArgument> sargs;
+     }
+}
+
+
+class TypeSpecifier {
+  // yield the type named by the specifier; this type may of course
+  // get refined when the declarator is considered
+  public Type *tcheck(Env &env, DeclFlags dflags);
+  pure_virtual Type *itcheck(Env &env, DeclFlags dflags);
+
+  // since several of the type specifiers use names, and names are
+  // scoped, but we don't want later analyses to have to know about
+  // scopes, for those specifiers that use names cc_tcheck writes down
+  // which type it refers to
+
+  -> TS_name {
+       // typedef Variable this name refers to
+       public(xml_TY) Variable *var = NULL;
+       
+       // if the lookup is *not* dependent (and some other conditions
+       // hold...), this will point to 'var' and be preserved when
+       // the AST is cloned
+       public(xml_TY) Variable *nondependentVar = NULL;
+       custom clone { ret->nondependentVar = nondependentVar; }
+     }
+
+  -> TS_elaborated {
+       public(xml_TY) NamedAtomicType *atype = NULL;
+     }
+
+  -> TS_classSpec {
+       public(xml_TY) CompoundType *ctype = NULL;
+       public void tcheckIntoCompound(
+         Env &env, DeclFlags dflags, CompoundType *ct);
+       private void tcheckFunctionBodies(Env &env);
+
+       public void printExtras(ostream &os, int indent) const;
+       custom debugPrint { printExtras(os, indent); }
+     }
+
+  -> TS_enumSpec {
+       public(xml_TY) EnumType *etype = NULL;
+     }
+}
+
+
+class BaseClassSpec {
+  public void printExtras(ostream &os, int indent) const;
+  custom debugPrint { printExtras(os, indent); }
+
+  // the type named by the 'name'
+  public(xml_TY) CompoundType *type = NULL;
+}
+
+
+class Member {
+  pure_virtual void tcheck(Env &env);
+}
+
+
+class Enumerator {
+  public(xml_TY) Variable *var; // (serf) introduction record
+  ctor var=NULL;
+
+  // when the enumerator values are computed, I store them here
+  // so I can see them in the AST printout; I only print this
+  // value if 'var' is non-NULL (i.e. the enumerator has been
+  // tcheck'd so the value has been determined)
+  public(xml) int enumValue;
+
+  public void printExtras(ostream &os, int indent) const;
+  custom debugPrint { printExtras(os, indent); }
+
+  // we pass both the base 'enum' and the Type wrapped around it,
+  // since both are needed and it's slightly expensive to compute
+  // one from the other for each enumerator
+  public void tcheck(Env &env, EnumType *parentEnum, Type *parentType);
+}
+
+
+// The "Declarator" AST node appears in many different contexts in the
+// AST, and visitor-based analyses often need to do quite different
+// things depending on which context a declarator appears in.  So,
+// this enumeration lists all the possible contexts.
+enum DeclaratorContext {
+  DC_UNKNOWN,             // dummy value; nothing should have this after tcheck
+
+  DC_FUNCTION,            // Function::nameAndParams
+                          // inside Declaration
+  DC_TF_DECL,             //   TF_decl::decl
+  DC_TF_EXPLICITINST,     //   TF_explicitInst::d
+  DC_MR_DECL,             //   MR_decl::d
+  DC_S_DECL,              //   S_decl::decl
+  DC_TD_DECL,             //   TD_decl::d
+                          // inside ASTTypeId
+  DC_D_FUNC,              //   D_func::params
+  DC_EXCEPTIONSPEC,       //   ExceptionSpec::types
+  DC_ON_CONVERSION,       //   ON_conversion::type
+  DC_CN_DECL,             //   CN_decl::typeId
+  DC_HANDLER,             //   Handler::typeId
+  DC_E_CAST,              //   E_cast::ctype
+  DC_E_SIZEOFTYPE,        //   E_sizeofType::atype
+  DC_E_NEW,               //   E_new::atype (new)
+  DC_E_KEYWORDCAST,       //   E_keywordCast::ctype
+  DC_E_TYPEIDTYPE,        //   E_typeidType::ttype
+  DC_TP_TYPE,             //   TP_type::defaultType
+  DC_TP_NONTYPE,          //   TP_nontype::param
+  DC_TA_TYPE,             //   TA_type::type
+};
+
+
+class Declarator {
+  // entity declared by this declarator
+  public(xml_TY) Variable *var = NULL;// (serf) computed information: name, type, etc.
+  custom clone { ret->var = var; }
+
+  // This field need not be identical to 'var->type'; the 'type' here
+  // comes directly from the declartor syntax, but 'var' might refer
+  // to a previous declaration (e.g. two protoypes of the same
+  // function), and hence 'var->type' might differ in details like
+  // parameter names.  Otherwise, nominally, 'var->type' and 'type'
+  // denote equivalent types.
+  public(xml_TY) Type *type = NULL;
+
+  // syntactic context; sometimes useful to visitors
+  public(xml) DeclaratorContext context = DC_UNKNOWN;
+
+  public void printExtras(ostream &os, int indent) const;
+  custom debugPrint { printExtras(os, indent); }
+
+  // this class contains the data passed into and out of the
+  // declarator checking functions
+  public struct Tcheck {
+    // Normally, a declarator creates a Variable and inserts it
+    // into the environment.  If this field is non-NULL, then the
+    // declarator simply uses the supplied Variable instead.
+    // Either way, the Variable* is then stored in Declarator::var.
+    Variable *existingVar;
+
+    // on the way in, this is the type computed so far; initially
+    // it's just the type specifier but additional declarators will
+    // layer additional type constructors on top of it and replace
+    // the pointer here with a pointer to the constructed type; at
+    // the end it is the fully-constructed type
+    Type *type;
+
+    // these are the declflags attached to the outer declaration
+    DeclFlags dflags;
+
+    // in a new[] declarator, when we hit the final [size], stash
+    // the size's AST node pointer here; then E_new can collect it
+    Expression *size_E_new;
+
+    // if this is non-NULL, then it points at the D_func responsible
+    // for creating 'type', a FunctionType; this is used to determine
+    // the cv flags of the implicit 'this' parameter of member functions
+    D_func *funcSyntax;
+
+    // syntactic context
+    DeclaratorContext context;
+
+  public:
+    Tcheck(Type *t, DeclFlags d, DeclaratorContext dc)
+      : existingVar (NULL)
+      , type        (t)
+      , dflags      (d)
+      , size_E_new  (NULL)
+      , funcSyntax  (NULL)
+      , context     (dc)
+    {}
+    Tcheck(Tcheck const &obj)
+      : existingVar (obj.existingVar)
+      , type        (obj.type)
+      , dflags      (obj.dflags)
+      , size_E_new  (obj.size_E_new)
+      , funcSyntax  (obj.funcSyntax)
+      , context     (obj.context)
+    {}
+    Tcheck& operator= (Tcheck const &obj) {
+      existingVar = obj.existingVar;
+      type        = obj.type;
+      dflags      = obj.dflags;
+      size_E_new  = obj.size_E_new;
+      funcSyntax  = obj.funcSyntax;
+      context     = obj.context;
+      return *this;
+    }
+
+    bool hasFlag(DeclFlags f) const { return !!(dflags &f); }
+  };
+
+  // determine the type denoted by the combination of 'dt.type' and
+  // the type constructors in this declarator, then make a Variable
+  // that has that type; if this declarator refers to something that
+  // is *already* declared (like a function with a prior prototype),
+  // the 'var' field will be shared among the various declarations; if
+  // not, put it into the environment
+  //
+  // the return value specifies which of possibly ambiguous
+  // alternatives was selected
+  public /*no_ignore*/ Declarator *tcheck(Env &env, Tcheck &dt);
+  public void mid_tcheck(Env &env, Tcheck &dt);
+  public void tcheck_init(Env &env);
+}
+
+
+class IDeclarator {
+  // 8/11/04: There used to be a 'type' field here, but I decided that
+  // analyses probably have no need to know about the types denoted by
+  // IDeclarators, only that denoted by the full Declarator, which is
+  // stored in Declarator::type.
+
+  // external interface; add the type constructor represented by this
+  // IDeclarator to 'dt.type'
+  pure_virtual void tcheck(Env &env, Declarator::Tcheck &dt);
+
+  // returns true if there is a D_grouping that does not have
+  // any D_pointer, D_reference or D_ptrToMember inside it
+  public bool hasInnerGrouping() const;
+
+  -> D_func {
+       // I want to know which D_funcs are members of classes (whether
+       // static or not), but it's not sufficient to just check my
+       // environment context since I get confused by pointers to
+       // functions.. so I set this to true in MR_decl::tcheck and
+       // MR_func::tcheck
+       public(xml) bool isMember = false;
+     }
+
+  -> D_array {
+       // client analyses find it difficult to know whether this
+       // D_array means "array" or "new[] size", so I'm going to
+       // write down in cc_tcheck which one this is
+       public(xml) bool isNewSize = false;
+     }
+     
+  -> D_bitfield {
+       // type checker stashes the bitfield size in bits here
+       public(xml) int numBits = 0;
+     }
+}
+
+
+class ExceptionSpec {
+  public FunctionType::ExnSpec *tcheck(Env &env);
+}
+
+
+class OperatorName {
+  public void tcheck(Env &env);
+}
+
+
+class Statement {
+  // typecheck, and return which Statement is selected from among
+  // syntactically ambiguous choices
+  public /*no_ignore*/ Statement *tcheck(Env &env);
+
+  public void mid_tcheck(Env &env, int &);
+  pure_virtual void itcheck(Env &env);
+
+  -> S_case {
+       // the case label must be an integer; this its value
+       public(xml) int labelVal = 0;
+     }
+}
+
+
+class Condition {
+  // typecheck, and return which Condition is selected from among
+  // syntactically ambiguous choices
+  public /*no_ignore*/ Condition *tcheck(Env &env);
+  public void mid_tcheck(Env &env, int &) { itcheck(env); };
+  pure_virtual void itcheck(Env &env);
+}
+
+
+class Handler {
+  public void tcheck(Env &env);
+}
+
+
+class Expression {
+  // type check and yield the type of the expression; this type
+  // gets automatically stored in the 'type' field; the return
+  // value specifies which of possibly ambiguous alternatives
+  // was selected for retention
+  public void tcheck(Env &env, Expression *&ptr);
+  public void mid_tcheck(Env &env, Expression *&replacement);
+
+  // per-type checker; return type this expression eval's to; if
+  // this Expression would like to rewrite itself, then it can put
+  // the new Expression into 'replacement' and the parent AST node
+  // will be updated accordingly; the caller should always put the
+  // receiver object pointer into 'replacement' initially
+  //
+  // the "_x" is for grepping value; think of it as standing for 'eXpression'
+  pure_virtual Type *itcheck_x(Env &env, Expression *&replacement);
+
+  // type computed for this expression; might be a SimpleType for
+  // ST_ERROR, in which case a subsequent attempt to typecheck the
+  // same expression should stop and look for an ambiguous alt.
+  public(xml_TY) Type *type = NULL;
+
+  // this is a violation of the cloning invariant, but it gets fixed
+  // with CloneExprTypesVisitor after the AST has been fully cloned
+  custom clone {
+    ret->type = type;
+  }
+
+  // make the API for getting the type identical to that of FullExpression
+  public Type *getType() { return type; };
+
+  // const-eval; will add an error message to the environment if this
+  // expression is not a constant (and also return false); can only
+  // call this after tchecking; result must be an integer
+  public bool constEval(Env &env, int &result) const;
+
+  // if the function returns true and 'dependent' returns as true, the
+  // expression *is* constant but the precise value is dependent on
+  // template parameters
+  public bool constEval(Env &env, int &result, bool &dependent) const;
+
+  // more control: all info returned in the return value
+  public CValue constEval(ConstEval &env) const;
+  public CValue iconstEval(ConstEval &env) const;
+  public virtual CValue extConstEval(ConstEval &env) const;
+
+  // this attempts to evaluate the expression's address
+  public CValue constEvalAddr(ConstEval &env) const;
+  
+  // shared by E_cast and E_keywordCast
+  public CValue constEvalCast(ConstEval &env, ASTTypeId const *ctype, 
+                              Expression const *expr) const;
+
+  // return true if this expression has any greater-than operators
+  // that are not buried under an E_grouping; this may modify 'expr'
+  // if it filters out certain ambiguous alternatives
+  public static bool hasUnparenthesizedGT(Expression *&expr);
+  public bool ihasUnparenthesizedGT();
+  public virtual bool extHasUnparenthesizedGT();
+
+  // return what kind of special expression this is, if any
+  public SpecialExpr getSpecial(CCLang &lang) const;
+
+  public void printExtras(ostream &os, int indent) const;
+  custom debugPrint { printExtras(os, indent); }
+
+  // interpretations of literals
+  -> E_intLit      { public(xml) unsigned long i = 0; }
+  -> E_floatLit    { public(xml) double d = 0; }
+  -> E_stringLit   { /* TODO: put a DataBlock here */ }
+  -> E_charLit     { public(xml) unsigned int c = 0; }
+
+  -> E_this {                              
+       // the receiver parameter to which this 'this' refers; NOTE
+       // that 'receiver' is a *reference* whereas E_this is a
+       // *pointer* (it's like taking the address of 'receiver')
+       public(xml_TY) Variable *receiver = NULL;
+       custom clone { ret->receiver = receiver; }
+     }
+
+  -> E_variable {
+       public(xml_TY) Variable *var = NULL; // (serf) binding introduction of this name
+       public Type *itcheck_var(Env &env, Expression *&replacement, LookupFlags flags);
+       custom clone { ret->var = var; }
+
+       // extended tcheck interface for lookups that yield sets
+       public Type *itcheck_var_set(Env &env, Expression *&replacement,
+                                    LookupFlags flags, LookupSet &set);
+
+       // similar to TS_name::nondependentVar
+       public(xml_TY) Variable *nondependentVar = NULL;
+       custom clone { ret->nondependentVar = nondependentVar; }
+     }
+
+  // these two kinds have their tcheck further split into two stages
+  // so I can use a more specialized disambiguation procedure; the
+  // first stage is sufficient to disambiguate between the two
+  -> E_funCall {
+       public void inner1_itcheck(Env &env, LookupSet &candidates);
+       public Type *inner2_itcheck(Env &env, LookupSet &candidates);
+     }
+  -> E_constructor {
+       public void inner1_itcheck(Env &env);
+       public Type *inner2_itcheck(Env &env, Expression *&replacement);
+
+       // the constructor function being called
+       public(xml_TY) Variable *ctorVar = NULL;
+       custom clone { ret->ctorVar = ctorVar; }
+     }
+
+  -> E_fieldAcc {
+       public(xml_TY) Variable *field = NULL;
+       public Type *itcheck_fieldAcc(Env &env, LookupFlags flags);
+       public Type *itcheck_fieldAcc_set(Env &env, LookupFlags flags,
+                                         LookupSet &candidates);
+
+       custom clone { ret->field = field; }
+     }
+
+  -> E_sizeof {
+       public(xml) int size = -1; // size of the type of expr
+       custom clone { ret->size = size; }
+     }
+
+  -> E_cast {                           
+       // idempotency for type definitions in casts
+       public(xml) bool tcheckedType = false;           
+     }
+
+  -> E_sizeofType {
+       public(xml) int size = -1; // size of the type
+       custom clone { ret->size = size; }
+                                    
+       // This flag is used in some circumstances in C mode to ensure
+       // a given type expression is only tchecked one time, despite
+       // possible ambiguities.  (See the tcheck method.)
+       public(xml) bool tchecked = false;
+     }
+
+  // Q: should I manually clone all the annotation fields?  Do I
+  // need them all?  Should I make a new mechanism in astgen to do
+  // this automatically?
+
+  -> E_new {
+       // if this is non-NULL, it's the number of elements to allocate via new[]
+       //
+       // 2005-08-07: Don't traverse this!  It is a non-tree pointer.
+       // That is why it says "serf".
+       public(xml_AST) Expression /*nullable serf*/ *arraySize = NULL;
+
+       // constructor being called to initialize the storage
+       public(xml_TY) Variable *ctorVar = NULL;
+       custom debugPrint { ind(os,indent) << "ctorVar: " << refersTo(ctorVar) << "\n"; }
+       custom clone { ret->ctorVar = ctorVar; }
+     }
+     
+  // extended tcheck interface for lookups that yield sets; see
+  // tcheckExpression_set() in cc_tcheck.cc
+  -> E_addrOf {
+       public Type *itcheck_addrOf_set(Env &env, Expression *&replacement,
+                                       LookupFlags flags, LookupSet &set);
+     }
+  -> E_grouping {
+       public Type *itcheck_grouping_set(Env &env, Expression *&replacement,
+                                         LookupFlags flags, LookupSet &set);
+     }
+  -> E_arrow {
+       public Type *itcheck_arrow_set(Env &env, Expression *&replacement,
+                                      LookupFlags flags, LookupSet &set);
+     }
+}
+
+
+class FullExpression {
+  public void tcheck(Env &env);
+
+  // duplicate the API of Expression and delegate all the calls down
+  // to the Expression *expr member
+  public Type *getType() const
+    { return expr->type; };
+  public bool constEval(Env &env, int &result) const
+    { return expr->constEval(env, result); };
+  public CValue constEval(ConstEval &env) const
+    { return expr->constEval(env); };
+  public CValue iconstEval(ConstEval &env) const
+    { return expr->iconstEval(env); };
+}
+
+
+class ArgExpression {
+  // repeat some of Expression's interface so I can avoid adding
+  // lots of annoying "expr->expr" clutter
+  public Type *getType() const
+    { return expr->type; };
+  public bool constEval(Env &env, int &result) const
+    { return expr->constEval(env, result); };
+  public CValue constEval(ConstEval &env) const
+    { return expr->constEval(env); };
+  public CValue iconstEval(ConstEval &env) const
+    { return expr->iconstEval(env); };
+  public bool hasUnparenthesizedGT()
+    { return Expression::hasUnparenthesizedGT(expr); };
+  public SpecialExpr getSpecial(CCLang &lang) const
+    { return expr->getSpecial(lang); };
+
+  public ArgExpression *tcheck(Env &env, ArgumentInfo &);
+  public void mid_tcheck(Env &env, ArgumentInfo &);
+}
+
+
+class Initializer {
+  // check that the initializer is well-typed, given the type of
+  // the thing it initializes
+  pure_virtual void tcheck(Env &env, Type *type);
+
+  -> IN_ctor() {                             
+       // constructor function being called
+       public(xml_TY) Variable *ctorVar = NULL;
+       
+       // true if this was originally an IN_expr that the type
+       // checker rewrote as IN_ctor; needed to implement 8.5p14
+       public(xml,field) bool was_IN_expr = false;
+
+       custom clone { 
+         ret->ctorVar = ctorVar;
+         ret->was_IN_expr = was_IN_expr;
+       }
+     }
+}
+
+
+class TemplateDeclaration {
+  public void tcheck(Env &env);
+  pure_virtual void itcheck(Env &env);
+       
+  // oy, I wanted 'preemptTraverse' to affect all TemplateDeclarations
+  // at once, but that's a little difficult, so I have to copy it..
+
+  -> TD_func {
+       custom preemptTraverse {
+         // we are now in a template if we already were, or if this
+         // declaration is not a complete specialization
+         Restorer<bool> r(vis.inTemplate, vis.inTemplate || params!=NULL);
+       }
+     }
+
+  -> TD_decl {
+       custom preemptTraverse {
+         Restorer<bool> r(vis.inTemplate, vis.inTemplate || params!=NULL);
+       }
+     }
+
+  -> TD_tmember {
+       custom preemptTraverse {
+         Restorer<bool> r(vis.inTemplate, vis.inTemplate || params!=NULL);
+       }
+     }
+}
+
+
+class TemplateParameter {
+  public /*no_ignore*/ TemplateParameter *tcheck(Env &env);
+  public void mid_tcheck(Env &env, int &dummy);
+  pure_virtual void itcheck(Env &env, int &dummy);
+
+  // parameter Variable
+  public(xml_TY) Variable *var = NULL;
+}
+
+
+class TemplateArgument {
+  public /*no_ignore*/ TemplateArgument *tcheck(Env &env, STemplateArgument &sarg);
+  public void mid_tcheck(Env &env, STemplateArgument &sarg);
+  pure_virtual void itcheck(Env &env, STemplateArgument &sarg);
+}
+
+
+class NamespaceDecl {
+  pure_virtual void tcheck(Env &env);
+}
+
+
+// EOF

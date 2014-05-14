@@ -1,0 +1,18 @@
+/* UNAMBIGUOUS
+
+Grammar 'rna6' taken from:
+
+"Effective Ambiguity Checking in Biosequence Analysis"
+J.Reeder, P.Steffen, R.Giegerich, BMC Bioinformatics 6 (2005) 153.
+
+tokens = {'.','(',')'}
+*/
+
+S : L S ;
+: L ;
+
+L : "(" F ")" ;
+: "." ;
+
+F : "(" F ")" ;
+: L S ;

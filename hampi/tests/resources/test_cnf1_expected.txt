@@ -1,0 +1,5 @@
+A = "a"  | "b"  | A X0  | U_a B  | X0 A  ;
+B = "b"  ;
+S = "a"  | A X0  | U_a B  | X0 A  ;
+U_a = "a"  ;
+X0 = "a"  | A X0  | U_a B  | X0 A  ;

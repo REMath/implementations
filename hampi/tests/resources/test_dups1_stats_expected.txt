@@ -1,0 +1,5 @@
+Undefined nonterminals:0
+Productions:4
+Special symbols: 0
+Terminals:2
+Nonterminals:4

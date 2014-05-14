@@ -1,0 +1,18 @@
+usage: ./configure [options]
+
+influential environment variables:
+  CC                 C compiler [gcc]
+  CXX                C++ compiler [g++]
+
+standard (sm_config) options:
+  -h:                print this message
+  -debug[=0/1]:      enable debugging options [0]
+  -target=<target>:  cross compilation target, e.g., "i386-mingw32msvc"
+  -no-dash-g:        disable -g
+  -no-dash-O2:       disable -O2
+
+package options:
+  -prof              enable profiling
+  -devel             add options useful while developing smbase
+  -debugheap         turn on heap usage debugging
+  -traceheap         print messages on each malloc and free

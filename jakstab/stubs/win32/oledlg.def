@@ -1,0 +1,51 @@
+; 
+;   oledlg.def
+;
+;   Exports for OLEDLG DLL
+;
+;   Copyright (C) 1998 Free Software Foundation, Inc.
+;   Created by J.J. van der Heijden <J.J.vanderHeijden@student.utwente.nl>
+;   
+;   This file is part of the Windows32 API Library.
+;   Based on the November 1997 Platform SDK
+;
+;   This library is free software; you can redistribute it and/or
+;   modify it under the terms of the GNU Library General Public
+;   License as published by the Free Software Foundation; either
+;   version 2 of the License, or (at your option) any later version.
+;   
+;   This library is distributed in the hope that it will be useful,
+;   but WITHOUT ANY WARRANTY; without even the implied warranty of
+;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;   Library General Public License for more details.
+;
+;   You should have received a copy of the GNU Library General Public
+;   License along with this library; see the file COPYING.LIB.
+;   If not, write to the Free Software Foundation, 
+;   59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+;
+LIBRARY OLEDLG
+EXPORTS
+OleUIAddVerbMenuA@36
+OleUIAddVerbMenuW@36
+OleUIBusyA@4
+OleUIBusyW@4
+OleUICanConvertOrActivateAs@12
+OleUIChangeIconA@4
+OleUIChangeIconW@4
+OleUIChangeSourceA@4
+OleUIChangeSourceW@4
+OleUIConvertA@4
+OleUIConvertW@4
+OleUIEditLinksA@4
+OleUIEditLinksW@4
+OleUIInsertObjectA@4
+OleUIInsertObjectW@4
+OleUIObjectPropertiesA@4
+OleUIObjectPropertiesW@4
+OleUIPasteSpecialA@4
+OleUIPasteSpecialW@4
+OleUIPromptUserA
+OleUIPromptUserW
+OleUIUpdateLinksA@16
+OleUIUpdateLinksW@16

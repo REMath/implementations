@@ -1,0 +1,6 @@
+#This file contains installation-specific properties. Change them according to your system.
+
+#GNUPlot. For the presentation of the experimental data. Hampi requires gnuplot 4.2 or newer.
+gnuplot=/usr/bin/gnuplot
+#Print satisfying assignments as sequence of decimal ASCII codes
+printOrd=no

@@ -1,0 +1,9 @@
+(declare-variable x String)
+(declare-variable y String)
+
+(assert (= "efg" (Substring x 1 3) ) )
+(assert (= (Length x) 4) )
+
+
+(check-sat)
+(get-model)

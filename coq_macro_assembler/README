@@ -1,0 +1,102 @@
+Information for reviewers of the PPDP 2013 submission
+"Coq: The world's best macro assembler?" by
+Andrew Kennedy, Nick Benton, Jonas Jensen, and Pierre-Evariste Dagand
+=================================================================================
+
+This tar file contains sources related to the submission. 
+For linux, there is a GNUmakefile for building the samples; 
+on Windows, there is a Makefile and build.bat script, and additionally a
+"buildiso.bat" batch file that can be used to build an ISO CD image
+which can be booted on a Virtual PC of burned onto disc and booted
+directly on a machine. The example in the ISO image is "Game of Life"
+using the legacy text-mode. You can find the Coq assembler source in
+x86/lifeimp.v.
+
+The paper
+---------
+Section by section, the Coq sources for the paper can be found as follows.
+
+Section 1.1:
+
+  examples.v
+
+Section 2.1 (Bits, bytes and all that):
+
+  bitsrep.v 
+  bitsprops.v 
+  bitsops.v
+  bitsopsprops.v
+
+Section 2.2 (Memory):
+
+  pmap.v
+  pmapprops.v
+  x86/mem.v
+
+Section 2.3 (Monads):
+
+  monad.v
+  monadinst.v
+
+Section 2.4 (Readers and writers):
+  
+  cursor.v
+  reader.v
+  writer.v
+  pointsto.v
+  roundtrip.v
+
+Section 2.5 (Instructions):
+  
+  x86/reg.v
+  x86/instr.v
+
+Section 2.6 (Operational semantics):
+
+  x86/flags.v
+  x86/exn.v
+  x86/regstate.v
+  x86/procstate.v
+  x86/procstatemonad.v
+  x86/eval.v
+  x86/step.v
+  x86/encdechelp.v
+  x86/emb.v
+  x86/decinstr.v
+
+Section 3.1 (Basics of assembly code):
+
+  x86/instrsyntax.v
+  x86/encinstr.v
+  x86/examples.v  (for max example)
+  x86/roundtripinstr.v
+  x86/program.v
+  x86/programassem.v
+
+Section 3.2 (Macros):
+
+  x86/macros.v
+  x86/call.v
+  x86/examples.v
+
+Further examples
+----------------
+
+See 
+  x86/mulc.v
+for some "add and multiply-by-constant" macros that expand to a series of 
+adds and shifts. There is also a proof of correctness.
+
+Also see
+  x86/inlinealloc.v
+  x86/listspec.v
+  x86/listimp.v
+  x86/listproof.v
+for a trivial memory allocator and list-cell functions, as mentioned in our previous POPL'13
+paper: another example of assembler syntax in Coq.
+
+See
+  x86/lifeimp.v
+for Game of Life, written in assembler, and implemented directly for a memory-mapped 
+text-mode screen. On Windows, you can build an ISO image and "boot" directly into 
+game of life, if you dare!

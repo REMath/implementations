@@ -1,0 +1,41 @@
+#!/bin/sh
+# run elsa, gcc, icc
+# 
+# each is run with multitest
+
+if [ "$1" = "" ]; then
+  echo "usage: $0 input.cc"
+  exit 0
+fi
+
+# grab extra arguments for elsa
+extra=""
+if [ "$1" = "-tr" ]; then
+  extra="-tr $2"
+  shift
+  shift
+fi
+
+echo "------------- icc -------------"
+if ./multitest.pl ./run-icc "$@"; then
+  icc="ok"
+else
+  icc="fail"
+fi
+
+echo "------------- gcc -------------"
+if ./multitest.pl ./run-g++ "$@"; then
+  gcc="ok"
+else
+  gcc="fail"
+fi
+
+echo "------------- elsa -------------"
+if ./multitest.pl ./ccparse $extra "$@"; then
+  elsa="ok"
+else
+  elsa="fail"
+fi
+
+echo "icc: $icc  gcc: $gcc  elsa: $elsa"
+

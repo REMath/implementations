@@ -1,0 +1,12 @@
+/*CFG Analyzer, version 03/12/2007
+
+A word in the intersection of L(G1) ... L(G2) is, e.g., "t;tt;" of length 5
+*/
+var hampiStringVar : 5;
+cfg declar_list :=  declar | declar_list declar ;
+cfg declar :=  type decl_list ";" | type declar "{" "}" ;
+cfg type :=  "t" | "s" "{" declar_list "}" | ;
+cfg decl_list :=  decl | decl_list "," declar ;
+cfg decl :=  "t" | "i" | "*" decl | "(" decl ")" | decl "(" ")" | decl "[" "]" ;
+reg limit := fix(declar_list, 5);
+assert hampiStringVar in limit;

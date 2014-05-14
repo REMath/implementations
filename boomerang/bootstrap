@@ -1,0 +1,3 @@
+#! /bin/sh
+autoheader && aclocal -I . && libtoolize -c -f && \
+automake --foreign -c --add-missing && autoconf

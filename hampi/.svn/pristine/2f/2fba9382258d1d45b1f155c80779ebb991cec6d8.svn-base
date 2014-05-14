@@ -1,0 +1,8 @@
+S : C T ;
+  : T ;
+C : A B ;
+  : A C B ;
+T : B ;
+  : B T ;
+A : "a" ;
+B : "b" ;

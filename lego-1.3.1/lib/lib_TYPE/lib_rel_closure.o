@@ -1,0 +1,191 @@
+Module lib_rel_closure Import "lib_more_induction" "lib_rel" "lib_nat_Le";
+[intersectionRel : {s|Type}{t|Type}{F:Pred (Rel s t)}Rel s t
+  = [s|Type][t|Type][F:Pred (Rel s t)][x:s][y:t]{R:Rel s t}{FR:F R}R x y];
+[unionRel : {s|Type}{t|Type}{F:Pred (Rel s t)}Rel s t
+  = [s|Type][t|Type][F:Pred (Rel s t)][x:s][y:t]{phi:Prop}{exR:{R:Rel s t}{FR:F R}{hypR:R x y}phi}phi];
+[intersectionPred : {s|Type}{G:Pred (Pred s)}Pred s
+  = [s|Type][G:Pred (Pred s)][x:s]{P:Pred s}{GP:G P}P x];
+[unionPred : {s|Type}{G:Pred (Pred s)}Pred s
+  = [s|Type][G:Pred (Pred s)][x:s]{phi:Prop}{exP:{P:Pred s}{GP:G P}{hypP:P x}phi}phi];
+[intersectionRelI : {s|Type}{t|Type}{F|Pred (Rel s t)}{R:Rel s t}{cone:{S:Rel s t}(F S)->SubRel%%s%%t R S}SubRel%%s%%t R (intersectionRel%%s%%t F)
+  = [s|Type][t|Type][F|Pred (Rel s t)][R:Rel s t][cone:{S:Rel s t}(F S)->SubRel%%s%%t R S][x|s][y|t][hyp:R x y][R1:Rel s t][FR:F R1]cone R1 FR%%x%%y hyp];
+[intersectionRelE : {s|Type}{t|Type}{F|Pred (Rel s t)}{R:Rel s t}(F R)->SubRel%%s%%t (intersectionRel%%s%%t F) R
+  = [s|Type][t|Type][F|Pred (Rel s t)][R:Rel s t][H1:F R][x|s][y|t][hyp:intersectionRel%%s%%t F x y]hyp R H1];
+[unionRelI : {s|Type}{t|Type}{F|Pred (Rel s t)}{R:Rel s t}(F R)->SubRel%%s%%t R (unionRel%%s%%t F)
+  = [s|Type][t|Type][F|Pred (Rel s t)][R:Rel s t][H1:F R][x|s][y|t][hyp:R x y][phi:Prop][exR:{R'10:Rel s t}{FR:F R'10}{hypR:R'10 x y}phi]exR R H1 hyp];
+[unionRelE : {s|Type}{t|Type}{F|Pred (Rel s t)}{R:Rel s t}{cone:{S:Rel s t}(F S)->SubRel%%s%%t S R}SubRel%%s%%t (unionRel%%s%%t F) R
+  = [s|Type][t|Type][F|Pred (Rel s t)][R:Rel s t][cone:{S:Rel s t}(F S)->SubRel%%s%%t S R][x|s][y|t][hyp:unionRel%%s%%t F x y]hyp (R x y) ([R1:Rel s t][FR:F R1][hypR:R1 x y]cone R1 FR%%x%%y hypR)];
+[intersectionPredI : {s|Type}{G|Pred (Pred s)}{P:Pred s}{cone:{Q:Pred s}(G Q)->SubPred%%s P Q}SubPred%%s P (intersectionPred%%s G)
+  = [s|Type][G|Pred (Pred s)][P:Pred s][cone:{Q:Pred s}(G Q)->SubPred%%s P Q][x|s][hyp:P x][P1:Pred s][GP:G P1]cone P1 GP%%x hyp];
+[intersectionPredE : {s|Type}{G|Pred (Pred s)}{P:Pred s}(G P)->SubPred%%s (intersectionPred%%s G) P
+  = [s|Type][G|Pred (Pred s)][P:Pred s][H1:G P][x|s][hyp:intersectionPred%%s G x]hyp P H1];
+[unionPredI : {s|Type}{G|Pred (Pred s)}{P:Pred s}(G P)->SubPred%%s P (unionPred%%s G)
+  = [s|Type][G|Pred (Pred s)][P:Pred s][H1:G P][x|s][hyp:P x][phi:Prop][exP:{P'8:Pred s}{GP:G P'8}{hypP:P'8 x}phi]exP P H1 hyp];
+[unionPredE : {s|Type}{G|Pred (Pred s)}{P:Pred s}{cone:{Q:Pred s}(G Q)->SubPred%%s Q P}SubPred%%s (unionPred%%s G) P
+  = [s|Type][G|Pred (Pred s)][P:Pred s][cone:{Q:Pred s}(G Q)->SubPred%%s Q P][x|s][hyp:unionPred%%s G x]hyp (P x) ([P1:Pred s][GP:G P1][hypP:P1 x]cone P1 GP%%x hypP)];
+[intReversesSubRel : {s|Type}{t|Type}{E,F|Pred (Rel s t)}{EsubF:SubPred%%(Rel s t) E F}SubRel%%s%%t (intersectionRel%%s%%t F) (intersectionRel%%s%%t E)
+  = [s|Type][t|Type][E,F|Pred (Rel s t)][EsubF:SubPred%%(Rel s t) E F][x|s][y|t][hyp:intersectionRel%%s%%t F x y][R1:Rel s t][FR:E R1]hyp R1 (EsubF%%R1 FR)];
+[unionPreservesSubRel : {s|Type}{t|Type}{E,F|Pred (Rel s t)}{EsubF:SubPred%%(Rel s t) E F}SubRel%%s%%t (unionRel%%s%%t E) (unionRel%%s%%t F)
+  = [s|Type][t|Type][E,F|Pred (Rel s t)][EsubF:SubPred%%(Rel s t) E F][x|s][y|t][hyp:unionRel%%s%%t E x y][phi:Prop][exR:{R:Rel s t}{FR:F R}{hypR:R x y}phi]hyp phi ([R1:Rel s t][FR:E R1][hypR:R1 x y]exR R1 (EsubF%%R1 FR) hypR)];
+[intReversesSubPred : {s|Type}{G,H|Pred (Pred s)}{GsubH:SubPred%%(Pred s) G H}SubPred%%s (intersectionPred%%s H) (intersectionPred%%s G)
+  = [s|Type][G,H|Pred (Pred s)][GsubH:SubPred%%(Pred s) G H][x|s][hyp:intersectionPred%%s H x][P1:Pred s][GP:G P1]hyp P1 (GsubH%%P1 GP)];
+[unionPreservesSubPred : {s|Type}{G,H|Pred (Pred s)}{GsubH:SubPred%%(Pred s) G H}SubPred%%s (unionPred%%s G) (unionPred%%s H)
+  = [s|Type][G,H|Pred (Pred s)][GsubH:SubPred%%(Pred s) G H][x|s][hyp:unionPred%%s G x][phi:Prop][exP:{P:Pred s}{GP:H P}{hypP:P x}phi]hyp phi ([P1:Pred s][GP:G P1][hypP:P1 x]exP P1 (GsubH%%P1 GP) hypP)];
+[IntersectionClosed : {s|Type}{t|Type}{F:Pred (Rel s t)}Prop
+  = [s|Type][t|Type][F:Pred (Rel s t)]{G:Pred (Rel s t)}{GsubF:SubPred%%(Rel s t) G F}F (intersectionRel%%s%%t G)];
+[UnionClosed : {s|Type}{t|Type}{F:Pred (Rel s t)}Prop
+  = [s|Type][t|Type][F:Pred (Rel s t)]{G:Pred (Rel s t)}{GsubF:SubPred%%(Rel s t) G F}F (unionRel%%s%%t G)];
+[intFhasF : {s|Type}{t|Type}{F:Pred (Rel s t)}{iclF:IntersectionClosed%%s%%t F}F (intersectionRel%%s%%t F)
+  = [s|Type][t|Type][F:Pred (Rel s t)][iclF:IntersectionClosed%%s%%t F]iclF F (reflSubPred%%(Rel s t) F)];
+[unionFhasF : {s|Type}{t|Type}{F:Pred (Rel s t)}{uclF:UnionClosed%%s%%t F}F (unionRel%%s%%t F)
+  = [s|Type][t|Type][F:Pred (Rel s t)][uclF:UnionClosed%%s%%t F]uclF F (reflSubPred%%(Rel s t) F)];
+[iclAnd : {s|Type}{t|Type}{F:Pred (Rel s t)}{iclF:IntersectionClosed%%s%%t F}{G:Pred (Rel s t)}{iclG:IntersectionClosed%%s%%t G}IntersectionClosed%%s%%t (andPred%%(Rel s t) F G)
+  = [s|Type][t|Type][F:Pred (Rel s t)][iclF:IntersectionClosed%%s%%t F][G:Pred (Rel s t)][iclG:IntersectionClosed%%s%%t G][G1:Pred (Rel s t)][GsubF:SubPred%%(Rel s t) G1 (andPred%%(Rel s t) F G)]pair%%(F (intersectionRel%%s%%t G1))%%(G (intersectionRel%%s%%t G1)) (iclF G1 (andPredE1%%(Rel s t)%%G1%%F%%G GsubF)) (iclG G1 (andPredE2%%(Rel s t)%%G1%%F%%G GsubF))];
+[uclAnd : {s|Type}{t|Type}{F:Pred (Rel s t)}{uclF:UnionClosed%%s%%t F}{G:Pred (Rel s t)}{uclG:UnionClosed%%s%%t G}UnionClosed%%s%%t (andPred%%(Rel s t) F G)
+  = [s|Type][t|Type][F:Pred (Rel s t)][uclF:UnionClosed%%s%%t F][G:Pred (Rel s t)][uclG:UnionClosed%%s%%t G][G1:Pred (Rel s t)][GsubF:SubPred%%(Rel s t) G1 (andPred%%(Rel s t) F G)]pair%%(F (unionRel%%s%%t G1))%%(G (unionRel%%s%%t G1)) (uclF G1 (andPredE1%%(Rel s t)%%G1%%F%%G GsubF)) (uclG G1 (andPredE2%%(Rel s t)%%G1%%F%%G GsubF))];
+[iclRefl : {s|Type}IntersectionClosed%%s%%s (refl|s)
+  = [s|Type][G1:Pred (Rel s s)][GsubF:SubPred%%(Rel s s) G1 (refl|s)][t1:s][R:Rel s s][FR:G1 R]GsubF%%R FR t1];
+[iclSym : {s|Type}IntersectionClosed%%s%%s (sym|s)
+  = [s|Type][G1:Pred (Rel s s)][GsubF:SubPred%%(Rel s s) G1 (sym|s)][t1,u1|s][H:intersectionRel%%s%%s G1 t1 u1][R:Rel s s][FR:G1 R]GsubF%%R FR%%t1%%u1 (H R FR)];
+[iclTrans : {s|Type}IntersectionClosed%%s%%s (trans|s)
+  = [s|Type][G1:Pred (Rel s s)][GsubF:SubPred%%(Rel s s) G1 (trans|s)][t1,u1,v1|s][H:intersectionRel%%s%%s G1 t1 u1][H1:intersectionRel%%s%%s G1 u1 v1][R:Rel s s][FR:G1 R]GsubF%%R FR%%t1%%u1%%v1 (H R FR) (H1 R FR)];
+[iclPreorder : {s|Type}IntersectionClosed%%s%%s (preorder|s)
+  = [s|Type]iclAnd%%s%%s (refl%%s) (iclRefl%%s) (trans%%s) (iclTrans%%s)];
+[iclPer : {s|Type}IntersectionClosed%%s%%s (per|s)
+  = [s|Type]iclAnd%%s%%s (sym%%s) (iclSym%%s) (trans%%s) (iclTrans%%s)];
+[iclEquiv : {s|Type}IntersectionClosed%%s%%s (equiv|s)
+  = [s|Type]iclAnd%%s%%s (refl%%s) (iclRefl%%s) (per%%s) (iclAnd%%s%%s (sym%%s) (iclSym%%s) (trans%%s) (iclTrans%%s))];
+[uclSym : {s|Type}UnionClosed%%s%%s (sym|s)
+  = [s|Type][G1:Pred (Rel s s)][GsubF:SubPred%%(Rel s s) G1 (sym|s)][t1,u1|s][H:unionRel%%s%%s G1 t1 u1][phi:Prop][exR:{R:Rel s s}{FR:G1 R}{hypR:R u1 t1}phi]H phi ([R:Rel s s][FR:G1 R][hypR:R t1 u1]exR R FR (GsubF%%R FR%%t1%%u1 hypR))];
+[closure : {s|Type}{t|Type}{F:Pred (Rel s t)}{R:Rel s t}Rel s t
+  = [s|Type][t|Type][F:Pred (Rel s t)][R:Rel s t]intersectionRel%%s%%t (andPred%%(Rel s t) F (SubRel%%s%%t R))];
+[iclSubRelR : {s|Type}{t|Type}{R|Rel s t}IntersectionClosed%%s%%t (SubRel%%s%%t R)
+  = [s|Type][t|Type][R|Rel s t][G1:Pred (Rel s t)][GsubF:SubPred%%(Rel s t) G1 (SubRel%%s%%t R)][x|s][y|t][hyp:R x y][R1:Rel s t][FR:G1 R1]GsubF%%R1 FR%%x%%y hyp];
+[Rbounds : {s|Type}{t|Type}{R|Rel s t}{S:Rel s t}Prop
+  = [s|Type][t|Type][R|Rel s t][S:Rel s t]SubRel%%s%%t S R];
+[uclRbounds : {s|Type}{t|Type}{R|Rel s t}UnionClosed%%s%%t (Rbounds%%s%%t%%R)
+  = [s|Type][t|Type][R|Rel s t][G1:Pred (Rel s t)][GsubF:SubPred%%(Rel s t) G1 (Rbounds%%s%%t%%R)][x|s][y|t][hyp:unionRel%%s%%t G1 x y]hyp (R x y) ([R1:Rel s t][FR:G1 R1][hypR:R1 x y]GsubF%%R1 FR%%x%%y hypR)];
+[closureInc : {s|Type}{t|Type}{F:Pred (Rel s t)}{R|Rel s t}SubRel%%s%%t R (closure%%s%%t F R)
+  = [s|Type][t|Type][F:Pred (Rel s t)][R|Rel s t]iclSubRelR%%s%%t%%R (andPred%%(Rel s t) F (SubRel%%s%%t R)) (andPredE2%%(Rel s t)%%(andPred%%(Rel s t) F (SubRel%%s%%t R))%%F%%(SubRel%%s%%t R) (reflSubRel%%(Pred (Rel s t))%%(Rel s t) (andPred%%(Rel s t) F)%%(SubRel%%s%%t R)))];
+[closureI : {s|Type}{t|Type}{F:Pred (Rel s t)}{iclF:IntersectionClosed%%s%%t F}{R|Rel s t}F (closure%%s%%t F R)
+  = [s|Type][t|Type][F:Pred (Rel s t)][iclF:IntersectionClosed%%s%%t F][R|Rel s t]iclF (andPred%%(Rel s t) F (SubRel%%s%%t R)) (andPredE1%%(Rel s t)%%(andPred%%(Rel s t) F (SubRel%%s%%t R))%%F%%(SubRel%%s%%t R) (reflSubRel%%(Pred (Rel s t))%%(Rel s t) (andPred%%(Rel s t) F)%%(SubRel%%s%%t R)))];
+[closureE : {s|Type}{t|Type}{F:Pred (Rel s t)}{R,S|Rel s t}(F S)->(SubRel%%s%%t R S)->SubRel%%s%%t (closure%%s%%t F R) S
+  = [s|Type][t|Type][F:Pred (Rel s t)][R,S|Rel s t][H:F S][H1:SubRel%%s%%t R S]intersectionRelE%%s%%t%%(andPred%%(Rel s t) F (SubRel%%s%%t R)) S (pair%%(F S)%%(SubRel%%s%%t R S) H H1)];
+[closureEderived : {s|Type}{t|Type}{F:Pred (Rel s t)}{R,S|Rel s t}(F (andRel%%s%%t (closure%%s%%t F R) S))->(SubRel%%s%%t R S)->SubRel%%s%%t (closure%%s%%t F R) S
+  = [s|Type][t|Type][F:Pred (Rel s t)][R,S|Rel s t][H:F (andRel%%s%%t (closure%%s%%t F R) S)][H1:SubRel%%s%%t R S]transSubRel%%s%%t%%(closure%%s%%t F R)%%(andRel%%s%%t (closure%%s%%t F R) S)%%S (intersectionRelE%%s%%t%%(andPred%%(Rel s t) F (SubRel%%s%%t R)) (andRel%%s%%t (closure%%s%%t F R) S) (pair%%(F (andRel%%s%%t (closure%%s%%t F R) S))%%(SubRel%%s%%t R (andRel%%s%%t (closure%%s%%t F R) S)) H (andRelI%%s%%t%%(closure%%s%%t F R)%%S%%R (closureInc%%s%%t F%%R) H1))) (andRelE2%%s%%t%%(closure%%s%%t F R)%%S%%(andRel%%s%%t (closure%%s%%t F R) S) (reflSubRel%%s%%t (andRel%%s%%t (closure%%s%%t F R) S)))];
+[PreFix : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{R:Rel s t}Prop
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][R:Rel s t]SubRel%%s%%t R (phi R)];
+[PostFix : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{R:Rel s t}Prop
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][R:Rel s t]SubRel%%s%%t (phi R) R];
+[Fix : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{R:Rel s t}Prop
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][R:Rel s t]EqRel%%s%%t R (phi R)];
+[Increasing : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}Prop
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t]{R:Rel s t}PreFix%%s%%t phi R];
+[Idempotent : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}Prop
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t]{R:Rel s t}PostFix%%s%%t phi (phi R)];
+[Monotone : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}Prop
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t]{R,S:Rel s t}(SubRel%%s%%t R S)->SubRel%%s%%t (phi R) (phi S)];
+[Closure : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}Prop
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t](Increasing%%s%%t phi /\ (Idempotent%%s%%t phi /\ Monotone%%s%%t phi))];
+[pfp0 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}PreFix%%s%%t phi (emptyRel|s|t)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t]emptyRelI%%s%%t%%(phi (emptyRel|s|t))];
+[pfp1 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}PostFix%%s%%t phi (univRel|s|t)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t]univRelI%%s%%t%%(phi (univRel|s|t))];
+[iclPostFix : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}IntersectionClosed%%s%%t (PostFix%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][G1:Pred (Rel s t)][GsubF:SubPred%%(Rel s t) G1 (PostFix%%s%%t phi)][x|s][y|t][hyp:phi (intersectionRel%%s%%t G1) x y][R:Rel s t][FR:G1 R]GsubF%%R FR%%x%%y (phimono (intersectionRel%%s%%t G1) R ([x1|s][y1|t][hyp1:intersectionRel%%s%%t G1 x1 y1]hyp1 R FR)%%x%%y hyp)];
+[uclPreFix : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}UnionClosed%%s%%t (PreFix%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][G1:Pred (Rel s t)][GsubF:SubPred%%(Rel s t) G1 (PreFix%%s%%t phi)][x|s][y|t][hyp:unionRel%%s%%t G1 x y]hyp (phi (unionRel%%s%%t G1) x y) ([R:Rel s t][FR:G1 R][hypR:R x y]phimono R (unionRel%%s%%t G1) ([x1|s][y1|t][hyp1:R x1 y1][phi1:Prop][exR:{R'17:Rel s t}{FR'18:G1 R'17}{hypR'19:R'17 x1 y1}phi1]exR R FR hyp1)%%x%%y (GsubF%%R FR%%x%%y hypR))];
+[closureClosure : {s|Type}{t|Type}{F:Pred (Rel s t)}{iclF:IntersectionClosed%%s%%t F}Closure%%s%%t (closure%%s%%t F)
+  = [s|Type][t|Type][F:Pred (Rel s t)][iclF:IntersectionClosed%%s%%t F]pair%%(Increasing%%s%%t (closure%%s%%t F))%%(Idempotent%%s%%t (closure%%s%%t F) /\ Monotone%%s%%t (closure%%s%%t F)) ([R:Rel s t]closureInc%%s%%t F%%R) (pair%%(Idempotent%%s%%t (closure%%s%%t F))%%(Monotone%%s%%t (closure%%s%%t F)) ([R:Rel s t]closureE%%s%%t F%%(closure%%s%%t F R)%%(closure%%s%%t F R) (closureI%%s%%t F iclF%%R) (reflSubRel%%s%%t (closure%%s%%t F R))) ([R,S:Rel s t][RsubS:SubRel%%s%%t R S]closureE%%s%%t F%%R%%(closure%%s%%t F S) (closureI%%s%%t F iclF%%S) (transSubRel%%s%%t%%R%%S%%(closure%%s%%t F S) RsubS (closureInc%%s%%t F%%S))))];
+[leastFixPoint : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}Rel s t
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t]intersectionRel%%s%%t (PostFix%%s%%t phi)];
+[lfplemma : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}Fix%%s%%t phi (leastFixPoint%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi]pair%%(SubRel%%s%%t (leastFixPoint%%s%%t phi) (phi (leastFixPoint%%s%%t phi)))%%(SubRel%%s%%t (phi (leastFixPoint%%s%%t phi)) (leastFixPoint%%s%%t phi)) (intersectionRelE%%s%%t%%(PostFix%%s%%t phi) (phi (leastFixPoint%%s%%t phi)) (phimono (phi (leastFixPoint%%s%%t phi)) (leastFixPoint%%s%%t phi) (intFhasF%%s%%t (PostFix%%s%%t phi) (iclPostFix%%s%%t phi phimono)))) (intFhasF%%s%%t (PostFix%%s%%t phi) (iclPostFix%%s%%t phi phimono))];
+[phipower : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{n:nat}{R:Rel s t}Rel s t
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][n:nat][R:Rel s t]nat_elim ([_:nat]Rel s t) R ([_:nat]phi) n];
+[phipower0 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{n:nat}Rel s t
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][n:nat]phipower%%s%%t phi n (emptyRel|s|t)];
+[phipower1 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{R|Rel s t}{k|nat}(PreFix%%s%%t phi R)->PreFix%%s%%t phi (phipower%%s%%t phi k R)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][R|Rel s t][k|nat][H:PreFix%%s%%t phi R]nat_iter_induction%%(Rel s t)%%R%%phi ([S:Rel s t](PreFix%%s%%t phi R)->PreFix%%s%%t phi S) ([H1:PreFix%%s%%t phi R]H1) ([S:Rel s t][H1:(PreFix%%s%%t phi R)->PreFix%%s%%t phi S][H2:PreFix%%s%%t phi R]phimono S (phi S) (H1 H2)) k H];
+[phipower2 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{m|nat}PreFix%%s%%t phi (phipower0%%s%%t phi m)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][m|nat]phipower1%%s%%t phi phimono%%(emptyRel|s|t)%%m (pfp0%%s%%t phi)];
+[phipower3 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{m,k|nat}SubRel%%s%%t (phipower0%%s%%t phi m) (phipower0%%s%%t phi (plus k m))
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][m,k|nat]nat_iter_induction%%nat%%m%%suc ([k'7:nat]SubRel%%s%%t (phipower0%%s%%t phi m) (phipower0%%s%%t phi k'7)) (reflSubRel%%s%%t (phipower0%%s%%t phi m)) ([n:nat][H:SubRel%%s%%t (phipower0%%s%%t phi m) (phipower0%%s%%t phi n)]transSubRel%%s%%t%%(phipower0%%s%%t phi m)%%(phipower0%%s%%t phi n)%%(phipower0%%s%%t phi (suc n)) H (phipower2%%s%%t phi phimono%%n)) k];
+[phipower4 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{m,k|nat}SubRel%%s%%t (phipower%%s%%t phi k (phipower0%%s%%t phi m)) (phipower0%%s%%t phi (plus k m))
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][m,k|nat]nat_rec_induction%%nat%%m%%([_:nat]suc) ([k'7,n:nat]SubRel%%s%%t (phipower%%s%%t phi k'7 (phipower0%%s%%t phi m)) (phipower0%%s%%t phi n)) (reflSubRel%%s%%t (phipower%%s%%t phi zero (phipower0%%s%%t phi m))) ([l,n:nat][H:SubRel%%s%%t (phipower%%s%%t phi l (phipower0%%s%%t phi m)) (phipower0%%s%%t phi n)]phimono (nat_elim ([_:nat]Rel s t) (phipower0%%s%%t phi m) ([_:nat]phi) l) (nat_elim ([_:nat]Rel s t) (emptyRel|s|t) ([_:nat]phi) n) H) k];
+[phipowersincrease : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{m,n|nat}(Le m n)->SubRel%%s%%t (phipower0%%s%%t phi m) (phipower0%%s%%t phi n)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][m,n|nat][H:Le m n]H (SubRel%%s%%t (phipower0%%s%%t phi m) (phipower0%%s%%t phi n)) ([t1:nat][H1:Eq%%nat (plus m t1) n]Eq_subst%%nat%%(plus m t1)%%n (Eq_sym%%nat%%n%%(plus m t1) (Eq_sym%%nat%%(plus m t1)%%n H1)) ([z:nat]SubRel%%s%%t (phipower0%%s%%t phi m) (phipower0%%s%%t phi z)) (Eq_subst%%nat%%(plus t1 m)%%(plus m t1) (Eq_sym%%nat%%(plus m t1)%%(plus t1 m) (plus_commutes m t1)) ([z:nat]SubRel%%s%%t (phipower0%%s%%t phi m) (phipower0%%s%%t phi z)) (phipower3%%s%%t phi phimono%%m%%t1)))];
+[leastPreFixPoint : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}Rel s t
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][x:s][y:t]Ex%%nat ([n:nat]phipower0%%s%%t phi n x y)];
+[lpfplemma1 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{n|nat}SubRel%%s%%t (phipower0%%s%%t phi n) (leastPreFixPoint%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][n|nat][x|s][y|t][hyp:phipower0%%s%%t phi n x y]ExIntro%%nat n ([n'8:nat]phipower0%%s%%t phi n'8 x y) hyp];
+[lpfplemma : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}PreFix%%s%%t phi (leastPreFixPoint%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][x|s][y|t][hyp:leastPreFixPoint%%s%%t phi x y]hyp (phi (leastPreFixPoint%%s%%t phi) x y) ([n:nat][phi0nxy:phipower0%%s%%t phi n x y]phimono (phipower0%%s%%t phi n) (leastPreFixPoint%%s%%t phi) (lpfplemma1%%s%%t phi%%n)%%x%%y (phipower2%%s%%t phi phimono%%n%%x%%y phi0nxy))];
+[lfplemma1 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{n|nat}SubRel%%s%%t (phipower0%%s%%t phi n) (leastFixPoint%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][n|nat]nat_iter_induction%%(Rel s t)%%(emptyRel|s|t)%%phi ([R:Rel s t]SubRel%%s%%t R (leastFixPoint%%s%%t phi)) (emptyRelI%%s%%t%%(leastFixPoint%%s%%t phi)) ([R:Rel s t][RsubLFP:SubRel%%s%%t R (leastFixPoint%%s%%t phi)]transSubRel%%s%%t%%(phi R)%%(phi (intersectionRel%%s%%t (PostFix%%s%%t phi)))%%(leastFixPoint%%s%%t phi) (phimono R (intersectionRel%%s%%t (PostFix%%s%%t phi)) RsubLFP) (iclPostFix%%s%%t phi phimono (PostFix%%s%%t phi) (reflSubPred%%(Rel s t) (PostFix%%s%%t phi)))) n];
+[ScottTarski1 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}SubRel%%s%%t (leastPreFixPoint%%s%%t phi) (leastFixPoint%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][x|s][y|t][hyp:leastPreFixPoint%%s%%t phi x y][R:Rel s t][FR:PostFix%%s%%t phi R]hyp (R x y) ([t1:nat][H:phipower0%%s%%t phi t1 x y]lfplemma1%%s%%t phi phimono%%t1%%x%%y H R FR)];
+[singletonPred : {s|Type}{y:s}Pred s
+  = [s|Type][y,x:s]Eq%%s x y];
+[singletonRel : {s|Type}{t|Type}{x:s}{y:t}Rel s t
+  = [s|Type][t|Type][x:s][y:t][w:s][z:t](Eq%%s x w /\ Eq%%t y z)];
+[finitePred : {s|Type}Pred (Pred s)
+  = [s|Type]intersectionPred%%(Pred s) ([F:Pred (Pred s)]and3 (F (emptyPred|s)) ({y|s}F (singletonPred%%s y)) ({A,B|Pred s}(F A)->(F B)->F (orPred%%s A B)))];
+[finiteRel : {s|Type}{t|Type}Pred (Rel s t)
+  = [s|Type][t|Type]intersectionPred%%(Rel s t) ([F:Pred (Rel s t)]and3 (F (emptyRel|s|t)) ({x|s}{y|t}F (singletonRel%%s%%t x y)) ({R,S|Rel s t}(F R)->(F S)->F (orRel%%s%%t R S)))];
+[finitephipowersbound : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{Xf|Rel s t}(finiteRel%%s%%t Xf)->(SubRel%%s%%t Xf (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t Xf (phipower0%%s%%t phi n))
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi]intersectionPredE%%(Rel s t)%%([F:Pred (Rel s t)]and3 (F (emptyRel|s|t)) ({x|s}{y|t}F (singletonRel%%s%%t x y)) ({R,S|Rel s t}(F R)->(F S)->F (orRel%%s%%t R S))) ([Xf:Rel s t](SubRel%%s%%t Xf (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t Xf (phipower0%%s%%t phi n))) (pair3%%((SubRel%%s%%t (emptyRel|s|t) (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t (emptyRel|s|t) (phipower0%%s%%t phi n)))%%({x|s}{y|t}(SubRel%%s%%t (singletonRel%%s%%t x y) (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t (singletonRel%%s%%t x y) (phipower0%%s%%t phi n)))%%({R,S|Rel s t}((SubRel%%s%%t R (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t R (phipower0%%s%%t phi n)))->((SubRel%%s%%t S (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t S (phipower0%%s%%t phi n)))->(SubRel%%s%%t (orRel%%s%%t R S) (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t (orRel%%s%%t R S) (phipower0%%s%%t phi n))) ([H:SubRel%%s%%t (emptyRel|s|t) (leastPreFixPoint%%s%%t phi)]ExIntro%%nat zero ([n:nat]SubRel%%s%%t (emptyRel|s|t) (phipower0%%s%%t phi n)) (emptyRelI%%s%%t%%(phipower0%%s%%t phi zero))) ([x|s][y|t][H:SubRel%%s%%t (singletonRel%%s%%t x y) (leastPreFixPoint%%s%%t phi)]H%%x%%y (pair%%(Eq%%s x x)%%(Eq%%t y y) (Eq_refl%%s x) (Eq_refl%%t y)) (Ex%%nat ([n:nat]SubRel%%s%%t (singletonRel%%s%%t x y) (phipower0%%s%%t phi n))) ([n:nat][H1:phipower0%%s%%t phi n x y]ExIntro%%nat n ([n'10:nat]SubRel%%s%%t (singletonRel%%s%%t x y) (phipower0%%s%%t phi n'10)) ([xn|s][yn|t][hyp:singletonRel%%s%%t x y xn yn]hyp%%(phipower0%%s%%t phi n xn yn) ([eqx:Eq%%s x xn][eqy:Eq%%t y yn]Eq_subst%%s%%x%%xn (Eq_sym%%s%%xn%%x (Eq_sym%%s%%x%%xn eqx)) ([z:s]phipower0%%s%%t phi n z yn) (Eq_subst%%t%%y%%yn (Eq_sym%%t%%yn%%y (Eq_sym%%t%%y%%yn eqy)) ([z:t]phipower0%%s%%t phi n x z) H1))))) ([R,S|Rel s t][H:(SubRel%%s%%t R (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t R (phipower0%%s%%t phi n))][H1:(SubRel%%s%%t S (leastPreFixPoint%%s%%t phi))->Ex%%nat ([n:nat]SubRel%%s%%t S (phipower0%%s%%t phi n))][H2:SubRel%%s%%t (orRel%%s%%t R S) (leastPreFixPoint%%s%%t phi)]H (transSubRel%%s%%t%%R%%(orRel%%s%%t R S)%%(leastPreFixPoint%%s%%t phi) (orRelI1%%s%%t%%R%%S%%R (reflSubRel%%s%%t R)) H2) (Ex%%nat ([n:nat]SubRel%%s%%t (orRel%%s%%t R S) (phipower0%%s%%t phi n))) ([nR:nat][H3:SubRel%%s%%t R (phipower0%%s%%t phi nR)]H1 (transSubRel%%s%%t%%S%%(orRel%%s%%t R S)%%(leastPreFixPoint%%s%%t phi) (orRelI2%%s%%t%%R%%S%%S (reflSubRel%%s%%t S)) H2) (Ex%%nat ([n:nat]SubRel%%s%%t (orRel%%s%%t R S) (phipower0%%s%%t phi n))) ([nS:nat][H4:SubRel%%s%%t S (phipower0%%s%%t phi nS)]ExIntro%%nat (plus nR nS) ([n:nat]SubRel%%s%%t (orRel%%s%%t R S) (phipower0%%s%%t phi n)) (orRelE%%s%%t%%R%%S%%(phipower0%%s%%t phi (plus nR nS)) (transSubRel%%s%%t%%R%%(phipower0%%s%%t phi nR)%%(phipower0%%s%%t phi (plus nR nS)) H3 (phipowersincrease%%s%%t phi phimono%%nR%%(plus nR nS) (Le_plus_lemma1%%nR%%nS))) (transSubRel%%s%%t%%S%%(phipower0%%s%%t phi nS)%%(phipower0%%s%%t phi (plus nR nS)) H4 (phipowersincrease%%s%%t phi phimono%%nS%%(plus nR nS) (Le_plus_lemma2%%nR%%nS))))))))];
+[Algebraic : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}Prop
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t]{R|Rel s t}{x|s}{y|t}{phiRxy:phi R x y}{psi:Prop}{exRf:{Rf:Rel s t}{finRf:finiteRel%%s%%t Rf}{RfsubF:SubRel%%s%%t Rf R}{phiRfxy:phi Rf x y}psi}psi];
+[ScottTarski2 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{algphi|Algebraic%%s%%t phi}SubRel%%s%%t (leastFixPoint%%s%%t phi) (leastPreFixPoint%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][algphi|Algebraic%%s%%t phi]intersectionRelE%%s%%t%%(PostFix%%s%%t phi) (leastPreFixPoint%%s%%t phi) ([x|s][y|t][hyp:phi (leastPreFixPoint%%s%%t phi) x y][B:Prop][H:{t'10:nat}(([n:nat]phipower0%%s%%t phi n x y) t'10)->B]algphi%%(leastPreFixPoint%%s%%t phi)%%x%%y hyp B ([Rf:Rel s t][finRf:finiteRel%%s%%t Rf][RfsubF:SubRel%%s%%t Rf (leastPreFixPoint%%s%%t phi)][phiRfxy:phi Rf x y]finitephipowersbound%%s%%t phi phimono%%Rf finRf RfsubF B ([n:nat][H1:SubRel%%s%%t Rf (phipower0%%s%%t phi n)]H (suc n) (phimono Rf (nat_elim ([_:nat]Rel s t) (emptyRel|s|t) ([_:nat]phi) n) H1%%x%%y phiRfxy))))];
+[ScottTarski : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{algphi|Algebraic%%s%%t phi}Fix%%s%%t phi (leastPreFixPoint%%s%%t phi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][algphi|Algebraic%%s%%t phi]lfplemma%%s%%t phi phimono%%(Fix%%s%%t phi (leastPreFixPoint%%s%%t phi)) ([H:SubRel%%s%%t (leastFixPoint%%s%%t phi) (phi (leastFixPoint%%s%%t phi))][H1:SubRel%%s%%t (phi (leastFixPoint%%s%%t phi)) (leastFixPoint%%s%%t phi)]pair%%(SubRel%%s%%t (leastPreFixPoint%%s%%t phi) (phi (leastPreFixPoint%%s%%t phi)))%%(SubRel%%s%%t (phi (leastPreFixPoint%%s%%t phi)) (leastPreFixPoint%%s%%t phi)) (transSubRel%%s%%t%%(leastPreFixPoint%%s%%t phi)%%(phi (leastFixPoint%%s%%t phi))%%(phi (leastPreFixPoint%%s%%t phi)) (transSubRel%%s%%t%%(leastPreFixPoint%%s%%t phi)%%(leastFixPoint%%s%%t phi)%%(phi (leastFixPoint%%s%%t phi)) (ScottTarski1%%s%%t phi phimono) H) (phimono (leastFixPoint%%s%%t phi) (leastPreFixPoint%%s%%t phi) (ScottTarski2%%s%%t phi phimono%%algphi))) (transSubRel%%s%%t%%(phi (leastPreFixPoint%%s%%t phi))%%(phi (leastFixPoint%%s%%t phi))%%(leastPreFixPoint%%s%%t phi) (phimono (leastPreFixPoint%%s%%t phi) (leastFixPoint%%s%%t phi) (ScottTarski1%%s%%t phi phimono)) (transSubRel%%s%%t%%(phi (leastFixPoint%%s%%t phi))%%(leastFixPoint%%s%%t phi)%%(leastPreFixPoint%%s%%t phi) H1 (ScottTarski2%%s%%t phi phimono%%algphi))))];
+[F2 : {s|Type}{t|Type}{phi,psi:(Rel s t)->Rel s t}Pred (Rel s t)
+  = [s|Type][t|Type][phi,psi:(Rel s t)->Rel s t]andPred%%(Rel s t) (PostFix%%s%%t phi) (PostFix%%s%%t psi)];
+[icl2 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{psi:(Rel s t)->Rel s t}{psimono:Monotone%%s%%t psi}IntersectionClosed%%s%%t (F2%%s%%t phi psi)
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][psi:(Rel s t)->Rel s t][psimono:Monotone%%s%%t psi]iclAnd%%s%%t (PostFix%%s%%t phi) (iclPostFix%%s%%t phi phimono) (PostFix%%s%%t psi) (iclPostFix%%s%%t psi psimono)];
+[int2 : {s|Type}{t|Type}{phi,psi:(Rel s t)->Rel s t}Rel s t
+  = [s|Type][t|Type][phi,psi:(Rel s t)->Rel s t]intersectionRel%%s%%t (F2%%s%%t phi psi)];
+[jointpostfixpoint2 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{psi:(Rel s t)->Rel s t}{psimono:Monotone%%s%%t psi}(PostFix%%s%%t phi (int2%%s%%t phi psi) /\ PostFix%%s%%t psi (int2%%s%%t phi psi))
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][psi:(Rel s t)->Rel s t][psimono:Monotone%%s%%t psi]intFhasF%%s%%t (F2%%s%%t phi psi) (icl2%%s%%t phi phimono psi psimono)];
+[Commphipsi : {s|Type}{t|Type}{phi,psi:(Rel s t)->Rel s t}{R:Rel s t}Prop
+  = [s|Type][t|Type][phi,psi:(Rel s t)->Rel s t][R:Rel s t]EqRel%%s%%t (phi (psi R)) (psi (phi R))];
+[jointprefixpoint2 : {s|Type}{t|Type}{phi:(Rel s t)->Rel s t}{phimono:Monotone%%s%%t phi}{psi:(Rel s t)->Rel s t}{psimono:Monotone%%s%%t psi}{comm2:Commphipsi%%s%%t phi psi (int2%%s%%t phi psi)}(PreFix%%s%%t phi (int2%%s%%t phi psi) /\ PreFix%%s%%t psi (int2%%s%%t phi psi))
+  = [s|Type][t|Type][phi:(Rel s t)->Rel s t][phimono:Monotone%%s%%t phi][psi:(Rel s t)->Rel s t][psimono:Monotone%%s%%t psi][comm2:Commphipsi%%s%%t phi psi (int2%%s%%t phi psi)]jointpostfixpoint2%%s%%t phi phimono psi psimono%%(PreFix%%s%%t phi (int2%%s%%t phi psi) /\ PreFix%%s%%t psi (int2%%s%%t phi psi)) ([H:PostFix%%s%%t phi (int2%%s%%t phi psi)][H1:PostFix%%s%%t psi (int2%%s%%t phi psi)]comm2%%(PreFix%%s%%t phi (int2%%s%%t phi psi) /\ PreFix%%s%%t psi (int2%%s%%t phi psi)) ([H2:SubRel%%s%%t (phi (psi (int2%%s%%t phi psi))) (psi (phi (int2%%s%%t phi psi)))][H3:SubRel%%s%%t (psi (phi (int2%%s%%t phi psi))) (phi (psi (int2%%s%%t phi psi)))]pair%%(PreFix%%s%%t phi (int2%%s%%t phi psi))%%(PreFix%%s%%t psi (int2%%s%%t phi psi)) (intersectionRelE%%s%%t%%(F2%%s%%t phi psi) (phi (int2%%s%%t phi psi)) (pair%%(PostFix%%s%%t phi (phi (int2%%s%%t phi psi)))%%(PostFix%%s%%t psi (phi (int2%%s%%t phi psi))) (phimono (phi (int2%%s%%t phi psi)) (int2%%s%%t phi psi) H) (transSubRel%%s%%t%%(psi (phi (int2%%s%%t phi psi)))%%(phi (psi (int2%%s%%t phi psi)))%%(phi (int2%%s%%t phi psi)) H3 (phimono (psi (int2%%s%%t phi psi)) (int2%%s%%t phi psi) H1)))) (intersectionRelE%%s%%t%%(F2%%s%%t phi psi) (psi (int2%%s%%t phi psi)) (pair%%(PostFix%%s%%t phi (psi (int2%%s%%t phi psi)))%%(PostFix%%s%%t psi (psi (int2%%s%%t phi psi))) (transSubRel%%s%%t%%(phi (psi (int2%%s%%t phi psi)))%%(psi (phi (int2%%s%%t phi psi)))%%(psi (int2%%s%%t phi psi)) H2 (psimono (phi (int2%%s%%t phi psi)) (int2%%s%%t phi psi) H)) (psimono (psi (int2%%s%%t phi psi)) (int2%%s%%t phi psi) H1)))))];
+[Ffamily : {s|Type}{t|Type}{u|Type}{phifamily:u->(Rel s t)->Rel s t}{R:Rel s t}Prop
+  = [s|Type][t|Type][u|Type][phifamily:u->(Rel s t)->Rel s t][R:Rel s t]{z:u}PostFix%%s%%t (phifamily z) R];
+[iclfamily : {s|Type}{t|Type}{u|Type}{phifamily:u->(Rel s t)->Rel s t}{phifamilymono:{z:u}Monotone%%s%%t (phifamily z)}IntersectionClosed%%s%%t (Ffamily%%s%%t%%u phifamily)
+  = [s|Type][t|Type][u|Type][phifamily:u->(Rel s t)->Rel s t][phifamilymono:{z:u}Monotone%%s%%t (phifamily z)][G1:Pred (Rel s t)][GsubF:SubPred%%(Rel s t) G1 (Ffamily%%s%%t%%u phifamily)][z:u][x|s][y|t][hyp:phifamily z (intersectionRel%%s%%t G1) x y][R:Rel s t][FR:G1 R]iclPostFix%%s%%t (phifamily z) (phifamilymono z) G1 ([x1|Rel s t][hyp1:G1 x1][x2|s][y1|t][hyp2:phifamily z x1 x2 y1]GsubF%%x1 hyp1 z%%x2%%y1 hyp2)%%x%%y hyp R FR];
+[intfamily : {s|Type}{t|Type}{u|Type}{phifamily:u->(Rel s t)->Rel s t}Rel s t
+  = [s|Type][t|Type][u|Type][phifamily:u->(Rel s t)->Rel s t]intersectionRel%%s%%t (Ffamily%%s%%t%%u phifamily)];
+[jointpostfixpoint : {s|Type}{t|Type}{u|Type}{phifamily:u->(Rel s t)->Rel s t}{phifamilymono:{z:u}Monotone%%s%%t (phifamily z)}{z:u}PostFix%%s%%t (phifamily z) (intfamily%%s%%t%%u phifamily)
+  = [s|Type][t|Type][u|Type][phifamily:u->(Rel s t)->Rel s t][phifamilymono:{z:u}Monotone%%s%%t (phifamily z)]intFhasF%%s%%t (Ffamily%%s%%t%%u phifamily) (iclfamily%%s%%t%%u phifamily phifamilymono)];
+[Commfamily : {s|Type}{t|Type}{u|Type}{phifamily:u->(Rel s t)->Rel s t}{R:Rel s t}Prop
+  = [s|Type][t|Type][u|Type][phifamily:u->(Rel s t)->Rel s t][R:Rel s t]{z,w:u}SubRel%%s%%t (phifamily z (phifamily w R)) (phifamily w (phifamily z R))];
+[jointprefixpoint : {s|Type}{t|Type}{u|Type}{phifamily:u->(Rel s t)->Rel s t}{phifamilymono:{z:u}Monotone%%s%%t (phifamily z)}{commphi:Commfamily%%s%%t%%u phifamily (intfamily%%s%%t%%u phifamily)}{z:u}PreFix%%s%%t (phifamily z) (intfamily%%s%%t%%u phifamily)
+  = [s|Type][t|Type][u|Type][phifamily:u->(Rel s t)->Rel s t][phifamilymono:{z:u}Monotone%%s%%t (phifamily z)][commphi:Commfamily%%s%%t%%u phifamily (intfamily%%s%%t%%u phifamily)][z:u]intersectionRelE%%s%%t%%(Ffamily%%s%%t%%u phifamily) (phifamily z (intfamily%%s%%t%%u phifamily)) ([w:u]transSubRel%%s%%t%%(phifamily w (phifamily z (intfamily%%s%%t%%u phifamily)))%%(phifamily z (phifamily w (intfamily%%s%%t%%u phifamily)))%%(phifamily z (intfamily%%s%%t%%u phifamily)) (commphi w z) (phifamilymono z (phifamily w (intfamily%%s%%t%%u phifamily)) (intfamily%%s%%t%%u phifamily) (iclfamily%%s%%t%%u phifamily phifamilymono (Ffamily%%s%%t%%u phifamily) (reflSubPred%%(Rel s t) (Ffamily%%s%%t%%u phifamily)) w)))];
+[reflop : {s|Type}{S:Rel s s}s->s->Prop
+  = [s|Type][S:Rel s s]Eq|s];
+[symop : {s|Type}{P:Rel s s}Rel s s
+  = [s|Type]op|s|s];
+[transop : {s|Type}{S:Rel s s}Rel s s
+  = [s|Type][S:Rel s s]composeRel%%s%%s%%s S S];
+[reflopMono : {s|Type}Monotone%%s%%s (reflop%%s)
+  = [s|Type][R,S:Rel s s][H:SubRel%%s%%s R S]reflSubRel%%s%%s (reflop%%s R)];
+[symopMono : {s|Type}Monotone%%s%%s (symop%%s)
+  = [s|Type][R,S:Rel s s]opMono%%s%%s%%R%%S];
+[transopMono : {s|Type}Monotone%%s%%s (transop%%s)
+  = [s|Type][R,S:Rel s s][H:SubRel%%s%%s R S]transSubRel%%s%%s%%(transop%%s R)%%(composeRel%%s%%s%%s R S)%%(transop%%s S) (composeRelMonoL%%s%%s%%s%%R%%R%%S H) (composeRelMonoR%%s%%s%%s%%S%%R%%S H)];
+[commreflsym : {s|Type}{R:Rel s s}Commphipsi%%s%%s (reflop%%s) (symop%%s) R
+  = [s|Type][R:Rel s s]pair%%(SubRel%%s%%s (reflop%%s (symop%%s R)) (symop%%s (reflop%%s R)))%%(SubRel%%s%%s (symop%%s (reflop%%s R)) (reflop%%s (symop%%s R))) (Eq_sym%%s) ([x,y|s][hyp:symop%%s (reflop%%s R) x y]Eq_sym%%s%%y%%x hyp)];
+[commsymtrans : {s|Type}{R:Rel s s}Commphipsi%%s%%s (symop%%s) (transop%%s) R
+  = [s|Type][R:Rel s s]pair%%(SubRel%%s%%s (symop%%s (transop%%s R)) (transop%%s (symop%%s R)))%%(SubRel%%s%%s (transop%%s (symop%%s R)) (symop%%s (transop%%s R))) (opcompose2%%s%%s%%s%%R%%R) (opcompose1%%s%%s%%s%%R%%R)];
+[commtransrefl : {s|Type}{R:Rel s s}Commphipsi%%s%%s (transop%%s) (reflop%%s) R
+  = [s|Type][R:Rel s s]pair%%(SubRel%%s%%s (transop%%s (reflop%%s R)) (reflop%%s (transop%%s R)))%%(SubRel%%s%%s (reflop%%s (transop%%s R)) (transop%%s (reflop%%s R))) ([x,y|s][hyp:transop%%s (reflop%%s R) x y]hyp (reflop%%s (transop%%s R) x y) ([y1:s][hypR:reflop%%s R x y1][hypS:reflop%%s R y1 y]Eq_trans%%s%%x%%y1%%y hypR hypS)) ([x,y|s][hyp:reflop%%s (transop%%s R) x y][phi1:Prop][ex_y:{y'7:s}{hypR:reflop%%s R x y'7}{hypS:reflop%%s R y'7 y}phi1]ex_y x (Eq_refl%%s x) hyp)];
+[Refl : {s|Type}{R:Rel s s}Prop
+  = [s|Type]PostFix%%s%%s (reflop%%s)];
+[Sym : {s|Type}{R:Rel s s}Prop
+  = [s|Type]PostFix%%s%%s (symop%%s)];
+[Trans : {s|Type}{R:Rel s s}Prop
+  = [s|Type]PostFix%%s%%s (transop%%s)];

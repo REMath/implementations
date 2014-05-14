@@ -1,0 +1,14 @@
+/*CFG Analyzer, version 03/12/2007
+
+A word in the intersection of L(G1) ... L(G2) is, e.g., "abbba" of length 5
+*/
+var hampiStringVar : 5;
+cfg S0 :=  A0 A0 ;
+cfg A0 :=  "a" | A0 "b" | "b" A0 | A0 A0 A0 ;
+reg limit0 := fix(S0, 5);
+assert hampiStringVar in limit0;
+cfg S1 :=  "a" L1 A1 L1 "a" ;
+cfg L1 :=  | " " L1 ;
+cfg A1 :=  | A1 "b" ;
+reg limit1 := fix(S1, 5);
+assert hampiStringVar in limit1;

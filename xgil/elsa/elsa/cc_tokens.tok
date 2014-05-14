@@ -1,0 +1,151 @@
+// cc_tokens.tok  -*- c++ -*-
+// this is the master description of the token classes; from
+// this several other files are generated, and extensions can
+// add new tokens by appending to this file
+
+// flags:
+//   MS(m): token has multiple spellings
+//   NS(n): token is a nonseparator; nonseparators cannot be adjacent
+//   CP(p): token is a keyword only in C++; in C it's an identifier
+
+// enumeration name      description                  : MS NS CP
+// ----------------      ---------------------------  : -- -- --
+
+// end of file
+TOK_EOF,                 "<EOF>",                     :
+
+// non-keyword name
+TOK_NAME,                "<name>",                    : m  n
+
+// classified name (for e.g. cdecl2)
+TOK_TYPE_NAME,           "<type name>",               : m  n
+TOK_VARIABLE_NAME,       "<variable name>",           : m  n
+
+// literals
+TOK_INT_LITERAL,         "<int literal>",             : m  n
+TOK_FLOAT_LITERAL,       "<float literal>",           : m  n
+TOK_STRING_LITERAL,      "<string literal>",          : m
+TOK_CHAR_LITERAL,        "<char literal>",            : m
+
+// keywords
+TOK_ASM,                 "asm",                       :    n
+TOK_AUTO,                "auto",                      :    n
+TOK_BREAK,               "break",                     :    n
+TOK_BOOL,                "bool",                      :    n  p
+TOK_CASE,                "case",                      :    n
+TOK_CATCH,               "catch",                     :    n  p
+TOK_CDECL,               "cdecl",                     :    n
+TOK_CHAR,                "char",                      :    n
+TOK_CLASS,               "class",                     :    n  p
+TOK_CONST,               "const",                     :    n
+TOK_CONST_CAST,          "const_cast",                :    n  p
+TOK_CONTINUE,            "continue",                  :    n
+TOK_DEFAULT,             "default",                   :    n
+TOK_DELETE,              "delete",                    :    n  p
+TOK_DO,                  "do",                        :    n
+TOK_DOUBLE,              "double",                    :    n
+TOK_DYNAMIC_CAST,        "dynamic_cast",              :    n  p
+TOK_ELSE,                "else",                      :    n
+TOK_ENUM,                "enum",                      :    n
+TOK_EXPLICIT,            "explicit",                  :    n  p
+TOK_EXPORT,              "export",                    :    n  p
+TOK_EXTERN,              "extern",                    :    n
+TOK_FALSE,               "false",                     :    n  p
+TOK_FLOAT,               "float",                     :    n
+TOK_FOR,                 "for",                       :    n
+TOK_FRIEND,              "friend",                    :    n  p
+TOK_GOTO,                "goto",                      :    n
+TOK_IF,                  "if",                        :    n
+TOK_INLINE,              "inline",                    :    n
+TOK_INT,                 "int",                       :    n
+TOK_LONG,                "long",                      :    n
+TOK_MUTABLE,             "mutable",                   :    n  p
+TOK_NAMESPACE,           "namespace",                 :    n  p
+TOK_NEW,                 "new",                       :    n  p
+TOK_OPERATOR,            "operator",                  :    n  p
+TOK_PASCAL,              "pascal",                    :    n
+TOK_PRIVATE,             "private",                   :    n  p
+TOK_PROTECTED,           "protected",                 :    n  p
+TOK_PUBLIC,              "public",                    :    n  p
+TOK_REGISTER,            "register",                  :    n
+TOK_REINTERPRET_CAST,    "reinterpret_cast",          :    n  p
+TOK_RETURN,              "return",                    :    n
+TOK_SHORT,               "short",                     :    n
+TOK_SIGNED,              "signed",                    :    n
+TOK_SIZEOF,              "sizeof",                    :    n
+TOK_STATIC,              "static",                    :    n
+TOK_STATIC_CAST,         "static_cast",               :    n  p
+TOK_STRUCT,              "struct",                    :    n
+TOK_SWITCH,              "switch",                    :    n
+TOK_TEMPLATE,            "template",                  :    n  p
+TOK_THIS,                "this",                      :    n  p
+TOK_THROW,               "throw",                     :    n  p
+TOK_TRUE,                "true",                      :    n  p
+TOK_TRY,                 "try",                       :    n  p
+TOK_TYPEDEF,             "typedef",                   :    n
+TOK_TYPEID,              "typeid",                    :    n  p
+TOK_TYPENAME,            "typename",                  :    n  p
+TOK_UNION,               "union",                     :    n
+TOK_UNSIGNED,            "unsigned",                  :    n
+TOK_USING,               "using",                     :    n  p
+TOK_VIRTUAL,             "virtual",                   :    n  p
+TOK_VOID,                "void",                      :    n
+TOK_VOLATILE,            "volatile",                  :    n
+TOK_WCHAR_T,             "wchar_t",                   :    n  p
+TOK_WHILE,               "while",                     :    n
+
+// operators (I don't identify C++ operators because in C they're not identifiers)
+TOK_LPAREN,              "(",                         :
+TOK_RPAREN,              ")",                         :
+TOK_LBRACKET,            "[",                         :
+TOK_RBRACKET,            "]",                         :
+TOK_ARROW,               "->",                        :
+TOK_COLONCOLON,          "::",                        :
+TOK_DOT,                 ".",                         :
+TOK_BANG,                "!",                         :
+TOK_TILDE,               "~",                         :
+TOK_PLUS,                "+",                         :
+TOK_MINUS,               "-",                         :
+TOK_PLUSPLUS,            "++",                        :
+TOK_MINUSMINUS,          "--",                        :
+TOK_AND,                 "&",                         :
+TOK_STAR,                "*",                         :
+TOK_DOTSTAR,             ".*",                        :
+TOK_ARROWSTAR,           "->*",                       :
+TOK_SLASH,               "/",                         :
+TOK_PERCENT,             "%",                         :
+TOK_LEFTSHIFT,           "<<",                        :
+TOK_RIGHTSHIFT,          ">>",                        :
+TOK_LESSTHAN,            "<",                         :
+TOK_LESSEQ,              "<=",                        :
+TOK_GREATERTHAN,         ">",                         :
+TOK_GREATEREQ,           ">=",                        :
+TOK_EQUALEQUAL,          "==",                        :
+TOK_NOTEQUAL,            "!=",                        :
+TOK_XOR,                 "^",                         :
+TOK_OR,                  "|",                         :
+TOK_ANDAND,              "&&",                        :
+TOK_OROR,                "||",                        :
+TOK_QUESTION,            "?",                         :
+TOK_COLON,               ":",                         :
+TOK_EQUAL,               "=",                         :
+TOK_STAREQUAL,           "*=",                        :
+TOK_SLASHEQUAL,          "/=",                        :
+TOK_PERCENTEQUAL,        "%=",                        :
+TOK_PLUSEQUAL,           "+=",                        :
+TOK_MINUSEQUAL,          "-=",                        :
+TOK_ANDEQUAL,            "&=",                        :
+TOK_XOREQUAL,            "^=",                        :
+TOK_OREQUAL,             "|=",                        :
+TOK_LEFTSHIFTEQUAL,      "<<=",                       :
+TOK_RIGHTSHIFTEQUAL,     ">>=",                       :
+TOK_COMMA,               ",",                         :
+TOK_ELLIPSIS,            "...",                       :
+TOK_SEMICOLON,           ";",                         :
+TOK_LBRACE,              "{",                         :
+TOK_RBRACE,              "}",                         :
+
+// dummy terminals used for precedence games
+TOK_PREFER_REDUCE,       "<prefer reduce>",           :
+TOK_PREFER_SHIFT,        "<prefer shift>",            :
+

@@ -1,0 +1,9 @@
+/* AMBIGUOUS */
+
+S : N V N V "ing" N ;
+: N V N ;
+
+N : N V "ing" N ;
+: "dogs" ;
+
+V : "eat" ;

@@ -1,0 +1,41 @@
+This directory contains basic material relating to the datatype "list" of
+polymorphic lists.  Note that the variables SET and TYPE must be defined 
+and a definition of equality loaded before these files can be used.
+
+The files in this directory are:
+
+lib_list.l
+----------
+ o Definition and induction principles
+ o Constructor identifiers and characterizing theorems
+
+lib_list_funs.l
+---------------
+ o Various basic functions on lists
+
+lib_list_thms.l
+---------------
+ o Various theorems about basic functions on lists
+
+lib_cross_list.l
+----------------
+ o Material about the cross product of two lists
+
+lib_list_Adjoin.l
+-----------------
+ o Definition of the relation "Adjoin" between lists and some 
+   theorems about this relation.
+
+lib_list_Member.l
+-----------------
+ o A new definition of list membership based on "Adjoin".
+
+lib_list_Distin.l
+-----------------
+ o The property that all the elements of a list are distinct.
+
+lib_list_Perm.l
+---------------
+ o The relation "Perm" between lists which states that one list is
+   a permutation of the other.
+

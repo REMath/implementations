@@ -1,0 +1,25 @@
+// kandr.ast            see license.txt for copyright and terms of use
+// derived from oink.ast
+// nominal author: dsw
+
+// extension module to cc.ast; goes with kandr.gr
+
+verbatim {
+  #define KANDR_EXTENSION         // this extension module is active
+}
+
+class PQName {
+  // Used in D_func::traverse to traverse kandr_params
+  -> PQ_name {
+    // FakeList link; use 'setNext' to set 'next'
+    public PQ_name *next = NULL;
+    public void setNext(PQ_name *newNext);
+  }
+}
+
+class IDeclarator {
+  // retrieve the innermost D_func constructor
+  pure_virtual D_func *getD_func();
+
+  -> D_func(FakeList<PQ_name> *kAndR_params = NULL); // params if a K&R function
+}

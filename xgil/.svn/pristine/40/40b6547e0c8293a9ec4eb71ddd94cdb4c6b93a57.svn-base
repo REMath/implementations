@@ -1,0 +1,31 @@
+// CAdB.gr   -*- c++ -*-
+// non cyclic grammar (potentially) exhibiting same merge problem as AdB;
+// it really *does* exhibit the problem, as long as "B -> d" occurs
+// earlier in the file than "A -> d"
+
+// C -> A
+// A -> d | B
+// B -> d
+
+terminals {
+  68 : d   ;
+}
+
+nonterm C {
+  -> A;
+}
+
+nonterm B {
+  -> d;
+}
+
+nonterm A {
+  fun merge(p1, p2) [ cout << "merging nonterminal A\n"; return p1; ]
+
+  -> d;
+  -> B;
+}
+
+
+
+

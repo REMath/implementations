@@ -1,0 +1,660 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>smbase</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+  <style type="text/css">
+    H1 { font-size: 150% }
+    H2 { font-size: 125% }
+    H3 { font-size: 100% }
+    P.title { font-size: 175% }
+  </style>
+</HEAD>
+
+<body>
+
+<center>
+<p class="title"><b>smbase: A Utility Library</b></p>
+</center>
+
+<h1>Introduction</h1>
+
+<p>
+"smbase" stands for Scott McPeak's Base Library (sorry, naming things
+is not my specialty).  It's a bunch of
+utility modules I use in virtually all of my projects.  The entire
+library is in the public domain.
+
+<p>
+There is some overlap in functionality between smbase and the C++
+Standard Library.  Partly this is because smbase predates the standard
+library, and partly this is because that library has aspects to its
+design that I disagree with (for example, I think it is excessively
+templatized, given flaws in the C++ template mechanism).  However, the
+intent is that client code can use smbase and the standard library at
+the same time.
+
+<p>
+smbase has developed organically, in response to specific needs.
+While each module individually has been reasonably carefully designed,
+the library as a whole has not.  Consequently, the modules to not
+always orthogonally cover a given design space, and some of the
+modules are now considered obsolete (marked below as such).
+
+<p>
+Some of the links below refer to generated documentation files.  If
+you are reading this from your local filesystem, you may have to
+say <tt>"make gendoc"</tt> (after <tt>"./configure"</tt>) to get them.
+
+<h1>Build Instructions</h1>
+
+<p>
+<pre>
+  $ ./configure
+  $ make
+  $ make check
+</pre>
+<a href="configure.pl"><tt>./configure</tt></a> understands
+<a href="gendoc/configure.txt">these options</a>.  You can also
+look at the <a href="Makefile.in">Makefile</a>.
+
+<h1>Modules</h1>
+
+<p>
+The following sections list all the smbase modules, grouped by
+functionality.
+
+<h2>Linked Lists</h2>
+
+<p>
+Linked lists are sequences of objects with O(1) insertion at the front
+and iterators for traversal.  Most also have <em>mutators</em> for
+traversing and modifying.  
+
+<p>
+The two main lists classes are ObjList and SObjList.  Both are lists
+of pointers to objects; the former <em>owns</em> the objects, and will
+delete them when it goes away, while the latter does not.
+
+<ul>
+<li><a href="objlist.h">objlist.h</a>:
+ObjList, a general linked list of objects.  ObjList considers itself
+to "own" (be responsible for deallocating) the things on its list.
+See also <a href="sobjlist.h">sobjlist.h</a>.
+
+<li><a href="sobjlist.h">sobjlist.h</a>:
+SObjList, a general linked list of objects.  SObjList does <em>not</em>
+consider itself the owner of the list elements.  The "s" in the
+name stands for "serf", which I use to mean the opposite of "owner".
+See also <a href="objlist.h">objlist.h</a>.
+
+<li><a href="xobjlist.h">xobjlist.h</a>:
+This file is processed by <a href="http://www.gnu.org/software/m4/">M4</a>
+to make <a href="objlist.h">objlist.h</a> and <a href="sobjlist.h">sobjlist.h</a>.
+
+<li><a href="voidlist.h">voidlist.h</a>,
+    <a href="voidlist.cc">voidlist.cc</a>:
+The core of the linked list implementation used by
+<a href="objlist.h">objlist.h</a> and <a href="sobjlist.h">sobjlist.h</a>.
+
+</ul>
+
+<p>
+There are a couple of variants that support O(1) appending.
+
+<ul>
+<li><a href="vdtllist.h">vdtllist.h</a>,
+    <a href="vdtllist.cc">vdtllist.cc</a>:
+VoidTailList, the core of a linked list implementation which maintains
+a pointer to the last node for O(1) appends.
+Used by <a href="astlist.h">astlist.h</a> and <a href="taillist.h">taillist.h</a>.
+
+<li><a href="taillist.h">taillist.h</a>:
+Template class built on top of VoidTailList (<a href="vdtllist.h">vdtllist.h</a>).
+
+<li><a href="astlist.h">astlist.h</a>:
+ASTList, a list class for use in abstract syntax trees.
+
+</ul>
+
+<p>
+Finally, two stacks implemented with lists.  Recently, I've been
+preferring to use array-based stacks (<a href="array.h">array.h</a>),
+so these are somewhat obsolete.
+
+<ul>
+
+<li><a href="objstack.h">objstack.h</a>:
+ObjStack, a stack of owned objects.  Built with a linked list.
+
+<li><a href="sobjstack.h">sobjstack.h</a>:
+SObjStack, a stack of non-owned objects.  Built with a linked list.
+
+</ul>
+
+<h2>Arrays</h2>
+
+<p>
+Arrays are sequences of objects with O(1) random access and replacement.
+
+<p>
+The main array header, <a href="array.h">array.h</a>, contains several
+array classes.  GrowArray supports bounds checking and a method to
+grow the array.  ArrayStack supports a distinction between the <em>length</em>
+of the sequence and the <em>size</em> of the array allocated to store it,
+and grows the latter automatically.
+
+<ul>
+
+<li><a href="array.h">array.h</a>:
+Several array-like template classes, including growable arrays.
+
+</ul>
+
+<p>
+The other array modules are less-used.
+
+<ul>
+
+<li><a href="arrayqueue.h">arrayqueue.h</a>:
+ArrayQueue, a template class implementing a queue with an array.
+Supports O(1) enqueue and dequeue.
+
+<li><a href="datablok.h">datablok.h</a>,
+    <a href="datablok.cpp">datablok.cpp</a>:
+DataBlock, an array of characters of a given length.  Useful when the
+data may contain NUL ('\0') bytes.
+
+<li><a href="growbuf.h">growbuf.h</a>,
+    <a href="growbuf.cc">growbuf.cc</a>:
+Extension of DataBlock (<a href="datablok.h">datablok.h</a>) that
+provides an append() function.
+
+</ul>
+
+<p>
+This is obsolete.
+
+<ul>
+
+<li><a href="arraymap.h">arraymap.h</a>:
+ArrayMap, a map from integers to object pointers. Obsolete.
+
+</ul>
+
+
+<h2>Arrays of Bits</h2>
+
+<p>
+Arrays of bits are handled specially, because they are implemented by
+storing multiple bits per byte.
+
+<ul>
+
+<li><a href="bit2d.h">bit2d.h</a>,
+    <a href="bit2d.cc">bit2d.cc</a>:
+Two-dimensional array of bits.
+
+<li><a href="bitarray.h">bitarray.h</a>,
+    <a href="bitarray.cc">bitarray.cc</a>:
+One-dimensional array of bits.
+
+</ul>
+
+<h2>Hash Tables and Maps</h2>
+
+<p>
+Maps support mapping from arbitrary domains to arbitrary ranges.  Mappings
+can be added and queried in amortized O(1) time, but the constant factor
+is considerably higher than for arrays and lists.
+
+<p>
+Probably the most common map is the PtrMap template, which will map
+from pointers to pointers, for arbitrary pointed-to types.
+
+<ul>
+
+<li><a href="ptrmap.h">ptrmap.h</a>:
+Template class built on top of VoidPtrMap (<a href="vptrmap.h">vptrmap.h</a>).
+
+<li><a href="objmap.h">objmap.h</a>:
+Variant of PtrMap (<a href="ptrmap.h">ptrmap.h</a>) that owns the values.
+
+<li><a href="vptrmap.h">vptrmap.h</a>,
+    <a href="vptrmap.cc">vptrmap.cc</a>:
+Hashtable-based map from void* to void*.
+Used by <a href="ptrmap.h">ptrmap.h</a> and <a href="objmap.h">objmap.h</a>.
+
+</ul>
+
+<p>
+If the key can always be derived from the data (for example, the key
+is stored in the data object), then it is inefficient to store both in
+the table.  The following variants require a function pointer to map
+from data to keys.
+
+<ul>
+
+<li><a href="hashtbl.h">hashtbl.h</a>,
+    <a href="hashtbl.cc">hashtbl.cc</a>:
+HashTable, a hash table.  Maps void* to void*.
+
+<li><a href="thashtbl.h">thashtbl.h</a>:
+Template class built on top of HashTable.  Maps KEY* to VALUE*.
+
+<li><a href="ohashtbl.h">ohashtbl.h</a>:
+OwnerHashTable, a hash table that owns the values, built on top
+of HashTable.  Maps void* to T*.
+
+</ul>
+
+<p>
+The above can be used to efficiently implement a set of T*.
+
+<ul>
+
+<li><a href="sobjset.h">sobjset.h</a>:
+SObjSet, a non-owning set of objects implemented on top of HashTable.
+
+</ul>
+
+<p>
+There are two specialized versions that combine O(1) insertion
+and query of a hash table with O(1) enqueue and dequeue of an
+array.
+
+<ul>
+
+<li><a href="okhasharr.h">okhasharr.h</a>:
+OwnerKHashArray, a combination of an owner hash table and an array/stack.
+
+<li><a href="okhashtbl.h">okhashtbl.h</a>:
+OwnerKHashTable, a version of <a href="okhasharr.h">okhasharr.h</a>
+with type-safe keys ("k" for keys).
+
+</ul>
+
+<h2>Maps with Strings as Keys</h2>
+
+<p>
+Mapping from strings is a nontrivial extension of the above maps
+because comparison is more than a pointer equality test.  So there
+are some specialized maps from strings.
+
+<p>
+If you have a function that can map from data to (string) key,
+then StringHash and TStringHash (the template version) are the
+most efficient:
+
+<ul>
+<li><a href="strhash.h">strhash.h</a>,
+    <a href="strhash.cc">strhash.cc</a>:
+StringHash, a case-sensitive map from strings to void* pointers.
+Built on top of HashTable.
+</ul>
+
+<p>
+The StringVoidDict and templates wrapped around it are more general.
+They do not require a function to map from data to key, support
+query-then-modify-result, and alphabetic iteration.
+
+<ul>
+
+<li><a href="strobjdict.h">strobjdict.h</a>:
+StringObjDict, a case-sensitive map from strings to object pointers.
+The dictionary owns the referred-to objects.
+
+<li><a href="strsobjdict.h">strsobjdict.h</a>:
+StringSObjDict, a case-sensitive map from strings to object pointers.
+The dictionary does <em>not</em> own the referred-to objects.
+
+<li><a href="svdict.h">svdict.h</a>,
+    <a href="svdict.cc">svdict.cc</a>:
+StringVoidDict, a case-sensitive map from strings to void* pointers.
+Built on top of StringHash.
+
+</ul>
+
+<p>
+Finally, there is a module to map from strings to strings.
+
+<ul>
+<li><a href="strdict.h">strdict.h</a>,
+    <a href="strdict.cc">strdict.cc</a>:
+StringDict, a case-sensitive map from strings to strings.
+Currently, this is implemented with a linked list and consequently
+not efficient.  But it will work when efficiency does not matter,
+and could be reimplemented (preserving the interface) with something
+better.
+
+</ul>
+
+
+<h2>Strings</h2>
+
+<p>
+Strings are sequences of characters.
+
+<ul>
+
+<li><a href="str.h">str.h</a>,
+    <a href="str.cpp">str.cpp</a>:
+The string class itself.  Using the string class instead of
+<tt>char*</tt> makes handling strings as convenent as manipulating
+fundamental types like <tt>int</tt> or <tt>float</tt>.
+See also <a href="string.txt">string.txt</a>.
+
+<li><a href="stringset.h">stringset.h</a>,
+    <a href="stringset.cc">stringset.cc</a>:
+StringSet, a set of strings.
+
+<li><a href="strtokp.h">strtokp.h</a>,
+    <a href="strtokp.cpp">strtokp.cpp</a>:
+StrtokParse, a class that parses a string similar to how strtok()
+works, but provides a more convenient (and thread-safe) interface.
+Similar to Java's StringTokenizer.
+
+<li><a href="strutil.h">strutil.h</a>,
+    <a href="strutil.cc">strutil.cc</a>:
+A set of generic string utilities, including replace(), translate(),
+trimWhitespace(), encodeWithEscapes(), etc.
+
+<li><a href="smregexp.h">smregexp.h</a>,
+    <a href="smregexp.cc">smregexp.cc</a>:
+Regular expression matching.
+
+</ul>
+
+<h2>System Utilities</h2>
+
+<p>
+The following modules provide access to or wrappers around various
+low-level system services.
+
+<ul>
+
+<li><a href="autofile.h">autofile.h</a>,
+    <a href="autofile.cc">autofile.cc</a>:
+AutoFILE, a simple wrapper around FILE* to open it or throw
+an exception, and automatically close it.
+
+<li><a href="cycles.h">cycles.h</a>
+    <a href="cycles.c">cycles.c</a>:
+Report total number of processor cycles since the machine was turned on.
+Uses the RDTSC instruction on x86.
+
+<li><a href="missing.h">missing.h</a>,
+    <a href="missing.cpp">missing.cpp</a>:
+Implementations of a few C library functions that are not present
+on all platforms.
+
+<li><a href="mypopen.h">mypopen.h</a>,
+    <a href="mypopen.c">mypopen.c</a>:
+Open a process, yielding two pipes: one for writing, one for reading.
+
+<li><a href="mysig.h">mysig.h</a>,
+    <a href="mysig.cc">mysig.cc</a>:
+Some signal-related utilities.
+
+<li><a href="syserr.h">syserr.h</a>,
+    <a href="syserr.cpp">syserr.cpp</a>:
+Intended to be a portable encapsulation of system-dependent error
+facilities like UNIX's errno and Win32's GetLastError().  It's not
+very complete right now.
+
+<li><a href="unixutil.h">unixutil.h</a>,
+    <a href="unixutil.c">unixutil.c</a>:
+Some utilities on top of unix functions: writeAll(), readString().
+
+</ul>
+
+<h2>Portability</h2>
+
+<p>
+These modules help insulate client code from the details of the system
+it is running on.
+
+<ul>
+
+<li><a href="nonport.h">nonport.h</a>,
+    <a href="nonport.cpp">nonport.cpp</a>:
+A library of utility functions whose implementation is system-specific.
+Generally, I try to encapsulate all system depenencies as functions
+defined in nonport.
+
+<li><a href="macros.h">macros.h</a>:
+A bunch of useful macros.
+
+<li><a href="typ.h">typ.h</a>:
+Some type definitions like <tt>byte</tt> and <tt>bool</tt>, plus a few
+utility macros.  Not clearly distinguished from <a href="macros.h">macros.h</a>
+in purpose.
+
+</ul>
+
+<h2>Allocation</h2>
+
+<p>
+These modules provide additional control over the allocator.
+
+<ul>
+
+<li><a href="ckheap.h">ckheap.h</a>:
+Interface to check heap integrity.  The underlying malloc implementation
+must support these entry points for it to work.  I've extended Doug
+Lea's malloc (<a href="malloc.c">malloc.c</a>) to do so.
+
+<li><a href="malloc.c">malloc.c</a>:
+Version 2.7.0 of
+<a href="http://gee.cs.oswego.edu/dl/html/malloc.html">Doug Lea's malloc</a>.
+I've made some modifications to help with debugging of memory errors
+in client code.
+
+<li><a href="objpool.h">objpool.h</a>:
+ObjPool, a custom allocator for fixed-size objects with embedded
+'next' links.
+
+</ul>
+
+<h2>Exceptions</h2>
+
+<p>
+These modules define or throw exceptions.
+
+<ul>
+
+<li><a href="exc.h">exc.h</a>,
+    <a href="exc.cpp">exc.cpp</a>:
+Various exception classes.  The intent is derive everything from xBase,
+so a program can catch this one exception type in main() and be assured
+no exception will propagate out of the program (or any other unit of
+granularity you want).
+
+<li><a href="xassert.h">xassert.h</a>:
+xassert is an assert()-like macro that throws an exception when it
+fails, instead of calling abort().
+
+</ul>
+
+<h2>Serialization</h2>
+
+<p>
+The "flatten" serialization scheme is intended to allow sets of objects
+to read and write themselves to files.
+
+<ul>
+
+<li><a href="bflatten.h">bflatten.h</a>,
+    <a href="bflatten.cc">bflatten.cc</a>:
+Implementation of the Flatten interface (<a href="flatten.h">flatten.h</a>)
+for reading/writing binary files.
+
+<li><a href="flatten.h">flatten.h</a>,
+    <a href="flatten.cc">flatten.cc</a>:
+Generic interface for serializing in-memory data structures to files.
+Similar to Java's Serializable, but independently conceived, and has
+superior version control facilities.
+
+</ul>
+
+<h2>Compiler/Translator Support</h2>
+
+<p>
+smbase has a number of modules that are of use to programs that
+read and/or write source code.
+
+<ul>
+
+<li><a href="hashline.h">hashline.h</a>,
+    <a href="hashline.cc">hashline.cc</a>:
+HashLineMap, a mechanism for keeping track of #line directives in C
+source files.  Provides efficient queries with respect to a set of
+such directives.
+
+<li><a href="srcloc.h">srcloc.h</a>,
+    <a href="srcloc.cc">srcloc.cc</a>:
+This module maintains a one-word data type called SourceLoc.
+SourceLoc is a location within some file, e.g. line/col or character
+offset information.  SourceLoc also encodes <em>which</em> file it
+refers to.  This type is very useful for language processors (like
+compilers) because it efficiently encodes location formation.
+Decoding this into human-readable form is slower than incrementally
+updating it, but decoding is made somewhat efficient with some
+appropriate index structures.
+
+<li><a href="boxprint.h">boxprint.h</a>
+    <a href="boxprint.cc">boxprint.cc</a>:
+BoxPrint functions as an output stream (sort of like <tt>cout</tt>)
+with operations to indicate structure within the emitted text, so that
+it can break lines intelligently.  It's used as part of a source-code
+pretty-printer.
+
+<li><a href="warn.h">warn.h</a>,
+    <a href="warn.cpp">warn.cpp</a>:
+Intended to provide a general interface for user-level warnings; the
+design never really worked well.
+
+</ul>
+
+<h2>Testing and Debugging</h2>
+
+<ul>
+
+<li><a href="breaker.h">breaker.h</a>
+    <a href="breaker.cpp">breaker.cpp</a>:
+Function for putting a breakpoint in, to get debugger control just
+before an exception is thrown.
+
+<li><a href="test.h">test.h</a>:
+A few test-harness macros.
+
+<li><a href="trace.h">trace.h</a>,
+    <a href="trace.cc">trace.cc</a>:
+Module for recording and querying a set of debug tracing flags.
+It is documented in <a href="trace.html">trace.html</a>.
+
+<li><a href="trdelete.h">trdelete.h</a>,
+    <a href="trdelete.cc">trdelete.cc</a>:
+An <tt>operator delete</tt> which overwrites the deallocated memory with
+0xAA before deallocating it.
+
+</ul>
+
+<h2>Miscellaneous</h2>
+
+<ul>
+
+<li><a href="crc.h">crc.h</a>
+    <a href="crc.cpp">crc.cpp</a>:
+32-bit cyclic redundancy check.
+
+<li><a href="gprintf.h">gprintf.h</a>,
+    <a href="gprintf.c">gprintf.c</a>:
+General printf; calls a function to emit each piece.
+
+<li><a href="owner.h">owner.h</a>:
+Owner, a pointer that deallocates its referrent in its destructor.
+Similar to auto_ptr in the C++ Standard.
+
+<li><a href="point.h">point.h</a>,
+    <a href="point.cc">point.cc</a>:
+Point, a pair of integers.
+
+</ul>
+
+<h2>Test Drivers</h2>
+
+<p>
+Test drivers.  Below are the modules that are purely test drivers
+for other modules.  They're separated out from the list above to
+avoid the clutter.
+
+<ul>
+
+<li><a href="testmalloc.cc">testmalloc.cc</a>:
+A program to test the interface exposed by <a href="ckheap.h">ckheap.h</a>.
+
+<li><a href="tmalloc.c">tmalloc.c</a>:
+Test my debugging enhancements to <a href="malloc.c">malloc.c</a>.
+
+<li><a href="tarrayqueue.cc">tarrayqueue.cc</a>:
+Test driver for <a href="arrayqueue.h">arrayqueue.h</a>.
+
+<li><a href="testarray.cc">testarray.cc</a>:
+Test driver for <a href="array.h">array.h</a>.
+
+<li><a href="testcout.cc">testcout.cc</a>:
+This is a little test program for use by <a href="configure.pl">configure.pl</a>.
+
+<li><a href="tobjlist.cc">tobjlist.cc</a>:
+Test driver for <a href="objlist.h">objlist.h</a>.
+
+<li><a href="tobjpool.cc">tobjpool.cc</a>
+Test driver for <a href="objpool.h">objpool.h</a>.
+
+<li><a href="tsobjlist.cc">tsobjlist.cc</a>:
+Test driver for <a href="sobjlist.h">sobjlist.h</a>.
+
+</ul>
+
+<h2>Utility Scripts</h2>
+
+<ul>
+
+<li><a href="run-flex.pl">run-flex.pl</a>:
+Perl script to run flex and massage its output for portability.
+
+<li><a href="sm_config.pm">sm_config.pm</a>:
+This is a Perl module, intended to be used by configure scripts.
+It is mostly a library of useful routines, but also reads and writes
+some of the main script's global variables.
+
+</ul>
+
+
+<h1>Module Dependencies</h1>
+
+<p>
+The <a href="scan-depends.pl">scan-depends.pl</a> script is capable
+of generating a
+<a href="gendoc/dependencies.dot">module dependency description</a> in the
+<a href="http://www.research.att.com/sw/tools/graphviz/">Dot</a>
+format.  Not all the modules appear; I try to show the most important
+modules, and try to avoid making Dot do weird things.
+Below is its output.
+
+<p>
+<img src="gendoc/dependencies.png" alt="Module Dependencies"><br>
+There's also a <a href="gendoc/dependencies.ps">Postscript version</a>.
+
+<p>
+  <a href="http://validator.w3.org/check/referer"><img border="0"
+      src="http://www.w3.org/Icons/valid-html401"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+    
+</body>
+
+</HTML>

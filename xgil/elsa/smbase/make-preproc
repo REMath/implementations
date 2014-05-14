@@ -1,0 +1,44 @@
+#!/bin/sh
+# this builds preprocessed copies of all the C++ source;
+# it's really part of the C++ parser testing suite, but
+# it's most convenient to have it in this directory
+
+set -e
+set -x
+
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  breaker.cpp -o breaker.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  crc.cpp -o crc.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  datablok.cpp -o datablok.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  exc.cpp -o exc.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  missing.cpp -o missing.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  nonport.cpp -o nonport.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  str.cpp -o str.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  syserr.cpp -o syserr.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  voidlist.cc -o voidlist.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  warn.cpp -o warn.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  bit2d.cc -o bit2d.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  point.cc -o point.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  growbuf.cc -o growbuf.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  strtokp.cpp -o strtokp.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  strutil.cc -o strutil.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  strdict.cc -o strdict.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  svdict.cc -o svdict.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  strhash.cc -o strhash.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  hashtbl.cc -o hashtbl.i
+
+# don't try malloc, because it's C code and doesn't
+# know that 'wchar_t' is a built-in
+#cpp -DNO_DEBUG -DNO_TRACE_MALLOC_CALLS -DNO_DEBUG_HEAP malloc.c -o malloc.i
+
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  trdelete.cc -o trdelete.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  flatten.cc -o flatten.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  bflatten.cc -o bflatten.i
+cpp mysig.cc -o mysig.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  trace.cc -o trace.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  vdtllist.cc -o vdtllist.i
+cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  stringset.cc -o stringset.i
+
+# same as for malloc
+#cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  mypopen.c -o mypopen.i
+#cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  unixutil.c -o unixutil.i
+#cpp -D__LINUX__ -D__UNIX__ -DNDEBUG  cycles.c -o cycles.i

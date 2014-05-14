@@ -1,0 +1,7 @@
+(declare-variable x String)
+(declare-variable b1 bool)
+
+(assert (= b1 (Contains "abcd_efgadc" "efg" ) ) )
+
+(check-sat)
+(get-model)

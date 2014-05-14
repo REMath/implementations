@@ -1,0 +1,10 @@
+/* AMBIGUOUS */
+
+S : "b" ;
+: "a" ;
+: A S ;
+: S S ;
+
+A : "a" ;
+: A S ;
+: A A ;

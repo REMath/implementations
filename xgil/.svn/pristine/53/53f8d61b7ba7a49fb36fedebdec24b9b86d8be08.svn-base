@@ -1,0 +1,150 @@
+#!/usr/bin/perl -w
+# -*-perl-*-
+use strict;
+
+# Test the idempotency of the C++ parser.
+
+# Daniel S. Wilkerson dsw@cs.berkeley.edu
+
+my $parser = "./ccparse";
+die "No executable file: $parser\n" unless -x $parser;
+my @names = ();
+my @outfiles = ();
+my %outfile2command = ();
+
+my $outdir;
+
+my $usage=<<END
+Usage: idemcheck -d <outputdir> <inputlist>...
+END
+    ;
+
+if (+@ARGV==0) {
+    print $usage;
+    exit 0;
+}
+
+#  for(@ARGV) {
+#      s/\s*\#.*$//;               # delete comments
+#      s/^\s*//;                   # delete leading whitespace
+#      s/\s*$//;                   # delete trailing whitespace
+#      next if /^\s*$/;            # skip blank lines
+#      if (/^(\S+)$/) {
+#          push @names, $1;
+#      } else {
+#          die "Malformed line: $_";
+#      }
+#  }
+{
+    my $arg = shift @ARGV;
+    last unless defined $arg;
+    if ($arg=~/^-d/) {
+        $outdir = shift @ARGV;
+        die "No argument to -d\n" unless defined $outdir;
+        die "No such dir: $outdir\n" unless -d $outdir;
+    } else {
+        push @names, $arg;
+    }
+    redo;
+}
+die "You must specify an out directory with -d\n$usage" unless defined $outdir;
+
+sub run_only ($$) {
+    my ($command, $outfile) = @_;
+    my $realcommand = "$command >> $outfile";
+#    print "RUN: $realcommand\n";
+    unlink $outfile;
+    die if -f $outfile;
+    my $res = system "$realcommand";
+    if ($res!=0) {
+        my $exit_value  = $res >> 8;
+        my $signal_num  = $res & 127;
+        my $dumped_core = $res & 128;
+        system "echo >> $outfile '**** abnormal exit: exit_value $exit_value, " .
+            "signal_num $signal_num, dumped_core $dumped_core'\n";
+        die "Command fails: $realcommand\n";
+    }
+}
+
+sub run_command ($$) {
+    my ($command, $outfile) = @_;
+    my $realcommand = "$command >> $outfile";
+    $outfile2command{$outfile} = $realcommand;
+    push @outfiles, $outfile;
+    run_only $command, $outfile;
+}
+
+sub dump_outfiles {
+    for my $outfile(@outfiles) {
+        print "STAGE ****************\n";
+        print "$outfile2command{$outfile}\n";
+        system "cat $outfile";
+    }
+}
+
+my $numinputs = 0;
+my $numpass = 0;
+my @failingFiles = ();
+for my $name(@names) {
+    print "$name\n";
+    die "No such file $name\n" unless -f "$name";
+    ++$numinputs;
+
+    my $outname = $name;
+    if ($outname=~m|/|) {$outname=~s|^.*/([^/]+)|$1|;}
+    die "Bad outname:$outname:\n" if $outname=~/^\s*$/;
+    $outname = "$outdir/$outname";
+
+    @outfiles = ();
+    push @outfiles, $name;
+    $outfile2command{$name} = "ORIGINAL: $name";
+    eval {
+        # sm: added "-tr prettyPrint" to print the tree, since
+        # I made that printing conditional upon the tracing flag
+        my $flags = "-tr prettyPrint";
+#          my $cppflags = "-lang-c++";      # This doesn't work!
+        my $cpp = "cpp -D__cplusplus -D__LINUX__ -D__UNIX__ -DNDEBUG";
+        run_command "$cpp $name", "$outname.0cppout.cc";
+        run_command "$parser $flags $outname.0cppout.cc", "$outname.1rawout.cc";
+        run_only "cpp < $outname.1rawout.cc | perl ./chop_out", "$outname.2out.cc";
+        run_command "$parser $flags $outname.2out.cc", "$outname.3rawout.cc";
+        run_only "$cpp < $outname.3rawout.cc | perl ./chop_out", "$outname.4out.cc";
+    };
+    if ($@) {
+        dump_outfiles();
+        push @failingFiles, $name;
+        print "ERROR: $@\n";
+        next;
+    }
+
+    # sm: replaced -u with -c for portability
+    #
+    # sm: 2005-02-12: added -b (ignore blankspace differences)
+    # because on cygwin with DOS line endings in/c99/t0133.c has
+    # a CR vs CRLF difference that I don't want to track down...
+    my $diff_command = "diff -c -b $outname.2out.cc $outname.4out.cc > $outname.5diff";
+    $outfile2command{"$outname.5diff"} = $diff_command;
+    push @outfiles, "$outname.5diff";
+    my $diff_res = system $diff_command;
+    if ($diff_res == 0) {
+        ++$numpass;
+    } else {
+        dump_outfiles();
+        push @failingFiles, $name;
+    }
+}
+
+print "";
+print "Num inputs $numinputs\n";
+print "Num pass   $numpass\n";
+if (@failingFiles) {
+    print ("Failing files: ", join(' ', @failingFiles), "\n");
+}
+
+if ($numinputs==$numpass) {
+    print "PASS\n";
+    exit 0;
+} else {
+    print "FAIL\n";
+    exit 1;
+}

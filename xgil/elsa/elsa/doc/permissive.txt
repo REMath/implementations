@@ -1,0 +1,104 @@
+2005-08-09 03:17
+
+The "permissive" Flag
+---------------------
+
+Elsa can be set in a mode that I call "permissive".  From the ccparse
+command line, "-tr permissive" will do it.  Internally, this has the
+effect of setting Env::doReportTemplateErrors to false.
+
+The effect of the flag is to suppress errors (and warnings) that arise
+during processing of uninstantiated template bodies.  Normally, Elsa
+diagnoses (flags as an error) any syntax in a template body that
+cannot generate a valid specialization (instantiation).  However, in
+permissive mode, most of those errors will be discarded (EF_STRONG
+errors and warnings are the exception), and therefore the syntax will
+only be diagnosed if/when the template is instantiated.
+
+Quoting the Standard, 14.6p7:
+
+  ... No diagnostic shall be issued for a template definition for which
+  a valid specialization can be generated.  If no valid specialization
+  can be generated for a template definition, and that template is not
+  instantiated, the template definition is ill-formed, no diagnostic
+  required.  ...  Note: if a template is instantiated, errors will be
+  diagnosed according to other rules in this Standard.
+
+  // example in 14.6p7
+  int j;
+  template<class T> class X {
+          // ...
+          void f(T t, int i, char* p)
+          {
+                  t = i;          // diagnosed if X::f is instantiated
+                                  // and the assignment to t is an error
+                  p = i;          // may be diagnosed even if X::f is
+                                  // not instantiated
+                  p = j;          // may be diagnosed even if X::f is
+                                  // not instantiated
+          }
+          void g(T t) {
+                  +;              // may be diagnosed even if X::g is
+                                  // not instantiated
+          }
+  };
+
+Note that Elsa is only supposed to report an error in a template when
+no specialization can be generated, meaning the input code is truly
+invalid.  It has lots of checks (even in non-permissive mode) to avoid
+emitting spurious errors, i.e., errors that in fact would not be
+errors if the right set of template arguments were provided.  If you
+observe Elsa behaving contrary to this intent, please report it as a
+bug.
+
+Now, you might ask why bother attempting to typecheck (uninstantiated)
+template bodies at all, given that diagnosing errors is in some sense
+optional?  The answer is that to implement non-dependent lookup (also
+known as two phase lookup), template bodies must be analyzed in
+sufficient detail to distinguish dependent from non-dependent names,
+and perform lookup on the non-dependent names:
+
+  // example in 14.6.3p1
+  void g(double);
+  void h();
+
+  template<class T> class Z {
+  public:
+          void f() {
+                  g(1);          // calls g(double)
+                  h++;           // ill-formed: cannot increment function;
+                                 // this could be diagnosed either here or
+                                 // at the point of instantiation
+          }
+  };
+
+  void g(int);                   // not in scope at the point of the template
+                                 // definition, not considered for the call g(1)
+
+So in fact the Standard effectively *requires* that template bodies be
+typechecked, and Elsa does.  Given that Elsa has to do such checking
+anyway, it reports the errors it finds, because that helps to debug
+Elsa (since we don't have to wait for an instantiation to observe
+certain bugs).
+
+But, GCC and ICC do not do this.  They implement two phase lookup, but
+apparently also suppress errors not related to lookup.  This causes a
+problem for automatic minimization, since the minimizer tends to just
+home in on syntax that Elsa diagnoses earlier than GCC would.
+
+Therefore, Elsa has the permissive flag.  With this flag enabled, Elsa
+delays diagnosis as well, making its behavior more similar to GCC and
+thereby improving the likelihood of successful automatic minimization.
+So, usually, inputs that GCC accepts and Elsa rejects should be
+minimized with Elsa in permissive mode.
+
+The specification of the behavior of this flag is a bit ugly.
+Basically, if an error arises from checking a template and neither GCC
+or ICC report it, it should be suppressed in permissive mode.  Since
+there is no easy way to determine exactly what is reported by these
+compilers, its behavior necessarily must evolve as more testcases are
+seen.
+
+
+
+EOF

@@ -1,0 +1,16 @@
+// demo.ast
+// demonstrates basic ast concepts; for the documentation
+
+class Root(A a, B b);
+
+class A {
+  -> A_one(string name);
+  -> A_two(B b);
+}
+
+class B(string name) {
+  public int x = 0;
+
+  -> B_one(int y);
+  -> B_two(char c);
+}

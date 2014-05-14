@@ -1,0 +1,38 @@
+/* UNAMBIGUOUS (LR(2))
+
+Grammar '03-09-027' ("monty") taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+tokens = {
+'f'=MONTY_FD,
+'c'=MONTY_CHAR,
+'n'=MONTY_UNSIGNED_INTEGER_NUMBER,
+'q'=MONTY_SINGLE_QUOTE,
+'i'=MONTY_IDENTIFIER,
+'s'=MONTY_STORE
+}
+
+*/
+
+
+lines
+: fred ;
+
+fred
+: declaration "f" declare_length ;
+
+declare_length
+: "n" "c" ;
+
+declaration
+: label_identifier_seq ;
+: "s" "f" label_identifier_seq ;
+
+label_identifier
+: "q" "i" "q" ;
+
+label_identifier_seq
+: label_identifier ;
+: label_identifier_seq "f" label_identifier ;

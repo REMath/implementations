@@ -1,0 +1,294 @@
+string.txt
+This document describes handling of string classes in smbase.
+
+
+
+The 'string' class defined in str.h predates std::string by several
+years.  I find its interface quite satisfactory.
+
+However, as part of the goal of releasing Elsa (etc.) is to let others
+use it in their projects, and std::string is understandably becoming
+quite popular, it must at a minimum be possible to integrate
+smbase-based code with code that uses std::string.
+
+One option is to simply put my string class into its own namespace,
+say smbase::string, or maybe rename it to sm_string or something.  But
+it was never my intent to have more than one notion of 'string' in a
+given code base; I made my own simply because there was nothing else
+at the time.  The programmer should not be forced to choose among
+string classes for routine tasks; a string is a string.
+
+Therefore my plan is to evolve my string (hereafter: smbase::string,
+even though it is not actually in a namespace at the moment) towards
+interface compatibility with std::string.  The ideal end state is that
+one could simply choose at compile-time which implementation to use,
+and all the client code would work, and the only difference (if any)
+would be performance.
+
+In other words, make smbase::string a subset of std::string.
+
+
+Now, that is all well and good, but there is one major problem:
+std::string does not implicitly convert to 'char const *', whereas
+smbase::string does (or used to), and a great deal of my code relies
+on this conversion.
+
+My general approach had been to use parameters of type 'char const *'
+whenever a function was (1) not going to modify the string, and (2)
+not going to let the pointer escape (say, into the heap).  This worked
+well because it was both efficient and convenient; code that needed to
+store strings used 'string' and code that needed to temporarily use a
+string used 'char const *', and both could be passed to C library
+functions.
+
+But since std::string cannot be implicitly converted to char const *,
+this strategy will not work, as it would require lots of explicit
+conversions (calls to c_str) that would clutter up the code.
+
+The main alternative is to push 'string' into interfaces further down
+in the subsystem hierarchy, closer to the C library.  The main problem
+with that is it entails either making the parameter types be 'string',
+which incurs an extra pair of calls to malloc and free each time it is
+passed down, or make the type 'string const &', which is unwieldy.
+
+Actually, many implementations of std::string, including the one in
+gcc's C++ library, use a copy-on-write strategy that would avoid the
+calls to malloc and free.  But the price is a significant storage
+overhead for each string (4 extra words for gcc), plus potential
+problems in multithreaded code.  While in general I think
+copy-on-write is a good idea, I do not want to adopt a style of code
+that will force me to use copy-on-write to get decent performance.
+Moreover, the cost I am *really* concerned about is allocations when
+there previously were none; the gap between 1 allocation and 2 is
+small compared to the gap between 0 and 1; and copy-and-write is of
+no help for eliminating that first allocation.
+
+
+My (straightforward) idea is to use the following 'rostring':
+         
+  // str.h
+  typedef string const &rostring;
+  
+This type, normally used as a function parameter type, conveys both 
+(1) that the user promises not to modify the string, and also 
+(2) that the address of the object passed will *not* "escape", i.e.
+be stored in the heap or a global after the function returns.  These
+semantics have always been associated with my use of 'char const *'
+in parameters, but now they have their own name, and this name is
+much easier to type than 'string const &'.
+
+I think this approach provides a reasonable compromise.  It lets
+me pass strings down efficiently and soundly, and I can create
+string objects implicitly from char ptrs.  The only problem is
+I cannot implicitly convert *to* char ptrs, so some conversion
+is necessary.
+
+It is my hope that the conversion can be done in such a way that it
+would be possible to change the definition of 'rostring' *back* to
+'char const *', without breaking too much stuff.  The reason I want
+that property is to give me a path to undo the changes, or perhaps use
+yet another definition for 'rostring', should that become necessary.
+It is also consistent with the limited intended purposes of
+'rostring'.
+
+
+Transition guide for new string interface:
+
+  - Replace non-performance-critical uses of
+      char const *
+    as function parameters with
+      rostring
+    which is a typedef for 'string const &'.
+
+    What is performance critical?  Mainly, uses of strings as keys
+    in hash tables.  In that case, the string data is often coming
+    from a lexer, which must *not* be required to allocate a copy
+    just to talk to the hash table.
+
+    Non-performance-critical uses include debugging info, error
+    messages, etc.
+    
+    If an interface is both performance-critical and also heavily
+    used with constructed strings (obviously not on the same code
+    paths), then it is reasonable to overload the function to
+    accept both 'char const *' and 'rostring'.  However, I do not
+    want to do this for lots of functions; generally, any given
+    interface should either be classified as above or below the
+    boundary line between 'rostring' and 'char const *', and all
+    its functions should consistently use one or the other (with
+    only well-motivated exceptions).
+    
+    See also the discussion below.
+
+  - Be careful when converting code to use 'rostring':
+    - It is usually *not* a good idea to change the types of local 
+      variables to 'rostring'.
+    - It will certainly not work to change 'char const *&' to 
+      'rostring&', since the latter will be an invalid type.
+    - Watch out for return types; if the function is returning a
+      locally-constructed string, a return type of 'rostring' will
+      be death.
+    - If the 'char const *' was *nullable*, then you should not
+      convert it to rostring, since the latter cannot accept a NULL
+      pointer.  One solution is to overload the function to accept
+      either a nullable 'char const *' or an rostring.  Another is
+      to change call sites (or default args) to pass "" instead.
+
+  - To convert an rostring to a char const*, use
+      char const *toCStr(rostring s);
+    instead of
+      char const *string::c_str() const;
+    to maintain the vague hope that 'rostring' could at some point
+    be yet some other type (perhaps even 'char const *' again).
+    For example:
+    
+      void foo(rostring s)
+      {
+        FILE *fp = fopen(toCStr(s), "r");       // yes
+        FILE *fp = fopen(s.c_str(), "r");       // no
+        ...
+      }
+
+  - One exception to the above: if an 'rostring' is being converted
+    to 'char const *' because the former is a parameter of an overloaded
+    function that just calls into another version which accepts the
+    latter, then use c_str() instead.  This makes it clear that the
+    'rostring' is really being treated as 'string const &', not simply
+    "something vaguely similar to char const *".  For example:
+    
+      int foo(char const *s);                        // real function
+      int foo(rostring s) { return foo(s.c_str()); } // yes
+      int foo(rostring s) { return foo(toCStr(s)); } // no
+
+  - To convert a string (other than 'rostring') to a char const*, use
+      char const *string::c_str() const;
+    instead of
+      char const *string::pcharc() const;
+    as the latter is gratuitously nonstandard and has been deleted.
+
+  - Replace uses of
+      string::string(char const *src, int length);
+    with
+      string substring(char const *p, int n);
+    since the former has different semantics in smbase than in std.
+
+  - The old string class allowed code to create a string with
+      string::string(int length)
+    and then modify the string with
+      char *pchar();
+    and
+      char operator[] (int i) const;
+    If the latter function (operator[]) is all that is needed,
+    use stringBuilder instead.  If the former is needed, use
+    Array<char> instead, but remember to explicitly allocate
+    one extra byte for the NUL terminator.
+    
+  - To convert code that iteratively scans a 'char const *', such as
+      void foo(char const *src)
+      {
+        while (*src) {
+          // ... do work ...
+          src++;
+        }
+      }
+    use something like the following:
+      void foo(rostring origSrc)
+      {                      
+        char const *src = toCStr(origSrc);
+
+        while (*src) {
+          // ... do work ...
+          src++;
+        }
+      }
+    Rename the *parameter*, and bind a local variable to the pointer
+    under the original name, so preserve semantic equivalence.
+
+  - If the code is testing a previously 'char const *' value against
+    NULL, e.g.
+      if (name) { ... }
+    then, assuming the caller has been appropriately modified to
+    pass an empty ("") rostring instead, change the test to
+      if (name[0]) { ... }
+    as this is a little less verbose than name.empty(), and will
+    work even if name is changed back to 'char const *'.
+
+
+
+The question arises as to exactly where the line should be drawn
+between code that nominally uses 'rostring' and code that nominally
+uses 'char const *'.  As with most issues of language/API design, it
+is a matter of balancing convenience and performance.
+
+Basically, there are three sources of strings in a typical program:
+
+  - Static strings in the program text.
+
+    The transition to 'rostring' may cause some static strings to
+    be malloc'd where they were not malloc'd before.  However, there
+    are very few such strings (generally less than 10000), so if
+    malloc'ing such strings ever becomes a performance problem it
+    must be that some strings are being malloc'd multiple times.
+    But that is easy to fix, e.g., by changing
+
+      foo("hi there")
+      
+    to
+    
+      static const string hi_there("hi there");
+      foo(hi_there)
+      
+    unwieldy though it may be.  (This should not be needed often.)
+
+  - Constructed strings.
+  
+    Constructing strings, like
+
+      stringc << "hello" << ' ' << "world!"
+
+    requires lots of allocation, and the result is a 'string'.
+    Passing this to an 'rostring' won't incur any penalty.
+    
+  - Strings in program input data.
+  
+    These are the strings I am worried about.  In the 'char const *'
+    regime, these strings are typically first read into an I/O
+    buffer first.  From there, the strings are either processed
+    in-place and discarded, or else copied to a more permanent
+    storage location, but not copied again.
+    
+    It would be very bad for performance if the transition to
+    'rostring' caused processing of such strings (and there are
+    lots of them) to incur additional allocation.  That is why I
+    want to keep string table interfaces (etc.) capable of accepting
+    raw 'char const *' pointers: it ought to be possible to do all
+    the processing on input data strings without them taking any
+    trips through the allocator.
+    
+So the principles I advocate are:
+
+  (1) Make sure input data strings don't have to make extra trips
+      through the allocator.  This means exposing interfaces capable
+      of accepting 'char const *' in key places like hash tables.
+
+  (2) Make sure static strings and constructed strings can be used
+      as conveniently as possible; for the latter, that means accepting
+      'rostring' in most places.
+
+  (3) Avoid polluting interfaces with duplicates interfaces just to
+      meet (1) and (2); clutter is a big long-term problem.
+
+One more thing I have been doing is if the interface did not have any
+reason to #include str.h under the old 'char const *' regime, for
+example autofile.h, then it may be best to stick with 'char const *'
+in the interest of minimizing dependencies.  (This is debatable.)
+
+
+
+
+
+
+
+
+
+EOF

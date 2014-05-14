@@ -1,0 +1,5 @@
+var v:8;
+reg sigmaStar := star(['a'-'z']);
+reg r := concat(sigmaStar, "x", sigmaStar);
+assert v in r;
+assert v contains "fred";

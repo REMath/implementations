@@ -1,0 +1,5 @@
+Analysis results for 'gxine':
+
+- simp_bad.c:
+    After analyzing this file with STAC, the r_strcpy call is marked as BAD because
+    a tainted buffer is copied into an untainted buffer.

@@ -1,0 +1,23 @@
+// ESb.gr   -*- c++ -*-
+// this grammar causes Tomita's algorithm to loop forever..
+// what does mine do?  it works ok.
+
+// S -> E S b | a
+// E -> /*epsilon*/
+
+terminals {
+  65 : a   ;
+  66 : b   ;
+}
+
+nonterm S {
+  -> E S b;
+  -> a;
+}
+
+nonterm E {
+  -> empty;
+}
+
+
+

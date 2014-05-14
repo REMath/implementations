@@ -1,0 +1,464 @@
+lookup.txt
+
+This is my attempt to document what the lookup rules of C++ are (in a
+more digested, concise form than the standard itself, but with liberal
+references to the standard), and how Elsa implements them.  Initially
+the document just covers a few special cases that I have investigated
+carefully, but ideally it will grow to cover all the cases of name
+lookup in C++.
+
+The main difference between the account here and that in the standard
+is that this document will attempt to provide a complete narrative
+from start to finish (i.e., temporally coherent) of how lookup happens
+for a given syntax/context, whereas the standard is organized by
+language feature and so often scatters relevant details in many
+places.
+
+One reference worth mentioning: Brian Malloy has done some
+investigation of how to implement lookup in C++, and his papers are
+at http://www.cs.clemson.edu/~malloy/projects/keystone/keystone.html.
+My analysis is independent, however.
+
+
+
+----------------------------------------------------
+Notions of syntactic context
+
+There are two notions of syntactic context for a lookup.  
+
+Global syntactic context:
+
+The first, which I call "global syntactic context", specifies the
+sequence of scopes to look in for a nominal unqualified lookup.  It is
+affected by the nesting of scope-containing constructs such as
+functions and namespaces.  It is also affected by issues such as
+definitions of class and namespace members outside the syntax of their
+containing entity, and visibility of various scopes during template
+instantiation.
+
+Local syntactic context:
+
+The second kind of context, what I call "local syntactic context", is
+the immediately surrounding neighborhood of tokens, giving contexts
+like "function name in a function call", "type specifier in a
+declaration", etc.  The nominal lookup rules are in many cases
+slightly adjusted depending on this local context.
+
+This rest of this file has two parts.  The first part discusses global
+syntactic context, and the second part discusses local syntactic
+context.  Then, in principle, to find out the procedure for lookup of
+a given occurrence of a name, one first consults the global syntactic
+context rules to determine a nominal scope search order, which is then
+modified by the rules for the local syntactic context.
+
+
+====================================================
+============= Global syntactic context =============
+====================================================
+
+
+----------------------------------------------------
+Scope chaining
+
+As with most languages, C++ lookup often provides for searching in a
+sequence of locations (scopes), with priority given to the earliest
+scope that contains the name being looked up (e.g., 3.4.1p1).  I call
+this phenomenon "scope chaining".
+
+There are four kinds of scope chaining mechanisms:
+  1. syntactic nesting for the current scope (Env::scopes)
+  2. syntactic nesting for non-current scopes (Scope::parentScope)
+  3. namespace 'using' directives (Scope::usingEdges)
+  4. base classes (CompoundType::bases)
+
+Env is responsible for internally following chains 1 and 2; they are
+(only) used for unqualified lookup.  Scope is responsible for
+following chains 3 and 4; Env delegates to Scope as necessary.
+Consequently, using Scope::lookup (as opposed to Env::lookup) disables
+use of chains 1 and 2.  LF_IGNORE_USING disables chain 3.
+LF_INNER_ONLY disables all four chains.  Currently, nothing disables
+chain 4 by itself.
+
+
+-------------------------------------------------------
+Scope::lookup: Lookup within a particular Scope
+
+Lookup within a scope has input:
+  - StringRef name     : name of symbol to look up
+  - Env env            : for error reporting (if not LF_SUPPRESS_ERROR)
+  - LookupFlags flags  : lookup modifiers
+And has output:
+  - LookupSet &set     : set of entities referred to by 'name'
+
+First, Scope::variables or Scope::typeTags is queried, depending
+on LF_QUERY_TAGS.  If this yields a hit, the resulting variable's
+overload set (if any) is expanded and placed in a temporary 'set'.
+
+If LF_INNER_ONLY, return what we have.
+
+Next, if this Scope is a namespace, and LF_IGNORE_USING is not
+specified, the 'using' directive edges are considered, as per 7.3.4
+and 3.4.3.2, adding to 'set' (scope chain 3 above):
+
+  (TODO: explain this process)
+
+If 'set' is not empty, return.
+
+Finally, if this Scope is a class, its base classes are searched
+according to 10.2 (scope chain 4 above):
+
+  - For each of the base class subobject, we search for 'name' in the
+    scope corresponding to the subobject's class (Scope::lookup with
+    LF_INNER_ONLY).
+
+  - If we find entities v1 and v2 with the given name:
+    - If v1 hides v2 (v2's subobject is an ancestor of v1's
+      subobject), or vice versa, ignore the hidden entity (10.2p6).
+    - If v1 and v2 are the same entity (just in different subobjects),
+      we can regard them as the same if the entity is static, a type,
+      or an enumerator (10.2p5).
+
+
+-------------------------------------------------
+Env::lookupPQ: Lookup of possibly-qualified names
+
+Input:
+  - Possibly empty sequence of qualifiers; each qualifier is
+    - StringRef name
+    - Possibly empty sequence of template arguments
+  - StringRef name (final name)
+  - Possibly empty sequence of template arguments (final targs)
+  - Lookup flags
+Output:
+  - LookupSet &set
+
+If the name is unqualified, then the lookup is delegated to
+Env::unqualifiedLookup (with scope=NULL).  See below.
+
+For qualified lookup (3.4.3), the first qualifier in the chain is
+looked up using unqualified lookup (in Env::lookupScope), and any
+template arguments applied, to obtain a Scope object.  If the
+qualifier is "::", the global Scope is used.
+
+Subsequent lookups are done in the Scope computed from the previous
+qualifiers, forming a chain of lookups, until the final name is
+looked up in the final qualifier's Scope.
+
+Finally, unless LF_TEMPL_PRIMARY is set in 'flags', the template
+arguments are applied to the final name.  For this to be possible,
+the lookup must have been unambiguous, so any caller of lookup that
+*can* accept a lookup set *must* specify LF_TEMPL_PRIMARY.
+
+If LF_TEMPL_PRIMARY *is* set, then the final template arguments (if
+any) are ignored.
+
+If the lookup is being done in the context of an uninstantiated
+template, and any of the qualifiers are dependent types (14.6.2.1),
+then either Env::dependentTypeVar or Env::dependentVar will be the
+final result of lookup (depending on whether we are expecting to find
+a type or a variable).  It is the responsibility of the caller to
+decide what to do about lookups that turn out to be dependent.
+(Sometimes the dependent(Type)Var can be used directly, and sometimes
+it cannot.)
+
+
+-------------------------------------------------
+Env::unqualifiedLookup: Lookup of unqualified names
+
+Input:
+  - StringRef name
+  - LookupFlags flags
+Output:
+  - LookupSet &set
+
+(It turns out to be convenient to allow callers to pass a Scope, in
+which case this function simply delegates to Scope::lookup.  The
+description here ignores this possibility.)
+
+This function is responsible for doing lookup in the "current" scope,
+i.e., the set of scopes visible where the name appears.  The sequence
+of scopes to be searched is maintained in Env::scopes, and is updated
+as the recursive tcheck traversal enters/exits syntactic constructs
+that contain scopes (functions, blocks, namespaces, etc.).  
+
+This function is responsible for interpreting the contents of
+Env::scope.  At least at the moment, it contains scopes arising from
+both chains 1 and 2 above; where necessary, Scope::parentScope is
+traversed in the process of updating Env::scope.
+
+If LF_INNER_ONLY is specified, only the topmost element of Env::scope
+is used.  This corresponds to the innermost enclosing scope.  This is
+useful when a name is about to be added to the innermost scope, and we
+need to check if the name has already been declared.
+
+Otherwise, the scopes in Env::scope are searched in turn, stopping
+when the name is found.  
+
+As a wrinkle, the current design allows for certain Scopes to be
+searched in an order different from their physical ordering in
+Env::scope, via the Scope "delegation" mechanism.  This is a design
+wart that should probably be fixed.
+
+
+-------------------------------------------
+How is class member use-before-declaration implemented?
+
+One well-known difficulty with C++ name lookup is 3.3.6p1b1, which
+says that the scope of a class member includes (among other things)
+function bodies that occur textually *before* the member declaration.
+This is problematic because it means that it is not possible to
+classify each identifier as type or variable name based only on the
+text that precedes it.
+
+The (somewhat novel) solution adopted in Elsa is to allow each
+identifier to be interpreted as *both* a type and a variable.  The
+parser yields *all* possible resulting parses (represented compactly
+with nearly maximal sharing of identical subparses).  Later, this
+representation is disambiguated by the type checker.
+
+The reason this makes things easier is that, having created an
+(ambiguous) AST, it is easy for the type checker to skip over method
+bodies during a first pass over the class member declarations, and
+then make a second pass once the class' scope is completed.  The
+mechanism is implemented in TS_classSpec::tcheckIntoCompound.
+
+The alternative, using the traditional feedback loop from the symbol
+table to the lexer, would be to have the lexer save the method bodies
+(perhaps as a textual string) somewhere, and then re-lex them once the
+class symbol table is built.  It is my engineering opinion that it is
+better to avoid complicating lexing and parsing, and instead do
+disambiguation during type checking, where the full lookup mechanism
+is already present.
+
+
+
+====================================================
+============= Local syntactic context ==============
+====================================================
+
+
+-----------------------------------------------------------
+E_funCall: Function name of a function call
+
+Note that context-specific name lookup only occurs if the 'func' is an
+E_variable or an E_fieldAcc.  Both contain a PQName, here called 'name'.
+
+At an E_funCall, we have the following information:
+  - func
+    - receiver object expression (if is E_fieldAcc)
+    - qualifiers (optional)
+    - StringRef name (name->getName())
+    - template arguments (optional), 'targs'
+  - function (expression) arguments, 'eargs'
+
+Lookup is split across E_funCall::inner1_tcheck and
+E_funCall::inner2_tcheck.  This split is for performance reasons, and
+forces a certain partition of the work (see comments in
+Expression::tcheck for more details).
+
+inner1's main job is to map the 'name' to an initial set of Variable 
+object pointers.  The set includes all overloaded instances from all
+relevant namespaces (i.e., those found via 'using' directives).
+
+  * Do an ordinary (as opposed to argument dependent) lookup of the
+    name, using the receiver object type, the qualifiers, and the
+    StringRef name.  Lookup is as specified in 10.2 if E_fieldAcc, or
+    3.4 if E_variable.
+
+  * If template arguments are present but the lookup did not find any
+    template functions, issue an error.
+
+The result of the inner1 lookup is carried in the 'candidates' list.
+
+inner2's job is to pick up where inner1 left off, and use the
+remaining information in the E_funCall to pick exactly the right
+Variable for the function call site, doing template instantiation and
+overload resolution as necessary.  It does these steps:
+
+  * It regards the set computed by inner1 (and stored in 'candidates') 
+    as denoting an initial candidate set (possibly empty).
+
+  * If no receiver object and no qualifiers are present, augment the
+    candidate set by using argument dependent lookup (3.4.2).
+
+  * Refine/filter the candidate set; for each candidate:
+
+    - If template arguments are explicitly present, but the candidate
+      is not a template, remove it.
+
+    - If the candidate is a template, bind the 'targs' (if present) to
+      template parameters (14.8.1), and then do template argument
+      deduction (using the 'eargs') to determine the remaining template
+      parameters (14.8.2, 14.8.2.1).  If any incompatibility is found,
+      or not all template arguments have been determined, remove the
+      candidate.  Otherwise, replace the candidate with its (fully
+      concrete) instantiation Variable.
+
+  * Use 'eargs' to do overload resolution (13.3) to select the best
+    candidate from the refined candidate set.
+
+
+-----------------------------------------------------------
+E_fieldAcc: Lookup of a field name after '.' or '->'
+
+Sections discussed here:
+  - 3.4.5: Lookup rules for field names.
+  - 5.2.4, 5.2.5: Meaning of expressions with '.' and '->'.
+  
+Other relevant sections:
+  - 13.3: Overloaded function name used in a function call.
+  - 13.4: Overloaded function name used in other contexts.
+  - 13.5.6: If '->' is overloaded.
+  - 14.6.2.2: Issues relating to dependent lookup.
+
+I am going to ignore the possibility of '->' and concentrate only on
+the '.' option.  (Perhaps I will ammend this later to discuss '->'.)
+
+The structure of an arbitrary E_fieldAcc can be dissected as follows:
+
+  LHS           ICC QUAL          FIELD
+  -----------   --- ------------- -------------------------------
+  object-expr . ::  qualifiers :: identifier            (FIELD case 1)
+                                  ~ identifier                     (2)
+                                  operator (op)                    (3)
+                                  operator (type-id)               (4)
+                                  identifier < targs >             (5)
+                                  'template' identifier < targs >  (6)
+
+with components:
+  LHS, "left-hand side": the object being accessed.
+  ICC, "initial colon-colon": A leading "::".  Optional.
+  QUAL, "qualifiers": Qualifiers before FIELD.  Optional.
+  FIELD: The field being accessed.  There are six possibilities.
+  
+Note that the presence of ICC implies that either QUAL is also
+present, or that FIELD is case 1, 3 or 5.
+
+I will divide this space along four dimensions:
+  - Whether the LHS is a class type or a scalar (non-class) type.
+  - Whether ICC is present.
+  - Whether QUAL is present.
+  - Which of the six options for FIELD is used.
+The notation "X" means "don't care".
+
+For each case, this table says which paragraphs of section 3.4.5 of
+the standard are applicable:
+
+  col:  1   2     3     4      5
+  LHS:  X   class class scalar scalar
+  ICC:  yes no    no    no     no
+  QUAL: X   yes   no    yes    no
+        --- ----- ----- ------ ------
+        5   4     1,2   E      E      identifier            (FIELD case 1)
+        5   4     2,3   **     2,3    ~ identifier                     (2)
+        5   4     2     E      E      operator (op)                    (3)
+        5   4     2,7   E      E      operator (type-id)               (4)
+        5   4     1,2   E      E      identifier < targs >             (5)
+        5   4     2*    E      E      'template' identifier < targs >  (6)
+        5   4     2     E      E      ~ identifier < targs >           (7)
+
+The code 'E' means it is a syntax error.
+
+The code '**' is a case that is not covered by the standard.  Below,
+I give my best guess as to the intention.
+
+Note: The cell marked '2*' *is* covered by paragraph 2, because the
+leading 'template' is not considered part of the id-expression, so it
+does not prevent it from being an unqualified-id.
+
+Note: The rules of paragraph 1 are used to decide between cases 1 and
+5 of FIELD, so I show paragraph 1 in both cells without qualifiers.
+The standard does not explicitly state how to distinguish between
+cases 1 and 5 if qualifiers are present; I assume the intent is to
+generalize paragraph 1 in the obvious way, respecting which paragraph
+specifies how to lookup the qualified name.
+
+Note: Paragraph 6 (type checking template arguments in the scope where
+the E_fieldAcc occurs) potentially applies to columns 1, 2 and 4, and
+rows 5, 6 and 7.
+
+Section 3.4.3 (qualified lookup) is also relevant.  3.4.3p4 applies
+to column 1, and 3.4.3p5 applies to columns 1 and 2.
+
+So, given all of the above, the procedure for resolving the RHS of
+an E_fieldAcc is:
+
+  1. Type-check the LHS.
+
+  2. If the LHS type is not a class, check that the FIELD is case 2,
+     then:
+
+     2a. If QUAL is present (code '**'), divide the RHS as follows:
+
+           true-qualifiers :: identifier1 :: ~ identifier2
+
+         Do qualified lookups of true-qualifiers::identifier1 and
+         true-qualifiers::identifier2.  Both lookups should yield the
+         same type as the LHS (5.2.4).
+
+     2b. If QUAL is not present, lookup the identifier in the current
+         scope, and check that it is the same type as the LHS 
+         (3.4.5p2,3).
+
+     Stop.  
+     
+  The remaining procedure is for class-typed LHSs.  Call the class C.
+
+  3. If ICC is present (3.4.5p5), let N be the global scope.  Go to
+     step 5.
+
+  4. If ICC is not present but QUAL is present (3.4.5p4), call the
+     first qualifier in the sequence Q.  (Does this apply if Q is
+     a template-id?  I am going to assume so, but a strict reading
+     would say no.)
+
+     4a. Perform unqualified lookup of Q.  If found, this must be
+         a class or namespace.
+     4b. Lookup Q in C.  If found, this must be a class.
+     4c. If lookups 4a and 4b both succeed, they must name the same
+         class N.  If only one succeeds, call its result N.  If neither
+         succeeds, report error.       
+
+  5. Given the computed initial scope N above, divide the RHS:
+
+       N :: leading-qualifiers :: final-qualifier :: FIELD
+
+     (3.4.3p4)  Do qualified lookup of leading-qualifiers, starting in
+     scope N.  Call the result LQ.  Lookup final-qualifier in LQ; call
+     the result FQ.
+
+     5a. If FQ is a namespace, lookup FIELD in FQ.
+     5b. If FQ is a class, lookup FIELD in LQ.
+
+  6. If neither ICC nor QUAL are present (3.4.5p1,2,3):
+
+     6a. If FIELD is case 1, 3, 5 or 6 (3.4.5p2), lookup FIELD in C.
+
+     6b. If FIELD is case 2 (3.4.5p3):
+           - Perform unqualified lookup of the identifier.
+           - Lookup the identifier in C.
+         The lookups must yield a class, the same class if they both
+         succeed.
+
+     6c. If FIELD is case 4 (3.4.5p7):
+           - Perform unqualified lookup of the type.
+           - Lookup the type in C.
+         *Both* must succeed, and name the same type.
+
+         Actually, this applies even to qualified names (3.4.3.1p1).
+
+  7. Having looked up the FIELD, it must name a nonempty set of members
+     of C, or a nonempty set of members of one of C's base classes.  If
+     the set contains more than one element, overload resolution will
+     happen later, depending on the local syntactic context of this
+     E_fieldAcc.
+
+
+
+
+
+
+
+
+
+EOF

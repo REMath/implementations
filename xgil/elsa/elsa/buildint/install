@@ -1,0 +1,25 @@
+#!/bin/sh
+
+runecho() {
+  echo "$@"
+  "$@"
+}
+
+for fn in as c++ cc cc1 cc1plus cpp g++ gcc ld; do
+  if [ ! -L $fn ]; then
+    runecho ln -s interceptor.pl $fn || exit
+  fi
+done
+                                              
+cwd=`pwd`       
+cat <<EOF
+
+To use the interceptor, simply prepend 
+  $cwd 
+to the \$PATH.
+
+The intercepted sources will go to ~/preproc, or wherever you
+put in \$BUILDINT_DIST.
+EOF
+
+# EOF

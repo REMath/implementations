@@ -1,0 +1,22 @@
+// mem.in3
+// some array code
+
+struct List {
+  List * owner next;
+};
+
+List * owner append(List owner *head, List owner *tail)
+{
+  if (!head) {
+    return tail;
+  }
+  else {
+    List /*serf*/ *tmp;
+    tmp = head;
+    while (tmp->next) {
+      tmp = tmp->next;
+    }
+    tmp->next = tail;            // swap(tmp->next, tail);
+    return head;
+  }
+}

@@ -1,0 +1,267 @@
+symb: "SELECT playerID FROM players WHERE nick = '" . VAR(txtNick) . "'"
+conc: SELECT playerID FROM players WHERE nick = '1'
+
+symb: "INSERT INTO players (password, firstName, lastName, nick) VALUES ('', '', '', '" . VAR(txtNick) . "')"
+conc: INSERT INTO players (password, firstName, lastName, nick) VALUES ('', '', '', '1')
+
+symb: "SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"
+conc: SELECT * FROM players WHERE nick = '1' AND password = ''
+
+symb: "SELECT * FROM preferences WHERE playerID =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID")
+conc: SELECT * FROM preferences WHERE playerID = 5
+
+symb: "INSERT INTO preferences (playerID, preference, value) VALUES (" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . ", 'autoreload', '5')"
+conc: INSERT INTO preferences (playerID, preference, value) VALUES (5, 'autoreload', '5')
+
+symb: "SELECT * FROM games WHERE (gameMessage = 'playerInvited' AND ((whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . " AND messageFrom = 'white') OR (blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . " AND messageFrom = 'black'))) OR (gameMessage = 'inviteDeclined' AND ((whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . " AND messageFrom = 'black') OR (blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . " AND messageFrom = 'white'))) ORDER BY dateCreated"
+conc: SELECT * FROM games WHERE (gameMessage = 'playerInvited' AND ((whitePlayer = 5 AND messageFrom = 'white') OR (blackPlayer = 5 AND messageFrom = 'black'))) OR (gameMessage = 'inviteDeclined' AND ((whitePlayer = 5 AND messageFrom = 'black') OR (blackPlayer = 5 AND messageFrom = 'white'))) ORDER BY dateCreated
+
+symb: "SELECT * FROM games WHERE gameMessage = 'playerInvited' AND ((whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . " AND messageFrom = 'black') OR (blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . " AND messageFrom = 'white')) ORDER BY dateCreated"
+conc: SELECT * FROM games WHERE gameMessage = 'playerInvited' AND ((whitePlayer = 5 AND messageFrom = 'black') OR (blackPlayer = 5 AND messageFrom = 'white')) ORDER BY dateCreated
+
+symb: "SELECT * FROM games WHERE gameMessage = '' AND (whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . " OR blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . ") ORDER BY dateCreated"
+conc: SELECT * FROM games WHERE gameMessage = '' AND (whitePlayer = 5 OR blackPlayer = 5) ORDER BY dateCreated
+
+symb: "SELECT * FROM games WHERE (gameMessage <> '' AND gameMessage <> 'playerInvited' AND gameMessage <> 'inviteDeclined') AND (whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . " OR blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = ''"), "1"), "playerID") . ") ORDER BY lastMove DESC"
+conc: SELECT * FROM games WHERE (gameMessage <> '' AND gameMessage <> 'playerInvited' AND gameMessage <> 'inviteDeclined') AND (whitePlayer = 5 OR blackPlayer = 5) ORDER BY lastMove DESC
+
+symb: "SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"
+conc: SELECT * FROM players WHERE nick = '1' AND password = '1'
+
+symb: "INSERT INTO players (password, firstName, lastName, nick) VALUES ('" . VAR(pwdPassword) . "', '" . VAR(txtFirstName) . "', '" . VAR(txtLastName) . "', '" . VAR(txtNick) . "')"
+conc: INSERT INTO players (password, firstName, lastName, nick) VALUES ('1', '1', '1', '1')
+
+symb: "INSERT INTO preferences (playerID, preference, value) VALUES (" . mysql_insert_id() . ", 'history', '" . VAR(rdoHistory) . "')"
+conc: INSERT INTO preferences (playerID, preference, value) VALUES (5, 'history', '1')
+
+symb: "INSERT INTO preferences (playerID, preference, value) VALUES (" . mysql_insert_id() . ", 'theme', '" . VAR(rdoTheme) . "')"
+conc: INSERT INTO preferences (playerID, preference, value) VALUES (5, 'theme', '1')
+
+symb: "INSERT INTO preferences (playerID, preference, value) VALUES (" . mysql_insert_id() . ", 'emailnotification', '" . VAR(txtEmailNotification) . "')"
+conc: INSERT INTO preferences (playerID, preference, value) VALUES (5, 'emailnotification', '1')
+
+symb: "SELECT * FROM preferences WHERE playerID =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID")
+conc: SELECT * FROM preferences WHERE playerID = 5
+
+symb: "SELECT * FROM games WHERE (gameMessage = 'playerInvited' AND ((whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . " AND messageFrom = 'white') OR (blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . " AND messageFrom = 'black'))) OR (gameMessage = 'inviteDeclined' AND ((whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . " AND messageFrom = 'black') OR (blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . " AND messageFrom = 'white'))) ORDER BY dateCreated"
+conc: SELECT * FROM games WHERE (gameMessage = 'playerInvited' AND ((whitePlayer = 5 AND messageFrom = 'white') OR (blackPlayer = 5 AND messageFrom = 'black'))) OR (gameMessage = 'inviteDeclined' AND ((whitePlayer = 5 AND messageFrom = 'black') OR (blackPlayer = 5 AND messageFrom = 'white'))) ORDER BY dateCreated
+
+symb: "SELECT * FROM games WHERE gameMessage = 'playerInvited' AND ((whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . " AND messageFrom = 'black') OR (blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . " AND messageFrom = 'white')) ORDER BY dateCreated"
+conc: SELECT * FROM games WHERE gameMessage = 'playerInvited' AND ((whitePlayer = 5 AND messageFrom = 'black') OR (blackPlayer = 5 AND messageFrom = 'white')) ORDER BY dateCreated
+
+symb: "SELECT * FROM games WHERE gameMessage = '' AND (whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . " OR blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . ") ORDER BY dateCreated"
+conc: SELECT * FROM games WHERE gameMessage = '' AND (whitePlayer = 5 OR blackPlayer = 5) ORDER BY dateCreated
+
+symb: "SELECT * FROM games WHERE (gameMessage <> '' AND gameMessage <> 'playerInvited' AND gameMessage <> 'inviteDeclined') AND (whitePlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . " OR blackPlayer =" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID") . ") ORDER BY lastMove DESC"
+conc: SELECT * FROM games WHERE (gameMessage <> '' AND gameMessage <> 'playerInvited' AND gameMessage <> 'inviteDeclined') AND (whitePlayer = 5 OR blackPlayer = 5) ORDER BY lastMove DESC
+
+symb: "UPDATE games SET gameMessage = 'inviteDeclined', messageFrom = '" . VAR(messageFrom) . "' WHERE gameID =" . VAR(gameID)
+conc: UPDATE games SET gameMessage = 'inviteDeclined', messageFrom = '1' WHERE gameID = 1
+
+symb: "UPDATE games SET gameMessage = '', messageFrom = '' WHERE gameID =" . VAR(gameID)
+conc: UPDATE games SET gameMessage = '', messageFrom = '' WHERE gameID = 1
+
+symb: "DELETE FROM history WHERE gameID =" . VAR(gameID)
+conc: DELETE FROM history WHERE gameID = 1
+
+symb: "DELETE FROM pieces WHERE gameID =" . VAR(gameID)
+conc: DELETE FROM pieces WHERE gameID = 1
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'rook', 0, 0)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'rook', 0, 0)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'knight', 0, 1)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'knight', 0, 1)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'bishop', 0, 2)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'bishop', 0, 2)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'queen', 0, 3)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'queen', 0, 3)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'king', 0, 4)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'king', 0, 4)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'bishop', 0, 5)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'bishop', 0, 5)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'knight', 0, 6)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'knight', 0, 6)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'rook', 0, 7)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'rook', 0, 7)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'pawn', 1, 0)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'pawn', 1, 0)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'pawn', 1, 1)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'pawn', 1, 1)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'pawn', 1, 2)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'pawn', 1, 2)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'pawn', 1, 3)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'pawn', 1, 3)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'pawn', 1, 4)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'pawn', 1, 4)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'pawn', 1, 5)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'pawn', 1, 5)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'pawn', 1, 6)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'pawn', 1, 6)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'white', 'pawn', 1, 7)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'white', 'pawn', 1, 7)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'pawn', 6, 0)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'pawn', 6, 0)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'pawn', 6, 1)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'pawn', 6, 1)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'pawn', 6, 2)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'pawn', 6, 2)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'pawn', 6, 3)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'pawn', 6, 3)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'pawn', 6, 4)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'pawn', 6, 4)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'pawn', 6, 5)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'pawn', 6, 5)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'pawn', 6, 6)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'pawn', 6, 6)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'pawn', 6, 7)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'pawn', 6, 7)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'rook', 7, 0)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'rook', 7, 0)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'knight', 7, 1)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'knight', 7, 1)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'bishop', 7, 2)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'bishop', 7, 2)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'queen', 7, 3)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'queen', 7, 3)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'king', 7, 4)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'king', 7, 4)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'bishop', 7, 5)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'bishop', 7, 5)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'knight', 7, 6)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'knight', 7, 6)
+
+symb: "INSERT INTO pieces (gameID, color, piece, row, col) VALUES (" . VAR(gameID) . ", 'black', 'rook', 7, 7)"
+conc: INSERT INTO pieces (gameID, color, piece, row, col) VALUES (1, 'black', 'rook', 7, 7)
+
+symb: "UPDATE games SET lastMove = NOW() WHERE gameID =" . VAR(gameID)
+conc: UPDATE games SET lastMove = NOW() WHERE gameID = 1
+
+symb: "UPDATE preferences SET value = '" . VAR(rdoTheme) . "' WHERE playerID = -1 AND preference = 'theme'"
+conc: UPDATE preferences SET value = '1' WHERE playerID = -1 AND preference = 'theme'
+
+symb: "UPDATE preferences SET value = '" . VAR(rdoHistory) . "' WHERE playerID = -1 AND preference = 'history'"
+conc: UPDATE preferences SET value = '1' WHERE playerID = -1 AND preference = 'history'
+
+symb: "UPDATE preferences SET value = '" . VAR(txtEmailNotification) . "' WHERE playerID = -1 AND preference = 'emailnotification'"
+conc: UPDATE preferences SET value = '1' WHERE playerID = -1 AND preference = 'emailnotification'
+
+symb: "SELECT playerID, nick FROM players WHERE playerID <>" . HASHREAD(mysql_fetch_array(mysql_query("SELECT * FROM players WHERE nick = '" . VAR(txtNick) . "' AND password = '" . VAR(pwdPassword) . "'"), "1"), "playerID")
+conc: SELECT playerID, nick FROM players WHERE playerID <> 1
+
+symb: "SELECT nick FROM players, games WHERE playerID = whitePlayer AND gameID =" . VAR(gameID)
+conc: SELECT nick FROM players, games WHERE playerID = whitePlayer AND gameID = 1
+
+symb: "SELECT nick FROM players, games WHERE playerID = blackPlayer AND gameID =" . VAR(gameID)
+conc: SELECT nick FROM players, games WHERE playerID = blackPlayer AND gameID = 1
+
+symb: "SELECT * FROM history WHERE gameID =" . VAR(gameID) . " ORDER BY timeOfMove"
+conc: SELECT * FROM history WHERE gameID = 1 ORDER BY timeOfMove
+
+symb: "SELECT * FROM pieces WHERE gameID =" . VAR(gameID)
+conc: SELECT * FROM pieces WHERE gameID = 1
+
+symb: "SELECT whitePlayer, blackPlayer FROM games WHERE gameID =" . VAR(gameID)
+conc: SELECT whitePlayer, blackPlayer FROM games WHERE gameID = 1
+
+symb: "SELECT * FROM messages WHERE gameID =" . VAR(gameID) . " AND destination = 'black'"
+conc: SELECT * FROM messages WHERE gameID = 1 AND destination = 'black'
+
+symb: "SELECT * FROM messages WHERE gameID =" . VAR(gameID) . " AND msgStatus = 'request' AND destination = 'white'"
+conc: SELECT * FROM messages WHERE gameID = 1 AND msgStatus = 'request' AND destination = 'white'
+
+symb: "SELECT gameMessage, messageFrom FROM games WHERE gameID =" . VAR(gameID)
+conc: SELECT gameMessage, messageFrom FROM games WHERE gameID = 1
+
+symb: "select curPiece,curColor,replaced from history where replaced > '' and gameID = '" . VAR(gameID) . "' order by curColor desc , replaced desc"
+conc: select curPiece,curColor,replaced from history where replaced > '' and gameID = '1' order by curColor desc , replaced desc
+
+symb: "SELECT password FROM players WHERE playerID =" . VAR(opponentsID)
+conc: SELECT password FROM players WHERE playerID = 1
+
+symb: "UPDATE history SET promotedTo = 'pawn', isInCheck = 0 WHERE gameID =" . VAR(gameID) . " AND timeOfMove = ''"
+conc: UPDATE history SET promotedTo = 'pawn', isInCheck = 0 WHERE gameID = 1 AND timeOfMove = ''
+
+symb: "SELECT * FROM messages WHERE gameID =" . VAR(gameID) . " AND destination = 'white'"
+conc: SELECT * FROM messages WHERE gameID = 1 AND destination = 'white'
+
+symb: "SELECT * FROM messages WHERE gameID =" . VAR(gameID) . " AND msgStatus = 'request' AND destination = 'black'"
+conc: SELECT * FROM messages WHERE gameID = 1 AND msgStatus = 'request' AND destination = 'black'
+
+symb: "INSERT INTO messages (gameID, msgType, msgStatus, destination) VALUES (" . VAR(gameID) . ", 'undo', 'request', 'white')"
+conc: INSERT INTO messages (gameID, msgType, msgStatus, destination) VALUES (1, 'undo', 'request', 'white')
+
+symb: "INSERT INTO messages (gameID, msgType, msgStatus, destination) VALUES (" . VAR(gameID) . ", 'draw', 'request', 'white')"
+conc: INSERT INTO messages (gameID, msgType, msgStatus, destination) VALUES (1, 'draw', 'request', 'white')
+
+symb: "SELECT Max(timeOfMove) FROM history WHERE gameID =" . VAR(gameID)
+conc: SELECT Max(timeOfMove) FROM history WHERE gameID = 1
+
+symb: "SELECT * FROM history WHERE gameID =" . VAR(gameID) . " AND timeOfMove = ''"
+conc: SELECT * FROM history WHERE gameID = 1 AND timeOfMove = ''
+
+symb: "UPDATE games SET gameMessage = 'playerResigned', messageFrom = 'black' WHERE gameID =" . VAR(gameID)
+conc: UPDATE games SET gameMessage = 'playerResigned', messageFrom = 'black' WHERE gameID = 1
+
+symb: "SELECT whitePlayer FROM games WHERE gameID =" . VAR(gameID)
+conc: SELECT whitePlayer FROM games WHERE gameID = 1
+
+symb: "SELECT value FROM preferences WHERE playerID =" . mysql_result(mysql_query("SELECT whitePlayer FROM games WHERE gameID =" . VAR(gameID)), "0") . " AND preference = 'emailNotification'"
+conc: SELECT value FROM preferences WHERE playerID = false AND preference = 'emailNotification'
+
+symb: "UPDATE games SET gameMessage = 'draw', messageFrom = 'white' WHERE gameID =" . VAR(gameID)
+conc: UPDATE games SET gameMessage = 'draw', messageFrom = 'white' WHERE gameID = 1
+
+symb: "UPDATE games SET gameMessage = 'checkMate', messageFrom = 'black' WHERE gameID =" . VAR(gameID)
+conc: UPDATE games SET gameMessage = 'checkMate', messageFrom = 'black' WHERE gameID = 1
+
+symb: "UPDATE games SET gameMessage = 'playerResigned', messageFrom = 'white' WHERE gameID =" . VAR(gameID)
+conc: UPDATE games SET gameMessage = 'playerResigned', messageFrom = 'white' WHERE gameID = 1
+
+symb: "SELECT blackPlayer FROM games WHERE gameID =" . VAR(gameID)
+conc: SELECT blackPlayer FROM games WHERE gameID = 1
+
+symb: "SELECT value FROM preferences WHERE playerID =" . mysql_result(mysql_query("SELECT blackPlayer FROM games WHERE gameID =" . VAR(gameID)), "0") . " AND preference = 'emailNotification'"
+conc: SELECT value FROM preferences WHERE playerID = false AND preference = 'emailNotification'
+
+symb: "UPDATE history SET promotedTo = 'pawn', isInCheck = 1 WHERE gameID =" . VAR(gameID) . " AND timeOfMove = ''"
+conc: UPDATE history SET promotedTo = 'pawn', isInCheck = 1 WHERE gameID = 1 AND timeOfMove = ''
+
+symb: "UPDATE games SET gameMessage = 'checkMate', messageFrom = 'white' WHERE gameID =" . VAR(gameID)
+conc: UPDATE games SET gameMessage = 'checkMate', messageFrom = 'white' WHERE gameID = 1
+
+symb: "UPDATE messages SET msgStatus = 'denied', destination = 'white' WHERE gameID =" . VAR(gameID) . " AND msgType = 'undo' AND msgStatus = 'request' AND destination = 'black'"
+conc: UPDATE messages SET msgStatus = 'denied', destination = 'white' WHERE gameID = 1 AND msgType = 'undo' AND msgStatus = 'request' AND destination = 'black'
+
+symb: "UPDATE messages SET msgStatus = 'denied', destination = 'white' WHERE gameID =" . VAR(gameID) . " AND msgType = 'draw' AND msgStatus = 'request' AND destination = 'black'"
+conc: UPDATE messages SET msgStatus = 'denied', destination = 'white' WHERE gameID = 1 AND msgType = 'draw' AND msgStatus = 'request' AND destination = 'black'
+

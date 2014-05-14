@@ -1,0 +1,1152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+  <title>C++ Entities and Relationships</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+  <style type="text/css">
+    H1 { font-size: 150% }
+    H2 { font-size: 125% }
+    H3 { font-size: 100% }
+    P.title { font-size: 175%; font-weight: bold }
+    P.remark { font-size: 125%; color: red }
+    SPAN.todo { font-weight: bold }
+    SPAN.program { font-family: monospace }
+    SPAN.variable { font-family: monospace }
+    a.toc:link { text-decoration: none }
+    a.toc:visited { text-decoration: none }
+  </style>
+</head>
+<body>
+
+<p>
+<a href="../index.html">Up</a>
+
+<center>
+<p class="title">C++ Entities and Relationships</p>
+</center>
+
+<p>
+This page contains data model diagrams useful for understanding the
+C++ language.  They show the various concepts in C++ static
+(compile-time) semantics, and their interrelationships. 
+
+<p>
+One use of these data models is to help understand the C++ Standard
+document.  It collects together the essential notions in the language,
+what components they have, how they are related, etc.  The data model
+is intended to be sufficiently complete that it could serve as the
+basis for a formal definition of the static semantics.
+
+<p>
+Another use is to understand the Elsa implementation.  Not surprisingly,
+many concepts in the data models correspond to prominent classes in
+the Elsa implementation.  However, the correspondence is not exact;
+in some cases, there are deviations due to known bugs in Elsa, while in
+others Elsa simply uses an implementation technique that may obscure
+a given concept.  Nevertheless, the intent is that Elsa should use a
+data model that could (in principle) be mapped back and forth to the
+model presented here.
+
+<p>
+That the names used in these diagrams do not correspond exactly with
+either the terminology in the standard (which is often unnecessarily
+vague) nor that used in Elsa (which makes fewer distinctions, for
+example among kinds of Variables).  However, there is an overall
+attempt at terminological consistency.
+
+
+<h1>Notation</h1>
+
+<p>
+The following diagrams use a notation that it is a mixture of
+traditional Entity-Relationship diagrams and UML, with some of my
+own ideas thrown in:
+<ul>
+
+<li>Entities are shown in boxes.  A dashed box indicates an entity that
+    with attributes and/or relationships that are elided from the
+    diagram.
+
+<li>Attributes are in ellipses.  Dashed ellipses similarly indicate
+    elided detail.
+
+<li>Relationships are thin lines with arrowheads connecting entities.
+    Either or both ends of a relationship may be named; the opposite
+    end of a named end has an arrowhead.  When an endpoint is named,
+    an annotation on the name indicates a <em>cardinality</em>, which
+    is the number times that a single instance of the entity may
+    participate in the relationship:
+    <ul>
+    <li>Name with no annotation: cardinality is one.
+    <li>Name with "?" annotation: zero or one.
+    <li>Name with "*" annotation: any number, including zero.
+    <li>Name with "[]" annotation: relation tuples are <em>ordered</em>,
+        forming a <em>sequence</em>; cardinality is anything.
+    <li>Unnamed: cardinality is anything.
+    </ul>
+
+<li>Attributes can be given "?", "*" and "[]" annotations, with similar
+    meanings as for relationships.  In fact, attribute notation is used
+    interchangeably with relationship notation where convenient.
+
+<li>Specialization (often conceptualized as inheritance) is indicated
+    by thick lines connecting entities, with triangular split points.
+    A solid triangle indicates <em>total</em> specialization (meaning
+    the superclass is abstract) while an open triangle indicates
+    <em>partial</em> specialization.  Color is used to emphasize
+    important specialization hierarchies.
+    <ul>
+    <li>What is the difference between a partial specialization and
+        an optional ("?") attribute or relationship?  The former cannot
+        change during the entity's lifetime, while the latter can.
+    </ul>
+</ul>
+
+
+<h1>Diagram 1: Scopes, Variables and Types</h1>
+
+<p>
+The following diagram
+(xfig sources: <a href="er.fig">er.fig</a>,
+postscript: <a href="er.ps">er.ps</a>)
+shows the essential static semantic concepts, such as scopes,
+variables and types.  It omits templates, and it omits executable
+AST fragments like statements and expressions.
+
+<p>
+<center><img src="er.png" alt="C++ Static Semantics ER diagram"></center>
+
+<p>
+This diagram has four primary dimensions:
+<ul>
+<li>Scope (green): Places searched during lookup.
+<li>Variable (blue): Things found by lookup.
+<li>Type (red): Types built up from type constructors.
+<li>AtomicType (magenta): Fundamental units of type identity.
+</ul>
+
+<h2>Name</h2>
+
+<p>
+Names [3p4] denote Variables.  As explained in [3p7], there are three
+kinds of Names: identifiers, operators, and conversions.  Names are
+<em>extensional</em>: two Names are the same if they have the same
+attributes and named relationships, and they are immutable once
+created.
+
+<h3>Identifier</h3>
+
+<p>
+An Identifier is a Name consisting of a nonempty sequence of source
+characters.
+
+<h3>OperatorName</h3>
+
+<p>
+An OperatorName is a Name consisting of the keyword <tt>operator</tt>
+followed by one of the overloadable operators [13.5p1].
+
+<h3>ConversionName</h3>
+
+<p>
+A ConversionName is a Name consisting of the keyword <tt>operator</tt>
+followed by a Type [12.3.2].
+
+<h2>Scope</h2>
+
+<p>
+A Scope ("declarative region") [3.3] is a set of Variables.  Name
+lookup [3.4] searches for a Name amongst a certain sequence of Scopes,
+yielding the set of Variables that have the given Name.  There are
+rules [3.3p4] that restrict the set of Variables that may have the
+same Name and Scope; the data model itself does not enforce them.
+
+<p>
+The Standard's notion of the "potential scope of a variable" is
+induced by the timing of the sequence of updates to Scopes
+corresponding to processing declarations.  I have chosen not to
+include an explicit notion of time or point of declaration in this
+data model, but I may reconsider.
+
+<p>
+(Currently missing from data model: function scopes, which contain
+the labels for <tt>goto</tt> statements.)
+
+<h3>Namespace</h3>
+
+<p>
+A Namespace [3.3.5, 7.3] is a scope outside any class or function.
+They include the GlobalScope.  Namespaces can be connected by
+UsingDirectives [7.3.4].
+
+<h3>BlockScope</h3>
+
+<p>
+A BlockScope ("local scope") [3.3.2] contains local variables in
+a function.  FunctionDefinitions include a BlockScope that spans
+their body.
+
+<h3>PrototypeScope</h3>
+
+<p>
+A PrototypeScope [3.3.3] contains the parameters of a function
+declarator that is not the declarator of a function definition.
+
+<h3>ClassType (as a Scope)</h3>
+
+<p>
+A ClassType [9] includes the scope [3.3.6] that contains the
+class members.  It is described further in another entry below.
+
+
+<h2>Variable</h2>
+
+<p>
+A Variable (a mixture of Standard concepts "entity" [3p3] and
+"declaration" [3p5]) is something that can be found by lookup.  Every
+Variable is a member of exactly one Scope.
+
+<p>
+A Variable's name is both optional and mutable.  It is optional
+because function and template parameters may be declared without names
+[8.3.5p8, 14.1p1].  It is mutable because subsequent declarations may
+add or change a name.  Variables without names are not subject to the
+rules of [3.3p4] that restrict same-named Variables in a Scope.
+
+<h3>NamespaceAlias</h3>
+
+<p>
+A NamespaceAlias [7.3.2] provides an alternate name for a Namespace.
+
+<h3>Function</h3>
+
+<p>
+A Function (Variable) is a unique name for a FunctionDefinition,
+which is a fragment of executable AST.  A Function may or may not
+have a definition, and that aspect may change during processing of
+a translation unit.
+
+<h3>Enumerator</h3>
+
+<p>
+An Enumerator [7.2] is one of the elements of an Enumeration.
+
+<h3>UsingAlias</h3>
+
+<p>
+A UsingAlias is introduced by a using-declaration [7.3.3].  When a
+lookup finds a UsingAlias, it transparently follows the "target"
+field.
+
+<h3>DataVariable</h3>
+
+<p>
+A DataVariable denotes a piece of named run-time data.  It
+can have any type other than a FunctionType (or <tt>void</tt>).
+DataVariables are partitioned:
+<ul>
+<li>LocalVariable: Appears in a BlockScope, denotes a variable
+    local to a function.  LocalVariables may have an initializer
+    Expression; this is relevant to static semantics only if
+    the variable is also <tt>const</tt> [5.19].
+<li>GlobalVariable: Appears in a Namespace, denotes a variable
+    visible to all functions (modulo namespace visibility).
+<li>FunctionParameter: Appears in a BlockScope (for FunctionDefinitions) or
+    a PrototypeScope, denotes a function parameter.
+    (TODO: Hmmm.  How are ProtoypeScopes related
+    to FunctionTypes and FunctionDefinitions?)       
+    A FunctionParameter may have a default value expression [8.3.6].
+<li>DataMember: Appears in a ClassType scope, denotes a data member
+    of a class (or struct or union).  These are further subdivided
+    into static and nonstatic members, the former of which may have
+    an initializer.
+<li>HandlerParam: Appears in a BlockScope, denotes the variable
+    bound to an exception object in an exception handler [15.3].
+</ul>
+
+<h2>ClassMember</h2>
+
+<p>
+A ClassMember is any Variable other than an Enumerator that is a
+member of a ClassType Scope.  Such Variables have an "access"
+attribute that is <tt>public</tt>, <tt>protected</tt> or
+<tt>private</tt>.  The access attribute of an Enumerator in
+a ClassType Scope can be determined by examining its type.
+
+<h3>ImplicitlyDeclaredMemberFunction</h3>
+
+<p>
+An ImplicitlyDeclaredMemberFunction is a constructor, destructor
+or copy assignment operator that is implicitly declared [12p1].
+
+
+<h2>TypeName</h2>
+
+<p>
+A TypeName names a type for purposes of lookup.  
+
+<h3>Typedef</h3>
+
+<p>
+A Typedef [7.1.3] is a type name in a scope, introduced via
+the <tt>typedef</tt> keyword.
+
+<h3>InjectedClassName</h3>
+
+<p>
+An InjectedClassName [9p2] is an alias for a ClassType within the
+scope of that ClassType.
+
+<h3>NamedAtomicType</h3>
+
+<p>
+A NamedAtomicType is both a TypeName and an AtomicType.  That is,
+it can be found by lookup, and it can be used to form constructed
+("compound") types and be cv-qualified.
+
+<h3>ClassType</h3>
+
+<p>
+A ClassType is a <tt>class</tt> or <tt>struct</tt> or <tt>union</tt>;
+the "keyword" field distinguishes these.  It has a sequence of base
+classes, each of which has an "access" specifier and may be virtual.
+It may also have a ClassDefinition, which is an AST fragment.  The
+presence of a ClassDefinition distinguishes forward declarations
+[3.4.4, 7.1.5.3, 9.2p2], and is also useful for implementing templates.
+
+<p>
+A ClassType has a set of constructors and a destructor.  They are
+found by direct examination of the ClassType, not by lookup, because
+they do not have names [12.1p1, 12.4(?)].  The data model allows both
+to be missing to accomodate the analysis of the class itself, which
+does not know in advance how to make them.
+
+<p>
+Currently, ClassType is called "CompoundType" in Elsa.
+
+<h3>Enumeration</h3>
+
+<p>
+An Enumeration [7.2] is a type consisting of a set of named constants,
+called enumerators.
+
+<h2>Type</h2>
+
+<p>
+A Type [3.9, 8.3] is an entity or concept that is used within the
+static semantics to approximate the dynamic semantics.  In the
+data model here, "Type" denotes those types constructed by applying
+type constructors and/or cv-qualifiers [3.9.2, 8.3] to other Types or
+AtomicTypes.  Types are extensional: two Types are equivalent if they
+have the same structure (attributes and relationships), and they
+are immutable once created.
+
+<h3>FunctionType</h3>
+
+<p>
+A FunctionType [8.3.5] is the type of a function.  It has a return
+type, parameters, and an optional exception specification.  Parameter
+types are equivalent if they have the same cv-unqualified type; that
+is, the name and the top-level cv-qualification of parameter types are
+not significant for type equivalence.
+
+<p>
+Even though the syntax of function declarators includes an exception
+specification, such specifications are only allowed when part of the
+certain declarations [15.4p1].
+
+<h3>MethodType</h3>
+
+<p>
+The type of a nonstatic member function, what I call a method, is a
+FunctionType that has a receiver parameter.  The receiver is always a
+reference to a (possibly cv-qualified) class type; the
+cv-qualification of the receiver records the cv-qualification of the
+member function declarator [8.3.5p4].
+
+<h3>DataType</h3>
+
+<p>
+An DataType is a Type that is not a FunctionType.  Note that the
+related Standard term "object type" [3.9p9] does not include
+references or <tt>void</tt>.
+
+<h3>CVAtomicType</h3>
+
+<p>
+A CVAtomicType is a leaf in a Type tree.  It refers to an AtomicType,
+and possibly cv-qualifies [3.9.3] it.
+
+<h3>IndirectionType</h3>
+
+<p>
+IndirectionType is the common ancestor for the types that are 
+constructed primarily from one other type.
+
+<h3>PointerType</h3>
+
+<p>
+A PointerType [8.3.1] is the type of a pointer to some other type,
+possibly with cv-qualification.  The cv-qualifiers apply to the
+pointer itself, not the referent (the type pointed to).
+
+<h3>PointerToMemberType</h3>
+
+<p>
+A PointerToMemberType [8.3.3] is the type of a pointer to a
+nonstatic class member.  In addition to cv-qualifiers, it names
+the class of which the referent is a member.
+
+<h3>ReferenceType</h3>
+
+<p>
+A ReferenceType [8.3.2] is the type of a reference to some other
+type.  It cannot be cv-qualified.
+
+<h3>ArrayType</h3>
+
+<p>
+An ArrayType [8.3.4] is the type of an array.  It does not
+(necessarily) have a known size.
+
+<h3>SizedArrayType</h3>
+
+<p>
+A SizedArrayType is the type of an array with known size.
+
+<h2>AtomicType</h2>
+
+<p>
+An AtomicType is a type which is not built from type constructors.
+Their identity is <em>physical</em>, not structural: two AtomicTypes
+can be different even when they have the same attributes and
+relationships.
+
+<h3>NamedAtomicType (as an AtomicType)</h3>
+
+<p>
+NamedAtomicType was already discussed above.  However, in this context
+it is worth explaining that even though class types are in some sense
+built by applying a "type constructor", this data model and the C++
+language regard the <tt>class { ... }</tt> syntax as creating a new type, 
+<em>not</em> equivalent to another type built with the same syntax.
+
+<h3>FundamentalType</h3>
+
+<p>
+A FundamentalType [3.9.1] is one of the following:
+<ul>
+<li><tt>char</tt>
+<li><tt>signed char</tt>
+<li><tt>unsigned char</tt>
+<li><tt>bool</tt>
+<li><tt>signed int</tt>
+<li><tt>unsigned int</tt>
+<li><tt>signed long int</tt>
+<li><tt>unsigned long int</tt>
+<li><tt>signed short int</tt>
+<li><tt>unsigned short int</tt>
+<li><tt>wchar_t</tt>
+<li><tt>float</tt>
+<li><tt>double</tt>
+<li><tt>long double</tt>
+<li><tt>void</tt>
+</ul>
+
+<p>
+Note that the data model does not imply any orthogonality between
+modifiers like <tt>signed</tt> and "basic" types like <tt>int</tt>.
+
+<p>
+The FundamentalTypes are further subdivided into categories [3.9.1]
+not reflected here.
+
+
+<h1>Diagram 2: Templates</h1>
+
+<p>
+This diagram
+(xfig sources: <a href="template_er.fig">template_er.fig</a>,
+postscript: <a href="template_er.ps">template_er.ps</a>)
+is an extension of the previous diagram, showing all the
+new and extended concepts needed to represent templates.
+
+<p>
+<center><img src="template_er.png" alt="C++ Templates diagram"></center>
+
+<p>
+One point of terminology: whereas the Standard refers to "template
+parameters" (etc.), I refer to "meta-parameters".  I use the term
+"template" only for templates themselves, and use the prefix "meta-"
+(or "Meta") for the parameters and values involved in defining and
+using templates.
+
+<p>
+This diagram has five primary dimensions.  (They are all colored black because
+assigning color seemed unnecessary, due to minimal overlap, and difficult
+to keep compatible with the first diagram.)
+<ul>
+<li>MetaParameter vs. MetaValue: MetaParameters are holes, and MetaValues
+    fill the holes.
+<li>MetaParameter vs. MetaBinding: An unbound parameter is a hole, while
+    a bound parameter represents a filled hole.
+<li>Kinds of meta-entities: Meta-entities can be types or non-types, which
+    further subdivide into ground types, templates, integers and (variable)
+    names.  This axis is present only implicitly via products (see below).
+<li>Template vs. Specialization: A template is an entity with holes.
+    A specialization is a version of a template with the holes filled.
+<li>Kinds of templates: There are three kinds of templates in C++: classes,
+    functions and static data members.  This axis is only implicit.
+</ul>
+
+<p>
+This diagram makes use of what I call <em>non-orthogonal inheritance
+products</em>.  This means that a set of entities is derived by
+multiplying two inheritance hierarchies together, but then giving
+attributes and relationships to the product tuples independent of
+their factors.  For example, an IntegerMetaParameter has an
+"AtomicType", attribute/relationship, but this is not common to
+MetaParameters nor IntegerMetaEntities.
+
+<p>
+Though non-orthogonal product tuples are individually named, their
+derivation as product tuples is still available (though implicit), and
+this is used to define the concept of <em>corresponding
+relationships</em>, shown with dashed arrows.  For example, every
+NameMetaParameter has an optional "val" relationship with a
+NameMetaValue.  There are corresponding "val" relationships for the
+other kinds of MetaValues.  These relationships are consistent with
+respect to the meta-entity-kind axis, so it is well-defined to
+introduce a "val" relationship between MetaParameters and MetaValues:
+given a MetaParameter, find out which kind it is, and retrieve its
+"val", which must be a MetaValue.  This makes it possible to
+generically refer to the default value (when present) of a
+MetaParameter as being a MetaValue, while at the same time having the
+"val" relationships be well-typed w.r.t. the meta-entity-kind axis.  A
+similar technique is used for the specializations/template
+relationship.
+
+<p>
+The diagram has essentially two parts.  The central part, comprising
+the five major dimensions above, is the data model required to
+represent templates and specializations themselves.  Then, sprinkled
+around the edges, is the second part which consists of miscellanous
+extensions and refinements of Diagram 1 necessary to integrate template
+concepts into the core data model.
+
+<p>
+Terminology:
+<ul>
+<li>"Abstract": an entity with unbound MetaParameters.
+<li>"Concrete": an entity with no unbound MetaParameters.
+    <br>
+    Note: The Standard uses the terms "dependent" and "non-dependent"
+    for these concepts, as in, "dependent upon template parameters"
+    [14.6.2].  I find this terminology a bit unwieldy, and possibly
+    confusing with the traditional concept of a "dependent type" in
+    type theory, so I use abstract/concrete instead.
+</ul>
+
+<h2>MetaParameter</h2>
+
+<p>
+A MetaParameter is a parameter of a template [14.1].  By supplying a
+MetaValue for the MetaParameter, the template can be instantiated
+to produce a concrete entity.  Note that it is not a full
+<em>meta-variable</em>; its value cannot be changed once set [14.1p6].
+
+<p>
+A MetaParameter has an optional default value.  As explained above,
+the kind of MetaValue is dependent on the kind of MetaParameter,
+according to a parallel decomposition of each along the
+meta-entity-kind axis.
+
+<h3>MetaBinding</h3>
+
+<p>
+A MetaParameter is a parameter, while a MetaBinding is a binding of a
+MetaParameter to a MetaValue.  Unlike a MetaParameter, the "val"
+relationship of a MetaBinding is not optional, because it carries the
+binding.  Furthermore, the MetaValue to which it is bound must be
+concrete; either a concrete Type, or one of the three
+ConcreteMetaValues.  (Neither of these constraints is depicted
+graphically.)
+
+<h3>TypeNameMetaParameter</h3>
+
+<p>
+The type branch of the MetaParameter hierarchy [14.1p3] is represented
+by the TypeNameMetaParameter.  It is a descendant of NamedAtomicType,
+and as such can be looked up as a type, and used to build constructed
+types.
+
+<h3>TypeMetaParameter</h3>
+
+<p>
+A TypeMetaParameter, such as the ubiquitous "<tt>&lt;class
+T&gt;</tt>", is a parameter that can be bound to concrete Type.
+(Despite the idiomatic use of the <tt>class</tt> keyword to introduce
+such parameters, they need not be bound to ClassTypes.)
+
+<h3>TemplateMetaParameter</h3>
+
+<p>
+A TemplateMetaParameter is syntactically introduced with something like
+<pre>
+  template &lt;template &lt;class S&gt; class T&gt; /*...*/
+</pre>
+and known in the Standard as a "template template parameter".  It can
+be bound to a ClassTemplate, enabling one template to use multiple
+specializations of another (class) template.  
+
+<p>
+Note that it is not possible to pass a template function or a template
+data member as the argument to a TemplateMetaParameter, though the
+effect could be simulated by creating an appropriate wrapper
+ClassTemplate.
+
+<h3>NontypeMetaParameter</h3>
+
+<p>
+A NontypeMetaParameter is a descendant of Variable, and can be used
+like an object variable.
+
+<h3>IntegerMetaParameter</h3>
+
+<p>
+An IntegerMetaParameter may be bound to an integer value [14.3.2p1].
+It has an AtomicType, but only integral types [3.9p7] and Enumerations
+are permitted [14.1p4].  This data model does not record the
+cv-qualification on the type of an IntegerMetaParameter because they
+are irrelevant [14.1p5].
+
+<h3>NameMetaParameter</h3>
+
+<p>
+A NameMetaParameter may be bound to a Function, GlobalVariable or
+DataMember [14.3.2p1].  It has an IndirectionType, which must be
+a PointerType, PointerToMemberType or ReferenceType [14.1p4].
+
+<h2>MetaValue</h2>
+
+<p>
+A MetaValue is something that can fill a hole of a MetaParameter.
+Syntactically, they are denoted with template arguments [14.3].
+They are decomposed along the meta-entity-kind axis, just like
+MetaParameters, though the diagram omits the names TypeNameMetaValue
+and NontypeMetaValue for reasons of space.
+
+<h3>TypeMetaValue</h3>
+
+<p>
+A TypeMetaValue is a Type.  It may be concrete or abstract, depending
+on the Type.
+
+<h3>TemplateMetaValue</h3>
+
+<p>
+A TemplateMetaValue is either a ConcreteTemplateMetaValue, which is
+a specific ClassTemplate, or an AbstractTemplateMetaValue, which is
+a reference to a TemplateMetaParameter.  AbstractTemplateMetaValues
+only occur as the default values of TemplateMetaParameters.
+
+<h3>IntegerMetaValue</h3>
+
+<p>
+An IntegerMetaValue is either a ConcreteIntegerMetaValue, which is
+an integer, or an AbstractIntegerMetaValue, which is an Expression
+that refers to MetaParameters.
+
+<h3>NameMetaValue</h3>
+
+<p>
+A NameMetaValue is either a ConcreteNameMetaValue, which is a
+specific concrete Variable, or is an AbstractNameMetaValue, which
+is a reference to a NameMetaParameter.  AbstractNameMetaValues
+only occur as the default values of NameMetaParameters.
+
+<p>
+The name of a template function may be passed as a syntactic template
+argument, but overload resolution will select a specific
+specialization for the binding [14.3.2p5b4,5].
+
+
+<h2>Template</h2>
+
+<p>
+A Template is an entity with named holes (parameters) that can be
+filled by supplying values.  Templates are distinct from (say)
+ordinary parameterized functions in that template parameters are are
+filled at compile time (only).
+
+<p>
+A Template is associated with a set of Specializations, instances
+of that template.
+
+<p>
+Note that members of ClassTemplates are not necessarily called
+Templates in this data model, even if they have holes due to the
+parameters of the class.  Only member templates (where the
+"<tt>template &lt;/*...*/&gt;</tt>" syntax is repeated inside the
+class body) are both ClassMembers and Templates.
+
+<p>
+Note further, however, that currently (2005-08-19) Elsa takes
+the opposite approach, regarding every member of a class template
+as being a template in its own right.  I now regard this design
+decision as a mistake, and hope to eventually rewrite that part
+of Elsa using the data model shown here.
+
+<h3>MetaParameterList</h3>
+
+<p>
+A Template is/has a MetaParameterList, a sequence of parameters.
+
+<h2>Specialization</h2>
+
+<p>
+A Specialization is a Template with the holes filled with MetaValue
+arguments.  The arguments are stored in a sequence that corresponds to
+the parameter sequence.  Except in the case of a
+ClassTemplatePartialSpecialization, a Specialization's arguments are
+always concrete.
+
+<p>
+A Specialization may be either <em>implicit</em> or <em>explicit</em>.
+An implicit specialization (also called an "instantiation") is
+generated automatically by the compiler by filling the holes of the
+Template definition with the supplied arguments.  An explicit
+specialization is supplied by the programmer, and effectively overrides
+implicit instantiation for a specific argument sequence.  
+
+<p>
+Note that the "explicit" attribute is a <em>mutable</em> boolean
+field.  This is because it is possible for the program to refer to a
+specialization prior to declaring it as an explicit specialization, as
+long as the compiler has no need to implicitly instantiate it in the
+meantime [14.7.3p6].  Thus, the static semantics and this data model
+allow for a specialization to be initially assumed implicit, but later
+determined to be explicit.
+
+
+<h2>ClassTemplate</h2>
+
+<p>
+A ClassTemplate is a Template of a ClassType.  It also <em>is</em>
+a ClassType: it can be looked up as a type (in which case template
+arguments would then have to be supplied), has members, etc.
+
+<h3>ClassTemplateSpecialization</h3>
+
+<p>
+A ClassTemplateSpecialization is a Specialization of a ClassTemplate.
+
+<h3>ClassTemplatePartialSpecialization</h3>
+
+<p>
+A ClassTemplatePartialSpecialization [14.5.4] is a Specialization of
+a ClassTemplate, whose template arguments ("args[]") are not all concrete.
+The holes in its arguments are declared in its MetaParameterList; i.e.,
+it is itself a ClassTemplate.
+
+
+<h2>FunctionTemplate</h2>
+
+<p>
+A FunctionTemplate is a Template of a Function.
+
+<h3>FunctionTemplateSpecialization</h3>
+
+<p>
+A FunctionTemplateSpecialization is a Specialization of a FunctionTemplate.
+
+<p>
+Note that, unlike for ClassTemplates, a Function cannot be both a
+FunctionTemplate and a FunctionTemplateSpecialization (there is no
+such thing as a function template partial specialization).
+
+
+<h2>Abstract NamedAtomicTypes</h2>
+
+<p>
+Abstract types are supported by several extensions of NamedAtomicType.
+
+<h3>TypeNameMetaParameter (as a NamedAtomicType)</h3>
+
+<p>
+Discussed above, a TypeNameMetaParameter is the leaf of any 
+abstract type.  Note that a TypeNameMetaParameter need not be
+abstract (it could be a TypeNameMetaBinding).
+
+<h3>AbstractTemplateId</h3>
+
+<p>
+An AbstractTemplateId is a template-id (template name plus arguments)
+where either the template or the arguments are abstract.  The template
+is indicated as a NamedAtomicType, but it must always be either a
+ClassTemplate or a TemplateMetaParameter.  For example:
+<pre>
+  template &lt;class T&gt;
+  struct A;
+  
+  template &lt;class T&gt;
+  struct B {
+    A&lt;T&gt; a;
+  };
+</pre>
+The B::a member has type <tt>A&lt;T&gt;</tt>, but (in the context of
+the template B) <TT>T</TT> is abstract, so <tt>A&lt;T&gt;</tt> is too.
+
+<p>
+Here is an example with an abstract template portion of an AbstractTemplateId:
+<pre>
+  template &lt;template &lt;class S&gt; class T, class U&gt;
+  struct A {
+    T&lt;U&gt; t;
+  };
+</pre>
+Here, A::t has type <tt>T&lt;U&gt;</tt>, in which both <TT>T</TT> and
+<TT>U</TT> are abstract.
+
+<p>
+In Elsa, this is called a "PseudoInstantiation".
+
+<h3>AbstractQualifiedType</h3>
+
+<p>
+An AbstractQualifiedType arises when a qualified name [3.4.3, 5.1p7]
+is used, but the qualifier is an abstract type name.  The "first" part (the
+abstract qualifier) is indicated as a NamedAtomicType, but must be
+a TypeMetaParameter or an AbstractTemplateId.  The "rest" part is
+a PossiblyQualifiedName, which is a sequence of identifiers and
+template-ids (to be shown on the as-yet-nonexistent Diagram 3).
+
+<p>
+Example:
+<pre>
+  template &lt;class T&gt;
+  struct A {
+    typename T::SomeType s;
+  };
+</pre>
+The type of A::s is <tt>T::SomeType</tt>, which is abstract because
+<TT>T</TT> is.
+
+<p>
+In Elsa, this is called a "DependentQualifiedType" or "DQT".
+
+
+<h2>AbstractSizedArrayType</h2>
+
+<p>
+An AbstractSizedArrayType is an ArrayType whose size is specified by
+an abstract Expression.  This is a necessary concept to permit matching
+declarations with definitions in some cases, for example (variant
+of <a href="../in/t0435.cc">../in/t0435.cc</a>):
+<pre>
+  template &lt;int n&gt;
+  struct A {
+    int foo(int (*p)[n]);
+    int foo(int (*p)[n+1]);
+  };
+
+  template &lt;int n&gt;
+  int A&lt;n&gt;::foo(int (*p)[n]) { /*...*/ }
+
+  template &lt;int n&gt;
+  int A&lt;n&gt;::foo(int (*p)[n+1]) { /*...*/ }
+</pre>
+Here, the array size expressions must be recorded in the data model
+to enable the declarations of <tt>A::foo</tt> to be matched with
+their definitions.
+
+
+<h2>MetaEntity Scopes</h2>
+
+<p>
+Two extensions of Scope are used for template support.
+
+<h3>MetaParameterScope</h3>
+
+<p>
+MetaParameters are stored in a MetaParameterScope.  When this scope
+is searched by lookup, MetaParameters can be found.
+
+<h3>MetaBindingScope</h3>
+
+<p>
+When an implicit specialization is instantiated, the static semantics
+require analyzing the specialization in light of its arguments.  The
+arguments are bound in a MetaBindingScope for this purpose.
+
+<p>
+(At the moment I cannot justify distinguishing a MetaParameterScope from
+a MetaBindingScope, but I know that Elsa needs to be able to tell them
+apart somewhere, so I'm reasonably confident that they do in fact need to be
+distinguished.)
+
+
+<h2>AbstractEnumerator</h2>
+
+<p>
+An AbstractEnumerator is like an Enumerator, but the precise value
+is unknown because its initializing expression is abstract.  It is
+a refinement of the Enumerator entity presented in Diagram 1.
+
+<p>
+It is not clear whether it is adequate to simply record that its value
+is abstract, as done here, or if it must actually carry the
+expression.  The testcase <a href="../in/t0578.cc">../in/t0578.cc</a>
+would be valid if AbstractEnumerators carried their value, and invalid
+otherwise.  Both ICC and GCC reject it, so at least the data model
+here is consistent their their interpretation.  If the Standard had a
+clear data model, such as the one presented in these diagrams, such a
+question would have a clear answer.
+
+
+<h2>OutOfLineTemplateMemberDefinition (abbreviated: OOLTMDefn)</h2>
+
+<p>
+A ClassMember of a ClassTemplate may have an out-of-line definition.
+If so, it has an OutOfLineTemplateMemberDefinition, which
+carries a sequence of MetaParameterLists.  These parameter lists
+override the nominal parameter names coming from the enclosing
+template class(es).  For example, in the following syntax:
+<pre>
+  template &lt;class S1&gt;
+  struct A {
+    template &lt;class T2&gt;
+    struct B {
+      int f();
+    };
+  };
+
+  template &lt;class S2&gt;
+  template &lt;class T2&gt;
+  int A&lt;S2&gt;::B&lt;T2&gt;::f() { /*...*/ }
+</pre>
+the ClassMember for A::B::f will have enclosing parameter lists
+<tt>&lt;S2&gt;</tt> and <tt>&lt;T2&gt;</tt>.  The definition of
+A::B::f may refer to the parameters in its enclosing parameter lists
+(S2 and T2), but not to the parameters in the enclosing
+TemplateClasses (S and T).
+
+<p>
+The order of the enclosingParams[] sequence is significant.  The first
+parameter list corresponds to the outermost enclosing template class,
+then proceeding towards the next innermost in sequence, until the last
+parameter list corresponds to the innermost enclosing template class.
+In other words, the enclosingParams[] sequence order is the same as
+the order in which they appear syntactically [14.7.3p17(?)].
+
+
+<h1>Diagram 3: C++ Abstract Syntax</h1>
+
+<p>
+This is work in progress, so no pretty pictures yet.
+
+<pre>
+  TranslationUnit: 
+    decls: Declaration[]
+    
+  Declaration
+    - BlockDeclaration
+    | - SimpleDeclaration
+    | |   declSpecifier
+    | |   initDecl[]
+    | - AsmDefinition
+    | |   string
+    | - NamespaceAliasDefinition
+    | |   src: Identifier
+    | |   tgt: PQName
+    | - UsingDeclaration
+    | |   t?
+    | |   PQName
+    | - UsingDirective
+    |     PQName
+    - FunctionDefinition
+    |   declSpecifier
+    |   declarator
+    |   ctorInit[]
+    |   handlers[]
+    - TemplateDeclaration
+    |   e?
+    |   params[+]
+    |   d: Declaration
+    - ExplicitInstantiation
+    |   d: Declaration
+    - ExplicitSpecialization
+    |   d: Declaration
+    - LinkageSpecification
+    | | string
+    | - LSSeq
+    | |   decls[]
+    | - LSOne
+    |     decl: Declaration
+    - NamespaceDefinition
+        n: Id?
+        decls[]
+        
+  InitDeclarator
+    declarator
+    init?
+    
+  Initializer
+    - IN_expr
+    |   expr
+    - IN_compound
+    |   initializer[]
+    - IN_ctor
+        args: Expression[+]
+        
+  DeclSpecifier(Seq)
+    declflag*
+    typeSpec
+    
+  DeclFlag
+    - StorageClass
+      - auto
+      - register
+      - static
+      - extern
+      - mutable
+    - FunctionSpecifier
+      - inline
+      - virtual
+      - explicit
+    - typedef
+    - friend
+    - CVFlag
+      - const
+      - volatile
+      
+  TypeSpecifier
+    - TS_name
+    |   t?
+    |   PQName
+    - TS_classSpec
+    |   keyword
+    |   PQName?
+    |   BaseClause[]
+    |   Member[]
+    - TS_enumSpec
+    |   Id?
+    |   EnumeratorDefn[]
+    - TS_elaborated
+    |   keyword
+    |   PQName
+    - TS_fundamental
+        FundamentalType
+        
+  Declarator           &lt;----+
+    - D_name                |
+    |   PQName?             |
+    - D_indirect            |
+      | base: Declarator ---+
+      - D_pointer
+      |   cv
+      - D_reference
+      - D_ptm
+      |   cv
+      |   class: PQName
+      - D_func
+      |   cv
+      |   params: ParameterDeclaration[]
+      |   exnSpec?
+      - D_array
+          size: Expression
+
+  PQName     &lt;----+
+    - QName       |
+    | | rest -----+
+    | - QN_global
+    | - QN_nested
+    |     qual -------+
+    - PQ_nameId   &lt;---+
+    | | n: Id
+    | - PQ_name
+    | - PQ_template
+    |     args: TemplateArg[]
+    - PQ_operator
+    |   op
+    - PQ_conversion
+    |   t: Type
+    - PQ_dtor
+        c: PQ_nameId
+</pre>
+
+
+<hr>
+
+<p>
+  <a href="http://validator.w3.org/check/referer"><img border="0"
+      src="valid-html401.png"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+
+<p>
+<a href="../index.html">Up</a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+<center>This space left intentionally blank.</center>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+&nbsp;<br>
+
+
+
+
+
+</body>
+</html>

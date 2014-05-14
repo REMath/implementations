@@ -1,0 +1,3 @@
+var v : 15;
+cfg S :=  "!" | "a" S "b" | "b" S "a";
+assert v in S; //limit should be inferred

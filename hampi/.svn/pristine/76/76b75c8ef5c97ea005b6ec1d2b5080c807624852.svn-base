@@ -1,0 +1,11 @@
+//created from CFGAnalyzer file java_casts.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg PrimitiveType :=  "n" ;
+cfg Expression :=  UnaryExpression ;
+cfg UnaryExpression :=  UnaryExpressionNotPlusMinus ;
+cfg UnaryExpressionNotPlusMinus :=  PostfixExpression | CastExpression ;
+cfg PostfixExpression :=  Primary | "n" ;
+cfg Primary :=  "(" Expression ")" ;
+cfg CastExpression :=  "(" PrimitiveType ")" UnaryExpression ;
+reg limit := fix(PrimitiveType, 7);
+assert hampiStringVar in limit;

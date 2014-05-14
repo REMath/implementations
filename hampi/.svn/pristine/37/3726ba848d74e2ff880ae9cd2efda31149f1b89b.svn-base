@@ -1,0 +1,27 @@
+#Query file for dprle
+
+# alphabet: q
+
+# L(a) = qq^*
+a subset [ s: a
+f: c
+d: a -> b on { 'q' }
+b -> c on { 'q' }
+c -> a on { epsilon } ];
+
+# L(b) = qq^*
+a subset [ s: d
+f: f
+d: d -> e on { 'q' }
+e -> f on { 'q' }
+f -> d on { epsilon } ];
+
+# L(c) = Sigma^4
+c subset [ s: h
+f: k
+d: h -> i on any
+i -> j on any
+j -> k on any
+k -> l on any];
+
+solve();

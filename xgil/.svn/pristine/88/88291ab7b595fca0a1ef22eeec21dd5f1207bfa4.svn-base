@@ -1,0 +1,8 @@
+#!/bin/sh
+# test-parse openssl's .i files, without stopping at failures
+
+exec >parse.log 2>&1
+
+for fn in `cat /home/scott/bld/openssh-3.5p1/allifiles`; do
+  ./test-parse -tr c_lang $fn
+done

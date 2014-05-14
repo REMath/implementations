@@ -1,0 +1,3 @@
+val foo := "fred";
+val bar := foo;
+val baz := concat("hampi", bar, "baz");

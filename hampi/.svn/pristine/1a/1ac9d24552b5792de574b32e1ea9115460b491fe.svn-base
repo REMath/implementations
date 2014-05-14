@@ -1,0 +1,13 @@
+E : C D ;
+  : C C ;
+  : G D ;
+  : ;
+S : C D ;
+  : C C ;
+  : F D ;
+A : C C ;
+B : C C ;
+F : C S ;
+G : C S ;
+C : "0" ;
+D : "1" ;

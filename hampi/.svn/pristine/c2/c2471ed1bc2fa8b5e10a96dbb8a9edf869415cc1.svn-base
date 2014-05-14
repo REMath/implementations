@@ -1,0 +1,16 @@
+//created from CFGAnalyzer file java_names.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg Type :=  TypeName ;
+cfg TypeName :=  "i" | PackageName "." "i" ;
+cfg PackageName :=  "i" | PackageName "." "i" ;
+cfg MethodName :=  "i" | AmbiguousName "." "i" ;
+cfg AmbiguousName :=  "i" | AmbiguousName "." "i" ;
+cfg BlockStatement :=  LocalVariableDeclarationStatement | Statement ;
+cfg Statement :=  MethodInvocation ;
+cfg LocalVariableDeclarationStatement :=  Type VariableDeclarators ";" ;
+cfg VariableDeclarators :=  VariableDeclarator | VariableDeclarators "," VariableDeclarator ;
+cfg VariableDeclarator :=  VariableDeclaratorId | VariableDeclaratorId "=" "v" ;
+cfg VariableDeclaratorId :=  "i" | VariableDeclaratorId "[" "]" ;
+cfg MethodInvocation :=  MethodName "(" "a" ")" ;
+reg limit := fix(Type, 7);
+assert hampiStringVar in limit;

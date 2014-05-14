@@ -1,0 +1,3 @@
+var v:3;
+reg r := or("foo", "bar");
+assert v in r;

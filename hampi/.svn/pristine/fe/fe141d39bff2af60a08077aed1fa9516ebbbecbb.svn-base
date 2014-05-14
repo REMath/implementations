@@ -1,0 +1,20 @@
+Select = "SELECT" ( <COLUMN_NAME> )+ "FROM" <TABLE_NAME> "WHERE" BCond ;
+Delete = "DELETE" "FROM" <TABLE_NAME> "WHERE" BCond ;
+Insert = "INSERT" "INTO" <TABLE_NAME> "VALUES" "(" ( <VALUE> )+ ")" ;
+BCond = BCond "OR" BTerm 
+         | BTerm ;
+BTerm = BTerm "AND" BFactor 
+      | BFactor ;
+BFactor = "NOT" BCond 
+       | <ID> "IS" "NULL" 
+       | ATerm 
+       | STerm ;
+ATerm = Value Aop Value ;
+Value = <ID> 
+      | <NUM> ;
+STerm = <ID> "LIKE" <STRING> 
+     | <ID> Sop <STRING> 
+     | <ID> Sop <ID> ;
+Aop = "=" | "<" | ">" | "<=" | ">=" | "!=" ;
+Sop = "=" | "!=" ;
+

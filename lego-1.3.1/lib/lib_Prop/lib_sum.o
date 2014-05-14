@@ -1,0 +1,29 @@
+Module lib_sum Import "lib_bool" "lib_eq_basics";
+$[sum : {A,B:SET}SET//in1_exp in2_exp];
+$[in1_exp : {A,B:SET}A->sum A B];
+$[in2_exp : {A,B:SET}B->sum A B];
+$[sum_elim : {A,B:SET}{C_sum:(sum A B)->TYPE}({x2:A}C_sum (in1_exp A B x2))->({x1:B}C_sum (in2_exp A B x1))->{z:sum A B}C_sum z];
+Label (!sum!) sum;Label (!sum elim!) sum_elim;Label (!sum in1_exp!) in1_exp;Label (!sum in2_exp!) in2_exp;[[A,B:SET][C_sum:(sum A B)->TYPE][f_in1_exp:{x2:A}C_sum (in1_exp A B x2)][f_in2_exp:{x1:B}C_sum (in2_exp A B x1)][x2:A][x1:B]   sum_elim A B C_sum f_in1_exp f_in2_exp (in1_exp A B x2)  ==>  f_in1_exp x2|| sum_elim A B C_sum f_in1_exp f_in2_exp (in2_exp A B x1)  ==>  f_in2_exp x1]
+;
+[in1 : {s,t|SET}s->sum s t
+  = [s,t|SET]in1_exp s t];
+[in2 : {s,t|SET}t->sum s t
+  = [s,t|SET]in2_exp s t];
+[case : {s,t|SET}{u|TYPE}(s->u)->(t->u)->(sum s t)->u
+  = [s,t|SET][u|TYPE]sum_elim s t ([_:sum s t]u)];
+[sum_ind : {s,t|SET}{P:(sum s t)->Prop}({x:s}P (in1%%s%%t x))->({y:t}P (in2%%s%%t y))->{z:sum s t}P z
+  = [s,t|SET][P:(sum s t)->Prop]sum_elim s t P];
+[is_in1 : {s,t|SET}(sum s t)->Prop
+  = [s,t|SET][x:sum s t]Ex%%s ([y:s]Eq%%(sum s t) (in1%%s%%t y) x)];
+[is_in2 : {s,t|SET}(sum s t)->Prop
+  = [s,t|SET][x:sum s t]Ex%%t ([y:t]Eq%%(sum s t) (in2%%s%%t y) x)];
+[in1_or_in2 : {s,t|SET}{x:sum s t}(is_in1%%s%%t x \/ is_in2%%s%%t x)
+  = [s,t|SET]sum_ind%%s%%t ([x:sum s t](is_in1%%s%%t x \/ is_in2%%s%%t x)) ([x:s]inl%%(is_in1%%s%%t (in1%%s%%t x))%%(is_in2%%s%%t (in1%%s%%t x)) (ExIntro%%s x ([y:s]Eq%%(sum s t) (in1%%s%%t y) (in1%%s%%t x)) (Eq_refl%%(sum s t) (in1%%s%%t x)))) ([y:t]inr%%(is_in1%%s%%t (in2%%s%%t y))%%(is_in2%%s%%t (in2%%s%%t y)) (ExIntro%%t y ([y'4:t]Eq%%(sum s t) (in2%%s%%t y'4) (in2%%s%%t y)) (Eq_refl%%(sum s t) (in2%%s%%t y))))];
+[in1_inj : {s,t|SET}{x,y:s}(Eq%%(sum s t) (in1|s|t x) (in1|s|t y))->Eq%%s x y
+  = [s,t|SET][x,y:s][H:Eq%%(sum s t) (in1|s|t x) (in1|s|t y)]Eq_resp%%(sum s t)%%s (case%%s%%t%%s ([x'6:s]x'6) ([x'6:t]y))%%(in1|s|t x)%%(in1|s|t y) H];
+[in2_inj : {s,t|SET}{x,y:t}(Eq%%(sum s t) (in2|s|t x) (in2|s|t y))->Eq%%t x y
+  = [s,t|SET][x,y:t][H:Eq%%(sum s t) (in2|s|t x) (in2|s|t y)]Eq_resp%%(sum s t)%%t (case%%s%%t%%t ([x'6:s]y) ([x'6:t]x'6))%%(in2|s|t x)%%(in2|s|t y) H];
+[in1_not_in2 : {s,t|SET}{x|s}not (is_in2%%s%%t (in1|s|t x))
+  = [s,t|SET][x|s][h:is_in2%%s%%t (in1|s|t x)]h absurd ([t1:t][h1:Eq%%(sum s t) (in2%%s%%t t1) (in1|s|t x)]true_not_false (Eq_resp%%(sum s t)%%bool (case%%s%%t%%bool ([_:s]false) ([_:t]true))%%(in2%%s%%t t1)%%(in1|s|t x) h1))];
+[in2_not_in1 : {s,t|SET}{x|t}not (is_in1%%s%%t (in2|s|t x))
+  = [s,t|SET][x|t][h:is_in1%%s%%t (in2|s|t x)]h absurd ([t1:s][h1:Eq%%(sum s t) (in1%%s%%t t1) (in2|s|t x)]true_not_false (Eq_resp%%(sum s t)%%bool (case%%s%%t%%bool ([_:s]true) ([_:t]false))%%(in1%%s%%t t1)%%(in2|s|t x) h1))];

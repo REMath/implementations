@@ -1,0 +1,20 @@
+# -*-sh-*-
+
+# This spec file modifies the build process for build interception.
+# See http://gcc.gnu.org/onlinedocs/gcc-3.4.0/gcc/Spec-Files.html#Spec%20Files
+
+# Remove -P from the gcc command line.  This makes sure that hash-line
+# directives are going to show up in the .i files.
+%rename cpp_options cpp_options_old0
+
+# the following syntax is specific to gcc >=3.4
+*cpp_options:
+%<P %(cpp_options_old0)
+
+# It is nice if we can find out the name of the original file to help
+# in creating a name for the temporary file.
+*cc1_options:
++ ---build_interceptor-orig_filename=%i
+
+*cc1plus_options:
++ ---build_interceptor-orig_filename=%i

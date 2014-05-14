@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="tests"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="StringSolver/lib"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/jpaul.jar"/>
+	<classpathentry kind="lib" path="lib/antlr-3.1b1.jar" sourcepath="lib/antlr-3.1b1.zip"/>
+	<classpathentry kind="lib" path="lib/antlr-2.7.7.jar"/>
+	<classpathentry kind="lib" path="lib/stringtemplate-3.1.jar"/>
+	<classpathentry kind="lib" path="lib/junit.jar" sourcepath="lib/junitsrc.jar"/>
+	<classpathentry kind="lib" path="lib/STPJNI.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

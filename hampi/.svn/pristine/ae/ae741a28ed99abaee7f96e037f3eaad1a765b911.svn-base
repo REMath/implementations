@@ -1,0 +1,11 @@
+//created from CFGAnalyzer file 03_05_170.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg prog :=  "t" "<" templateParameterList ">" "c" "=" idExpression ;
+cfg templateParameterList :=  templateParameter | templateParameterList "," templateParameter ;
+cfg templateParameter :=  typeParameter | parameterDeclarationList ;
+cfg parameterDeclarationList :=  parameterDeclaration | parameterDeclarationList "," parameterDeclaration ;
+cfg parameterDeclaration :=  "i" | "d" ;
+cfg typeParameter :=  "c" ;
+cfg idExpression :=  "i" ;
+reg limit := fix(prog, 7);
+assert hampiStringVar in limit;

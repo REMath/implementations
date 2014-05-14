@@ -1,0 +1,181 @@
+%***** Non-String CSTR ===============================================
+(declare-variable  v_a442ce0 bool)
+(declare-variable  v_a43aa88 bool)
+(declare-variable  v_a43ad8c bool)
+(declare-variable  v_a442c50 String)
+%------------- Taint declare -------------
+(declare-variable  T_local__GET  (_ BitVec 1) )
+(declare-variable  T_local__GET_i_file  (_ BitVec 1) )
+(declare-variable  T_local__GET_i_template  (_ BitVec 1) )
+(declare-variable  T_local__POST  (_ BitVec 1) )
+(declare-variable  T_local__POST_i_editor  (_ BitVec 1) )
+(declare-variable  T_local__POST_i_postFile  (_ BitVec 1) )
+(declare-variable  T_local__POST_i_saveit  (_ BitVec 1) )
+(declare-variable  T_local__POST_i_submit  (_ BitVec 1) )
+(declare-variable  T_v_a43a9f4  (_ BitVec 1) )
+(declare-variable  T_v_a43ab7c  (_ BitVec 1) )
+(declare-variable  T_v_a43ac10  (_ BitVec 1) )
+(declare-variable  T_v_a43acec  (_ BitVec 1) )
+(declare-variable  T_v_a43fe64  (_ BitVec 1) )
+(declare-variable  T_v_a43fef8  (_ BitVec 1) )
+(declare-variable  T_v_a43ffd4  (_ BitVec 1) )
+(declare-variable  T_v_a440068  (_ BitVec 1) )
+(declare-variable  T_v_a442934  (_ BitVec 1) )
+(declare-variable  T_v_a4429e0  (_ BitVec 1) )
+(declare-variable  T_v_a442a7c  (_ BitVec 1) )
+(declare-variable  T_v_a442b1c  (_ BitVec 1) )
+(declare-variable  T_v_a442bbc  (_ BitVec 1) )
+(declare-variable  T_v_a442d94  (_ BitVec 1) )
+(declare-variable  T_v_a442e34  (_ BitVec 1) )
+(declare-variable  T_v_a442ed4  (_ BitVec 1) )
+%-------------------------------------------------------------------
+(assert (= T_local__POST_i_submit   T_local__POST) )
+(assert (= T_v_a43a9f4   T_local__POST_i_submit) )
+(assert (= T_local__POST   #b1) )
+(assert (= T_local__POST_i_saveit   T_local__POST) )
+(assert (= T_v_a43acec   T_local__POST_i_saveit) )
+(assert (= T_local__POST   #b1) )
+(assert (= v_a442ce0 (not (= v_a442c50 "") ) ) )
+(assert (= T_v_a442bbc (bvor T_v_a442b1c T_v_a43fef8 ) ) )
+(assert (= T_v_a442b1c (bvor T_v_a442a7c #b0 ) ) )
+(assert (= T_v_a442a7c (bvor #b0 T_v_a440068) ) )
+(assert (= T_v_a440068  T_v_a43ffd4) )
+(assert (= T_local__GET_i_template  T_local__GET) )
+(assert (= T_v_a43ffd4  T_local__GET_i_template) )
+(assert (= T_local__GET  #b1) )
+(assert (= T_v_a43fef8  T_v_a43fe64) )
+(assert (= T_local__GET_i_file  T_local__GET) )
+(assert (= T_v_a43fe64  T_local__GET_i_file) )
+(assert (= T_local__GET  #b1) )
+(assert (= T_v_a4429e0  #b1) )
+(assert (= T_v_a442ed4 (bvor T_v_a442e34 T_v_a43ac10) ) )
+(assert (= T_v_a442e34 (bvor T_v_a442d94 #b0) ) )
+(assert (= T_v_a442d94 (bvor #b0 T_v_a440068) ) )
+(assert (= T_v_a43ac10  T_v_a43ab7c) )
+(assert (= T_local__POST_i_postFile  T_local__POST) )
+(assert (= T_v_a43ab7c  T_local__POST_i_postFile) )
+(assert (= T_local__POST  #b1) )
+(assert (= T_v_a4429e0  T_v_a442934) )
+(assert (= T_local__POST_i_editor  T_local__POST) )
+(assert (= T_v_a442934  T_local__POST_i_editor) )
+(assert (= T_local__POST  #b1) )
+(assert v_a43aa88)
+(assert v_a43ad8c)
+(assert v_a442ce0)
+%----------------------------------------
+(declare-variable  v_a43a9f4                String)
+(declare-variable  local__POST_i_submit     String)
+(declare-variable  zYh_aNyStR               String)
+(declare-variable  v_a43acec                String)
+(declare-variable  local__POST_i_saveit     String)
+(declare-variable  v_a442bbc                String)
+(declare-variable  v_a442b1c                String)
+(declare-variable  v_a43fef8                String)
+(declare-variable  v_a442a7c                String)
+(declare-variable  v_a440068                String)
+(declare-variable  v_a43ffd4                String)
+(declare-variable  local__GET_i_template    String)
+(declare-variable  v_a43fe64                String)
+(declare-variable  local__GET_i_file        String)
+(declare-variable  v_a442ed4                String)
+(declare-variable  v_a442e34                String)
+(declare-variable  v_a43ac10                String)
+(declare-variable  v_a442d94                String)
+(declare-variable  v_a43ab7c                String)
+(declare-variable  local__POST_i_postFile   String)
+(declare-variable  v_a4429e0                String)
+(declare-variable  v_a442934                String)
+(declare-variable  local__POST_i_editor     String)
+
+% v_a43aa88 := v_a43a9f4 != ""
+(assert (= v_a43aa88 (not (= v_a43a9f4 "") ) ) )
+% local__POST_i_submit := zYh_aNyStR
+% (assert (= local__POST_i_submit  zYh_aNyStR) )
+% v_a43a9f4 := local__POST_i_submit
+(assert (= v_a43a9f4  local__POST_i_submit) )
+% v_a43ad8c := v_a43acec == "true"
+(assert (= v_a43ad8c  (= v_a43acec "true") ) )
+% local__POST_i_saveit := zYh_aNyStR
+% (assert (= local__POST_i_saveit  zYh_aNyStR) )
+% v_a43acec := local__POST_i_saveit
+(assert (= v_a43acec  local__POST_i_saveit) )
+% v_a442bbc := v_a442b1c v_a43fef8
+(assert (= v_a442bbc  (Concat v_a442b1c v_a43fef8) ) )
+% v_a442b1c := v_a442a7c "/template/"
+(assert (= v_a442b1c  (Concat v_a442a7c "/template/") ) )
+% v_a442a7c := "themes/" v_a440068
+(assert (= v_a442b1c  (Concat "themes/" v_a440068) ) )
+% v_a440068 := v_a43ffd4
+(assert (= v_a440068  v_a43ffd4) )
+% local__GET_i_template := zYh_aNyStR
+% (assert (= local__GET_i_template  zYh_aNyStR) )
+% v_a43ffd4 := local__GET_i_template
+(assert (= v_a43ffd4  local__GET_i_template) )
+% v_a43fef8 := v_a43fe64
+(assert (= v_a43fef8  v_a43fe64) )
+% local__GET_i_file := zYh_aNyStR
+% v_a43fe64 := local__GET_i_file
+(assert (= v_a43fe64  local__GET_i_file) )
+% v_a442ed4 := v_a442e34 v_a43ac10
+(assert (= v_a442ed4  (Concat v_a442e34 v_a43ac10) ) )
+% v_a442e34 := v_a442d94 "/template/"
+(assert (= v_a442e34  (Concat v_a442d94 "/template/") ) )
+% v_a442d94 := "themes/" v_a440068
+(assert (= v_a442d94  (Concat "themes/" v_a440068) ) )
+% v_a43ac10 := v_a43ab7c
+(assert (= v_a43ac10  v_a43ab7c) )
+% local__POST_i_postFile := zYh_aNyStR
+% v_a43ab7c := local__POST_i_postFile
+(assert (= v_a43ab7c  local__POST_i_postFile) )
+% v_a4429e0 := v_a442934
+(assert (= v_a4429e0  v_a442934) )
+% local__POST_i_editor := zYh_aNyStR
+% v_a442934 := local__POST_i_editor
+(assert (= v_a442934  local__POST_i_editor) )
+
+
+
+
+% ASSERT( T_local__POST_i_submit = T_local__POST );
+% ASSERT( T_v_a43a9f4 = T_local__POST_i_submit );
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+% ASSERT( T_local__POST_i_saveit = T_local__POST );
+% ASSERT( T_v_a43acec = T_local__POST_i_saveit );
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+% ASSERT( v_a442ce0 <=> NOT(v_a442c50 = 0bin00000000000000000000000000000000) );
+% ASSERT( T_v_a442bbc = T_v_a442b1c | T_v_a43fef8);
+% ASSERT( T_v_a442b1c = T_v_a442a7c | 0bin00000000000000000000000000000000);
+% ASSERT( T_v_a442a7c = 0bin00000000000000000000000000000000 | T_v_a440068);
+% ASSERT( T_v_a440068 = T_v_a43ffd4);
+% ASSERT( T_local__GET_i_template = T_local__GET );
+% ASSERT( T_v_a43ffd4 = T_local__GET_i_template );
+% ASSERT( T_local__GET = 0bin00000000000000000000000000000001 );
+% ASSERT( T_v_a43fef8 = T_v_a43fe64);
+% ASSERT( T_local__GET_i_file = T_local__GET );
+% ASSERT( T_v_a43fe64 = T_local__GET_i_file );
+% ASSERT( T_local__GET = 0bin00000000000000000000000000000001 );
+% ASSERT( T_v_a4429e0 = 0bin00000000000000000000000000000001 );
+% ASSERT( T_v_a442ed4 = T_v_a442e34 | T_v_a43ac10);
+% ASSERT( T_v_a442e34 = T_v_a442d94 | 0bin00000000000000000000000000000000);
+% ASSERT( T_v_a442d94 = 0bin00000000000000000000000000000000 | T_v_a440068);
+% ASSERT( T_v_a43ac10 = T_v_a43ab7c);
+% ASSERT( T_local__POST_i_postFile = T_local__POST );
+% ASSERT( T_v_a43ab7c = T_local__POST_i_postFile );
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+% ASSERT( T_v_a4429e0 = T_v_a442934);
+% ASSERT( T_local__POST_i_editor = T_local__POST );
+% ASSERT( T_v_a442934 = T_local__POST_i_editor );
+% ASSERT( T_local__POST = 0bin00000000000000000000000000000001 );
+% ASSERT( v_a43aa88 );
+% ASSERT( v_a43ad8c );
+% ASSERT( v_a442ce0 );
+% 
+% QUERY FALSE;
+% COUNTEREXAMPLE;
+
+% STP VRBL Count = 31
+% STP CSTR Count = 33
+%===================================================================
+
+(check-sat) 
+(get-model)

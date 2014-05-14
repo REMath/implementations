@@ -1,0 +1,45 @@
+obj/cfg.cmi: obj/basics.cmx 
+obj/coding.cmi: obj/cfg.cmi obj/basics.cmx 
+obj/cyktable.cmi: obj/varencoding.cmi obj/cfg.cmi 
+obj/dotty.cmi: obj/cfg.cmi 
+obj/engine.cmi: obj/problems.cmi obj/cfg.cmi obj/basics.cmx 
+obj/latex.cmi: obj/parsetree.cmi obj/cfg.cmi 
+obj/parsetree.cmi: obj/cfg.cmi 
+obj/problems.cmi: obj/cfg.cmi obj/basics.cmx 
+obj/varencoding.cmi: obj/cfg.cmi 
+obj/basics.cmo: obj/zchaff.cmx 
+obj/basics.cmx: obj/zchaff.cmx 
+obj/cfg.cmo: obj/basics.cmx obj/cfg.cmi 
+obj/cfg.cmx: obj/basics.cmx obj/cfg.cmi 
+obj/coding.cmo: obj/zchaff.cmx obj/varencoding.cmi obj/cfg.cmi obj/basics.cmx \
+    obj/coding.cmi 
+obj/coding.cmx: obj/zchaff.cmx obj/varencoding.cmx obj/cfg.cmx obj/basics.cmx \
+    obj/coding.cmi 
+obj/cyktable.cmo: obj/zchaff.cmx obj/varencoding.cmi obj/cfg.cmi \
+    obj/basics.cmx obj/cyktable.cmi 
+obj/cyktable.cmx: obj/zchaff.cmx obj/varencoding.cmx obj/cfg.cmx \
+    obj/basics.cmx obj/cyktable.cmi 
+obj/dotty.cmo: obj/varencoding.cmi obj/cfg.cmi obj/basics.cmx obj/dotty.cmi 
+obj/dotty.cmx: obj/varencoding.cmx obj/cfg.cmx obj/basics.cmx obj/dotty.cmi 
+obj/engine.cmo: obj/zchaff.cmx obj/varencoding.cmi obj/problems.cmi \
+    obj/basics.cmx obj/engine.cmi 
+obj/engine.cmx: obj/zchaff.cmx obj/varencoding.cmx obj/problems.cmx \
+    obj/basics.cmx obj/engine.cmi 
+obj/latex.cmo: obj/varencoding.cmi obj/parsetree.cmi obj/cyktable.cmi \
+    obj/basics.cmx obj/latex.cmi 
+obj/latex.cmx: obj/varencoding.cmx obj/parsetree.cmx obj/cyktable.cmx \
+    obj/basics.cmx obj/latex.cmi 
+obj/main.cmo: obj/problems.cmi obj/engine.cmi obj/cfg.cmi obj/basics.cmx 
+obj/main.cmx: obj/problems.cmx obj/engine.cmx obj/cfg.cmx obj/basics.cmx 
+obj/parsetree.cmo: obj/zchaff.cmx obj/varencoding.cmi obj/cfg.cmi \
+    obj/basics.cmx obj/parsetree.cmi 
+obj/parsetree.cmx: obj/zchaff.cmx obj/varencoding.cmx obj/cfg.cmx \
+    obj/basics.cmx obj/parsetree.cmi 
+obj/problems.cmo: obj/zchaff.cmx obj/varencoding.cmi obj/dotty.cmi \
+    obj/coding.cmi obj/cfg.cmi obj/basics.cmx obj/problems.cmi 
+obj/problems.cmx: obj/zchaff.cmx obj/varencoding.cmx obj/dotty.cmx \
+    obj/coding.cmx obj/cfg.cmx obj/basics.cmx obj/problems.cmi 
+obj/varencoding.cmo: obj/zchaff.cmx obj/cfg.cmi obj/basics.cmx \
+    obj/varencoding.cmi 
+obj/varencoding.cmx: obj/zchaff.cmx obj/cfg.cmx obj/basics.cmx \
+    obj/varencoding.cmi 

@@ -1,0 +1,1226 @@
+// occ2.gr            see license.txt for copyright and terms of use
+// starting over with a C++ grammar
+// working from ISO/IEC 14882:1998(E)
+// Ocaml version
+
+option lang_OCaml;
+
+context_class cc2 {
+public:
+};
+
+
+terminals {
+  include("tokens.tok")
+}
+
+
+// start symbol
+nonterm StartSymbol -> TranslationUnit;
+
+
+// map from my lexer's names into the Standard's names
+nonterm Identifier -> TOK_NAME;
+
+nonterm IntegerLiteral -> TOK_INT_LITERAL;
+
+nonterm CharacterLiteral -> TOK_CHAR_LITERAL;
+
+nonterm FloatingLiteral -> TOK_FLOAT_LITERAL;
+
+nonterm StringLiteral -> TOK_STRING_LITERAL;
+
+nonterm BooleanLiteral {
+  -> "true";
+  -> "false";
+}
+
+
+// -------------------- A.1 Keywords --------------------
+
+nonterm TypedefName {
+  -> Identifier;
+}
+
+nonterm NamespaceName {
+  -> OriginalNamespaceName;
+  -> NamespaceAlias;
+}
+
+nonterm OriginalNamespaceName {
+  -> Identifier;
+}
+
+nonterm NamespaceAlias {
+  -> Identifier;
+}
+
+nonterm ClassName {
+  -> Identifier;
+  -> TemplateId;
+}
+
+nonterm EnumName {
+  -> Identifier;
+}
+
+nonterm TemplateName {
+  -> Identifier;
+}
+
+
+// -------------------- A.2 Lexical conventions --------------------
+
+// since I assume the use of a conventional lexical analyzer, I don't
+// reproduce all of the rules from the standard here; instead I list
+// the tokens I assume will be exported by the lexer:
+
+//   Identifier
+//   IntegerLiteral
+//   CharacterLiteral
+//   FloatingLiteral
+//   StringLiteral
+//   BooleanLiteral
+//   keywords: "this", "if", ...
+//   operators: "+", "-", ...
+//   punctuators: "(", ")", ";", ...
+
+nonterm Literal {
+  -> IntegerLiteral;
+  -> CharacterLiteral;
+  -> FloatingLiteral;
+  -> StringLiteral;
+  -> BooleanLiteral;
+}
+
+
+// -------------------- A.3 Basic concepts --------------------
+
+nonterm TranslationUnit {
+  -> DeclarationSeqOpt;
+}
+
+
+// -------------------- A.4 Expressions --------------------
+
+nonterm PrimaryExpression {
+  -> Literal;
+  -> "this";
+  -> "(" Expression ")";
+  -> IdExpression;
+}
+
+nonterm IdExpression {
+  -> UnqualifiedId;
+  -> QualifiedId;
+}
+
+nonterm UnqualifiedId {
+  -> Identifier;
+  -> OperatorFunctionId;
+  -> ConversionFunctionId;
+  -> "~" ClassName;
+  -> TemplateId;
+}
+
+nonterm ColonColonOpt {
+  -> empty;
+  -> "::";
+}
+
+nonterm TemplateOpt {
+  -> empty;
+  -> "template";
+}
+
+nonterm QualifiedId {
+  -> ColonColonOpt NestedNameSpecifier TemplateOpt UnqualifiedId;
+  -> "::" Identifier;
+  -> "::" OperatorFunctionId;
+  -> "::" TemplateId;
+}
+
+nonterm NestedNameSpecifierOpt {
+  -> empty;
+  -> NestedNameSpecifier;
+}
+
+nonterm NestedNameSpecifier {
+  -> ClassOrNamespaceName "::" NestedNameSpecifierOpt;
+  -> ClassOrNamespaceName "::" "template" NestedNameSpecifier;
+}
+
+nonterm ClassOrNamespaceName {
+  -> ClassName;
+  -> NamespaceName;
+}                                                
+
+nonterm ExpressionListOpt {
+  -> empty;
+  -> ExpressionList;
+}
+
+nonterm PostfixExpression {
+  fun merge(l,r) [ l ]
+
+  -> PrimaryExpression;
+  -> PostfixExpression "[" Expression "]";
+  -> PostfixExpression "(" ExpressionListOpt ")";
+  -> SimpleTypeSpecifier "(" ExpressionListOpt ")";
+  -> "typename" ColonColonOpt NestedNameSpecifier Identifier "(" ExpressionListOpt ")";
+  -> "typename" ColonColonOpt NestedNameSpecifier TemplateOpt TemplateId "(" ExpressionListOpt ")";
+  -> PostfixExpression "." TemplateOpt IdExpression;
+  -> PostfixExpression "->" TemplateOpt IdExpression;
+  -> PostfixExpression "." PseudoDestructorName;
+  -> PostfixExpression "->" PseudoDestructorName;
+  -> PostfixExpression "++";
+  -> PostfixExpression "--";
+  -> "dynamic_cast"     "<" TypeId ">" "(" Expression ")";
+  -> "static_cast"      "<" TypeId ">" "(" Expression ")";
+  -> "reinterpret_cast" "<" TypeId ">" "(" Expression ")";
+  -> "const_cast"       "<" TypeId ">" "(" Expression ")";
+  -> "typeid" "(" Expression ")";
+  -> "typeid" "(" TypeId ")";
+}
+
+nonterm ExpressionList {
+  -> AssignmentExpression;
+  -> ExpressionList "," AssignmentExpression;
+}
+
+nonterm PseudoDestructorName {
+  -> ColonColonOpt NestedNameSpecifierOpt TypeName "::" "~" TypeName;
+  -> ColonColonOpt NestedNameSpecifier "template" TemplateId "::" "~" TypeName;
+  -> ColonColonOpt NestedNameSpecifierOpt "~" TypeName;
+}
+
+nonterm UnaryExpression {
+  fun merge(l,r) [ l ]
+
+  -> PostfixExpression;
+  -> "++" CastExpression;
+  -> "--" CastExpression;
+  -> UnaryOperator CastExpression;
+  -> "sizeof" UnaryExpression;
+  -> "sizeof" "(" TypeId ")";
+  -> NewExpression;
+  -> DeleteExpression;
+}
+
+nonterm UnaryOperator {
+  -> "*";
+  -> "&";
+  -> "+";
+  -> "-";
+  -> "!";
+  -> "~";
+}
+  
+nonterm NewPlacementOpt {
+  -> empty;
+  -> NewPlacement;
+}
+
+nonterm NewInitializerOpt {
+  -> empty;
+  -> NewInitializer;
+}
+
+nonterm NewExpression {
+  -> ColonColonOpt "new" NewPlacementOpt NewTypeId NewInitializerOpt;
+  -> ColonColonOpt "new" NewPlacementOpt "(" TypeId ")" NewInitializerOpt;
+}
+
+nonterm NewPlacement {
+  -> "(" ExpressionList ")";
+}                           
+
+nonterm NewDeclaratorOpt {
+  -> empty;
+  -> NewDeclarator;
+}
+
+nonterm NewTypeId {
+  -> TypeSpecifierSeq NewDeclaratorOpt;
+}
+
+nonterm NewDeclarator {
+  -> PtrOperator NewDeclaratorOpt;
+  -> DirectNewDeclarator;
+}
+
+nonterm DirectNewDeclarator {
+  -> "[" Expression "]";
+  -> DirectNewDeclarator "[" ConstantExpression "]";
+}
+
+nonterm NewInitializer {
+  -> "(" ExpressionListOpt ")";
+}
+
+nonterm DeleteExpression {
+  -> ColonColonOpt "delete" CastExpression;
+  -> ColonColonOpt "delete" "[" "]" CastExpression;
+}
+
+nonterm CastExpression {
+  fun merge(l,r) [ l ]
+
+  -> UnaryExpression;
+  -> "(" TypeId ")" CastExpression;
+}
+
+nonterm PmExpression {
+  -> CastExpression;
+  -> PmExpression ".*" CastExpression;
+  -> PmExpression "->*" CastExpression;
+}
+
+nonterm MultiplicativeExpression {
+  -> PmExpression;
+  -> MultiplicativeExpression "*" PmExpression;
+  -> MultiplicativeExpression "/" PmExpression;
+  -> MultiplicativeExpression "%" PmExpression;
+}
+
+nonterm AdditiveExpression {
+  fun merge(l,r) [ l ]
+
+  -> MultiplicativeExpression;
+  -> AdditiveExpression "+" MultiplicativeExpression;
+  -> AdditiveExpression "-" MultiplicativeExpression;
+}
+
+nonterm ShiftExpression {
+  -> AdditiveExpression;
+  -> ShiftExpression "<<" AdditiveExpression;
+  -> ShiftExpression ">>" AdditiveExpression;
+}
+
+nonterm RelationalExpression {
+  fun merge(l,r) { l }
+
+  -> ShiftExpression;
+  -> RelationalExpression "<" ShiftExpression;
+  -> RelationalExpression ">" ShiftExpression;
+  -> RelationalExpression "<=" ShiftExpression;
+  -> RelationalExpression ">=" ShiftExpression;
+}
+
+nonterm EqualityExpression {
+  -> RelationalExpression;
+  -> EqualityExpression "==" RelationalExpression;
+  -> EqualityExpression "!=" RelationalExpression;
+}
+
+nonterm AndExpression {
+  fun merge(l,r) [ l ]
+
+  -> EqualityExpression;
+  -> AndExpression "&" EqualityExpression;
+}
+
+nonterm ExclusiveOrExpression {
+  -> AndExpression;
+  -> ExclusiveOrExpression "^" AndExpression;
+}
+
+nonterm InclusiveOrExpression {
+  -> ExclusiveOrExpression;
+  -> InclusiveOrExpression "|" ExclusiveOrExpression;
+}
+
+nonterm LogicalAndExpression {
+  -> InclusiveOrExpression;
+  -> LogicalAndExpression "&&" InclusiveOrExpression;
+}
+
+nonterm LogicalOrExpression {
+  -> LogicalAndExpression;
+  -> LogicalOrExpression "||" LogicalAndExpression;
+}
+
+nonterm ConditionalExpression {
+  -> LogicalOrExpression;
+  -> LogicalOrExpression "?" Expression ":" AssignmentExpression;
+}
+
+nonterm AssignmentExpression {
+  -> ConditionalExpression;
+  -> LogicalOrExpression AssignmentOperator AssignmentExpression;
+  -> ThrowExpression;
+}
+
+nonterm AssignmentOperator {
+  -> "=";
+  -> "*=";
+  -> "/=";
+  -> "%=";
+  -> "+=";
+  -> "-=";
+  -> ">>=";
+  -> "<<=";
+  -> "&=";
+  -> "^=";
+  -> "|=";
+}
+
+nonterm Expression {
+  -> AssignmentExpression;
+  -> Expression "," AssignmentExpression;
+}
+
+nonterm ConstantExpression {
+  -> ConditionalExpression;
+}
+
+
+// -------------------- A.5 Statements --------------------
+
+nonterm Statement {
+  fun merge(l,r) [ l ]
+
+  -> LabeledStatement;
+  -> ExpressionStatement;
+  -> CompoundStatement;
+  -> SelectionStatement;
+  -> IterationStatement;
+  -> JumpStatement;
+  -> DeclarationStatement;
+  -> TryBlock;
+}
+
+nonterm LabeledStatement {
+  -> Identifier ":" Statement;
+  -> "case" ConstantExpression ":" Statement;
+  -> "default" ":" Statement;      // note: linux kernel contains "switch (..) { ... default: }" ..
+}
+
+nonterm ExpressionOpt {
+  -> empty;
+  -> Expression;
+}
+
+nonterm ExpressionStatement {
+  -> ExpressionOpt ";";
+}
+
+nonterm StatementSeqOpt {
+  -> empty;
+  -> StatementSeq;
+}
+
+nonterm CompoundStatement {
+  -> "{" StatementSeqOpt "}";
+}
+
+nonterm StatementSeq {
+  -> Statement;
+  -> StatementSeq Statement;
+}
+
+nonterm SelectionStatement {
+  -> "if" "(" Condition ")" Statement;
+  -> "if" "(" Condition ")" Statement "else" Statement;
+  -> "switch" "(" Condition ")" Statement;
+}
+
+nonterm Condition {
+  -> Expression;
+  -> TypeSpecifierSeq Declarator "=" AssignmentExpression;     // ?
+}
+  
+nonterm ConditionOpt {
+  -> empty;
+  -> Condition;
+}
+
+nonterm IterationStatement {
+  -> "while" "(" Condition ")" Statement;
+  -> "do" Statement "while" "(" Expression ")" ";";
+  -> "for" "(" ForInitStatement ConditionOpt ";" ExpressionOpt ")" Statement;
+}
+
+nonterm ForInitStatement {
+  fun merge(l,r) [ l ]
+
+  -> ExpressionStatement;
+  -> SimpleDeclaration;
+}
+
+nonterm JumpStatement {
+  -> "break" ";";
+  -> "continue" ";";
+  -> "return" ExpressionOpt ";";
+  -> "goto" Identifier ";";
+}
+
+nonterm DeclarationStatement {
+  -> BlockDeclaration;
+}
+
+
+// -------------------- A.6 Declarations --------------------
+
+nonterm DeclarationSeq {
+  -> Declaration;
+  -> DeclarationSeq Declaration;
+}
+
+nonterm Declaration {
+  -> BlockDeclaration;
+  -> FunctionDefinition;
+  -> TemplateDeclaration;
+  -> ExplicitInstantiation;
+  -> ExplicitSpecialization;
+  -> LinkageSpecification;
+  -> NamespaceDefinition;
+}
+
+nonterm BlockDeclaration {
+  -> SimpleDeclaration;
+  -> AsmDefinition;
+  -> NamespaceAliasDefinition;
+  -> UsingDeclaration;
+  -> UsingDirective;
+}
+
+nonterm DeclSpecifierSeqOpt {
+  -> empty;
+  -> DeclSpecifierSeq;
+}
+
+nonterm InitDeclaratorListOpt {
+  -> empty;
+  -> InitDeclaratorList;
+}
+
+// Q: why is the InitDeclaratorList optional?  "int ;" is not valid
+// Q: for that matter, why is the DeclSpecifierSeq optional?  ";" is
+// not a valid declaration (it's a statement)
+nonterm SimpleDeclaration {
+  fun merge(l,r) [ l ]
+
+  -> DeclSpecifierSeqOpt InitDeclaratorListOpt ";";
+}
+
+nonterm DeclSpecifier {
+  -> StorageClassSpecifier;
+  -> TypeSpecifier;
+  -> FunctionSpecifier;
+  -> "friend";
+  -> "typedef";
+}
+
+nonterm DeclSpecifierSeq {
+  -> DeclSpecifierSeqOpt DeclSpecifier;
+}
+
+nonterm StorageClassSpecifier {
+  -> "auto";
+  -> "register";
+  -> "static";
+  -> "extern";
+  -> "mutable";
+}
+
+nonterm FunctionSpecifier {
+  -> "inline";
+  -> "virtual";
+  -> "explicit";
+}
+
+// repeated in spec
+//nonterm TypedefName {
+//  -> Identifier;
+//} 
+
+nonterm TypeSpecifier {
+  -> SimpleTypeSpecifier;
+  -> ClassSpecifier;
+  -> EnumSpecifier;
+  -> ElaboratedTypeSpecifier;
+  -> CvQualifier;
+}
+
+nonterm SimpleTypeSpecifier {
+  -> ColonColonOpt NestedNameSpecifierOpt TypeName;
+  -> ColonColonOpt NestedNameSpecifier "template" TemplateId;
+  -> "char";
+  -> "wchar_t";
+  -> "bool";
+  -> "short";
+  -> "int";
+  -> "long";
+  -> "signed";
+  -> "unsigned";
+  -> "float";
+  -> "double";
+  -> "void";
+}
+
+nonterm TypeName {
+  fun merge(l,r) [ l ]
+
+  -> ClassName;
+  -> EnumName;
+  -> TypedefName;
+}
+
+nonterm ElaboratedTypeSpecifier {
+  -> ClassKey ColonColonOpt NestedNameSpecifierOpt Identifier;
+  -> "enum" ColonColonOpt NestedNameSpecifierOpt Identifier;
+  -> "typename" ColonColonOpt NestedNameSpecifier Identifier;
+  -> "typename" ColonColonOpt NestedNameSpecifier TemplateOpt TemplateId;
+}
+
+// this is repeated in the spec
+//nonterm EnumName {
+//  -> Identifier;
+//}
+
+nonterm IdentifierOpt {
+  -> empty;
+  -> Identifier;
+}
+        
+nonterm EnumeratorListOpt {
+  -> empty;
+  -> EnumeratorList;
+}
+
+nonterm EnumSpecifier {
+  -> "enum" IdentifierOpt "{" EnumeratorListOpt "}";
+}
+
+nonterm EnumeratorList {
+  -> EnumeratorDefinition;
+  -> EnumeratorList "," EnumeratorDefinition;
+}
+
+nonterm EnumeratorDefinition {
+  -> Enumerator;
+  -> Enumerator "=" ConstantExpression;
+}
+
+nonterm Enumerator {
+  -> Identifier;
+}
+
+// repeated in spec
+//nonterm NamespaceName {
+//  -> OriginalNamespaceName;
+//  -> NamespaceAlias;
+//} 
+
+// repeated in spec
+//nonterm OriginalNamespaceName {
+//  -> Identifier;
+//} 
+
+nonterm NamespaceDefinition {
+  -> NamedNamespaceDefinition;
+  -> UnnamedNamespaceDefinition;
+}
+
+nonterm NamedNamespaceDefinition {
+  -> OriginalNamespaceDefinition;
+  -> ExtensionNamespaceDefinition;
+}
+
+nonterm OriginalNamespaceDefinition {
+  -> "namespace" Identifier "{" NamespaceBody "}";
+}
+
+nonterm ExtensionNamespaceDefinition {
+  -> "namespace" OriginalNamespaceName "{" NamespaceBody "}";
+}
+
+nonterm UnnamedNamespaceDefinition {
+  -> "namespace" "{" NamespaceBody "}";
+}
+
+nonterm DeclarationSeqOpt {
+  -> empty;
+  -> DeclarationSeq;
+}
+
+nonterm NamespaceBody {
+  -> DeclarationSeqOpt;
+}
+
+// repeated in spec
+//nonterm NamespaceAlias {
+//  -> Identifier;
+//} 
+
+nonterm NamespaceAliasDefinition {
+  -> "namespace" Identifier "=" QualifiedNamespaceSpecifier ";";
+}
+
+nonterm QualifiedNamespaceSpecifier {
+  -> ColonColonOpt NestedNameSpecifierOpt NamespaceName;
+}
+
+nonterm TypenameOpt {
+  -> empty;
+  -> "typename";
+}
+
+nonterm UsingDeclaration {
+  -> "using" TypenameOpt ColonColonOpt NestedNameSpecifier UnqualifiedId ";";
+  -> "using" "::" UnqualifiedId ";";
+}
+
+nonterm UsingDirective {
+  -> "using" "namespace" ColonColonOpt NestedNameSpecifierOpt NamespaceName ";";
+}
+
+nonterm AsmDefinition {
+  -> "asm" "(" StringLiteral ")" ";";
+}
+
+nonterm LinkageSpecification {
+  -> "extern" StringLiteral "{" DeclarationSeqOpt "}";
+  -> "extern" StringLiteral Declaration;
+}
+
+
+// -------------------- A.7 Declarators --------------------
+
+nonterm InitDeclaratorList {
+  -> InitDeclarator;
+  -> InitDeclaratorList "," InitDeclarator;
+}
+
+nonterm InitializerOpt {
+  -> empty;
+  -> Initializer;
+}
+
+nonterm InitDeclarator {
+  fun merge(l,r) [ l ]
+
+  -> Declarator InitializerOpt;
+}
+
+nonterm Declarator {
+  -> DirectDeclarator;
+  -> PtrOperator Declarator;
+}
+
+nonterm CvQualifierSeqOpt {
+  -> empty;
+  -> CvQualifierSeq;
+}
+
+nonterm ExceptionSpecificationOpt {
+  -> empty;
+  -> ExceptionSpecification;
+}
+
+nonterm ConstantExpressionOpt {
+  -> empty;
+  -> ConstantExpression;
+}
+
+nonterm DirectDeclarator {
+  -> DeclaratorId;
+  -> DirectDeclarator "(" ParameterDeclarationClause ")" CvQualifierSeqOpt ExceptionSpecificationOpt;
+  -> DirectDeclarator "[" ConstantExpressionOpt "]";
+  -> "(" Declarator ")";
+}
+
+nonterm PtrOperator {
+  -> "*" CvQualifierSeqOpt;
+  -> "&";
+  -> ColonColonOpt NestedNameSpecifier "*" CvQualifierSeqOpt;     // pointer to member
+}
+
+nonterm CvQualifierSeq {
+  -> CvQualifier CvQualifierSeqOpt;
+}
+
+nonterm CvQualifier {
+  -> "const";
+  -> "volatile";
+}
+
+nonterm DeclaratorId {
+  fun merge(l,r) [ l ]
+
+  -> IdExpression;
+  -> ColonColonOpt NestedNameSpecifierOpt TypeName;
+}
+
+nonterm AbstractDeclaratorOpt {
+  -> empty;
+  -> AbstractDeclarator;
+}
+
+nonterm TypeId {
+  -> TypeSpecifierSeq AbstractDeclaratorOpt;
+}
+
+nonterm TypeSpecifierSeqOpt {
+  -> empty;
+  -> TypeSpecifierSeq;
+}
+
+nonterm TypeSpecifierSeq {
+  -> TypeSpecifier TypeSpecifierSeqOpt;
+}
+
+nonterm AbstractDeclarator {
+  -> PtrOperator AbstractDeclaratorOpt;
+  -> DirectAbstractDeclarator;
+}
+     
+nonterm DirectAbstractDeclaratorOpt {
+  -> empty;
+  -> DirectAbstractDeclarator;
+}
+
+nonterm DirectAbstractDeclarator {
+  -> DirectAbstractDeclaratorOpt "(" ParameterDeclarationClause ")" CvQualifierSeqOpt ExceptionSpecificationOpt;
+  -> DirectAbstractDeclaratorOpt "[" ConstantExpressionOpt "]";
+  -> "(" AbstractDeclarator ")";
+}
+
+nonterm ParameterDeclarationListOpt {
+  -> empty;
+  -> ParameterDeclarationList;
+}
+
+nonterm EllipsisOpt {
+  -> empty;
+  -> "...";
+}
+
+nonterm ParameterDeclarationClause {
+  -> ParameterDeclarationListOpt EllipsisOpt;
+  -> ParameterDeclarationList "," "...";
+}
+
+nonterm ParameterDeclarationList {
+  -> ParameterDeclaration;
+  -> ParameterDeclarationList "," ParameterDeclaration;
+}
+
+nonterm ParameterDeclaration {
+  fun merge(l,r) [ l ]
+
+  -> DeclSpecifierSeq Declarator;
+  -> DeclSpecifierSeq Declarator "=" AssignmentExpression;
+  -> DeclSpecifierSeq AbstractDeclaratorOpt;
+  -> DeclSpecifierSeq AbstractDeclaratorOpt "=" AssignmentExpression;
+}
+
+nonterm CtorInitializerOpt {
+  -> empty;
+  -> CtorInitializer;
+}
+
+nonterm FunctionDefinition {
+  -> DeclSpecifierSeqOpt Declarator CtorInitializerOpt FunctionBody;
+  -> DeclSpecifierSeqOpt Declarator FunctionTryBlock;
+}
+
+nonterm FunctionBody {
+  -> CompoundStatement;
+}
+
+nonterm Initializer {
+  -> "=" InitializerClause;
+  -> "(" ExpressionList ")";
+}
+
+nonterm CommaOpt {
+  -> empty;
+  -> ",";
+}
+
+nonterm InitializerClause {
+  -> AssignmentExpression;
+  -> "{" InitializerList CommaOpt "}";
+  -> "{" "}";
+}
+
+nonterm InitializerList {
+  -> InitializerClause;
+  -> InitializerList "," InitializerClause;
+}
+
+
+// -------------------- A.8 Classes --------------------
+
+// repeated in spec
+//nonterm ClassName {
+//  -> Identifier;
+//  -> TemplateId;
+//} 
+
+nonterm MemberSpecificationOpt {
+  -> empty;
+  -> MemberSpecification;
+}
+
+nonterm ClassSpecifier {
+  -> ClassHead "{" MemberSpecificationOpt "}";
+}
+
+nonterm BaseClauseOpt {
+  -> empty;
+  -> BaseClause;
+}
+
+nonterm ClassHead {
+  -> ClassKey IdentifierOpt BaseClauseOpt;
+  -> ClassKey NestedNameSpecifier Identifier BaseClauseOpt;
+  -> ClassKey NestedNameSpecifierOpt TemplateId BaseClauseOpt;
+}
+
+nonterm ClassKey {
+  -> "class";
+  -> "struct";
+  -> "union";
+}
+  
+nonterm MemberSpecification {
+  -> MemberDeclaration MemberSpecificationOpt;
+  -> AccessSpecifier ":" MemberSpecificationOpt;
+}
+
+nonterm MemberDeclaratorListOpt {
+  -> empty;
+  -> MemberDeclaratorList;
+}
+  
+nonterm SemicolonOpt {
+  -> empty;
+  -> ";";
+}
+
+nonterm MemberDeclaration {
+  fun merge(l,r) [ l ]
+
+  -> DeclSpecifierSeqOpt MemberDeclaratorListOpt ";";
+  -> FunctionDefinition SemicolonOpt;
+  -> ColonColonOpt NestedNameSpecifier TemplateOpt UnqualifiedId ";";
+  -> UsingDeclaration;
+  -> TemplateDeclaration;
+}
+
+nonterm MemberDeclaratorList {
+  -> MemberDeclarator;
+  -> MemberDeclaratorList "," MemberDeclarator;
+}
+
+nonterm PureSpecifierOpt {
+  -> empty;
+  -> PureSpecifier;
+}
+
+nonterm ConstantInitializerOpt {
+  -> empty;
+  -> ConstantInitializer;
+}
+
+nonterm MemberDeclarator {
+  fun merge(l,r) [ l ]
+
+  -> Declarator PureSpecifierOpt;           // for when declarator is a function type
+  -> Declarator ConstantInitializerOpt;     // for when it is any other type
+  -> IdentifierOpt ":" ConstantExpression;  // bitfield with optional name
+}
+
+nonterm PureSpecifier {
+  -> "=" IntegerLiteral;         // standard says "0" here but that's not one of my tokens..
+}
+
+nonterm ConstantInitializer{ 
+  -> "=" ConstantExpression;
+}
+
+
+// -------------------- A.9 Derived classes --------------------
+
+nonterm BaseClause {
+  -> ":" BaseSpecifierList;
+}
+
+nonterm BaseSpecifierList {
+  -> BaseSpecifier;
+  -> BaseSpecifierList "," BaseSpecifier;
+}
+ 
+// Q: is there a nonterminal called "virtual"?
+// A: no.  the standard uses the wrong font for "virtual" in the base-specifier rules
+nonterm VirtualOpt {
+  -> empty;
+  -> "virtual";
+}
+
+nonterm AccessSpecifierOpt {
+  -> empty;
+  -> AccessSpecifier;
+}
+
+nonterm BaseSpecifier {
+  -> ColonColonOpt NestedNameSpecifierOpt ClassName;
+  -> "virtual" AccessSpecifierOpt ColonColonOpt NestedNameSpecifierOpt ClassName;
+  -> AccessSpecifier VirtualOpt   ColonColonOpt NestedNameSpecifierOpt ClassName;
+}
+
+nonterm AccessSpecifier {
+  -> "private";
+  -> "protected";
+  -> "public";
+}
+
+
+// -------------------- A.10 Special member functions --------------------
+
+nonterm ConversionFunctionId {
+  -> "operator" ConversionTypeId;
+}
+
+nonterm ConversionDeclaratorOpt {
+  -> empty;
+  -> ConversionDeclarator;
+}
+
+nonterm ConversionTypeId {
+  -> TypeSpecifierSeq ConversionDeclaratorOpt;
+}
+
+nonterm ConversionDeclarator {
+  -> PtrOperator ConversionDeclaratorOpt;
+}
+
+nonterm CtorInitializer {
+  -> ":" MemInitializerList;
+}
+
+// Q: why right recursion?
+nonterm MemInitializerList {
+  -> MemInitializer;
+  -> MemInitializer "," MemInitializerList;
+}                                          
+
+// Q: what is a mem-initializer?
+// A: "member initializer", in constructors after the ":" but before "{"
+nonterm MemInitializer {
+  -> MemInitializerId "(" ExpressionListOpt ")";
+}
+
+nonterm MemInitializerId {
+  fun merge(l,r) { l }
+
+  -> ColonColonOpt NestedNameSpecifierOpt ClassName;
+  -> Identifier;
+}
+
+
+// -------------------- A.11 Overloading --------------------
+
+nonterm OperatorFunctionId {
+  -> "operator" Operator;
+}
+
+nonterm Operator {
+  -> "new";
+  -> "delete";
+  -> "new" "[" "]";
+  -> "delete" "[" "]";
+  -> "+";
+  -> "-";
+  -> "*";
+  -> "/";
+  -> "%";
+  -> "^";
+  -> "&";
+  -> "|";
+  -> "~";
+  -> "!";
+  -> "=";
+  -> "<";
+  -> ">";
+  -> "+=";
+  -> "-=";
+  -> "*=";
+  -> "/=";
+  -> "%=";
+  -> "^=";
+  -> "&=";
+  -> "|=";
+  -> "<<";
+  -> ">>";
+  -> ">>=";
+  -> "<<=";
+  -> "==";
+  -> "!=";
+  -> "<=";
+  -> ">=";
+  -> "&&";
+  -> "||";
+  -> "++";
+  -> "--";
+  -> ",";
+  -> "->*";
+  -> "->";
+  -> "(" ")";
+  -> "[" "]";
+}
+
+
+// -------------------- A.12 Templates --------------------
+
+nonterm ExportOpt {
+  -> empty;
+  -> "export";
+}
+
+nonterm TemplateDeclaration {
+  -> ExportOpt "template" "<" TemplateParameterList ">" Declaration;
+}
+
+nonterm TemplateParameterList {
+  -> TemplateParameter;
+  -> TemplateParameterList "," TemplateParameter;
+}
+
+nonterm TemplateParameter {
+  fun merge(l,r) { l }
+
+  -> TypeParameter;
+  -> ParameterDeclaration;
+}
+
+nonterm TypeParameter {
+  -> "class" IdentifierOpt;
+  -> "class" IdentifierOpt "=" TypeId;
+  -> "typename" IdentifierOpt;
+  -> "typename" IdentifierOpt "=" TypeId;
+  -> "template" "<" TemplateParameterList ">" "class" IdentifierOpt;
+  -> "template" "<" TemplateParameterList ">" "class" IdentifierOpt "=" IdExpression;
+}
+
+nonterm TemplateArgumentListOpt {
+  -> empty;
+  -> TemplateArgumentList;
+}
+
+nonterm TemplateId {
+  -> TemplateName "<" TemplateArgumentListOpt ">";
+}
+
+// repeated in spec
+//nonterm TemplateName {
+//  -> Identifier;
+//} 
+
+nonterm TemplateArgumentList {
+  -> TemplateArgument;
+  -> TemplateArgumentList "," TemplateArgument;
+}
+
+nonterm TemplateArgument {
+  fun merge(l,r) [ l ]
+
+  -> AssignmentExpression;
+  -> TypeId;
+  -> IdExpression;
+}
+
+nonterm ExplicitInstantiation {
+  -> "template" Declaration;
+}
+
+nonterm ExplicitSpecialization {
+  -> "template" "<" ">" Declaration;
+}
+
+
+// -------------------- A.13 Exception handling --------------------
+
+nonterm TryBlock {
+  -> "try" CompoundStatement HandlerSeq;
+}
+
+nonterm FunctionTryBlock {
+  -> "try" CtorInitializerOpt FunctionBody HandlerSeq;
+}
+
+nonterm HandlerSeqOpt {
+  -> empty;
+  -> HandlerSeq;
+}
+
+// Q: why did they choose to use right recursion for this one?  all of
+// the other sequences use left recursion..
+nonterm HandlerSeq {
+  -> Handler HandlerSeqOpt;
+}
+
+nonterm Handler {
+  -> "catch" "(" ExceptionDeclaration ")" CompoundStatement;
+}
+
+nonterm ExceptionDeclaration {
+  -> TypeSpecifierSeq Declarator;
+  -> TypeSpecifierSeq AbstractDeclarator;
+  -> TypeSpecifierSeq;
+  -> "...";
+}
+
+nonterm AssignmentExpressionOpt {
+  -> empty;
+  -> AssignmentExpression;
+}
+
+nonterm ThrowExpression {
+  -> "throw" AssignmentExpressionOpt;
+}
+
+nonterm TypeIdListOpt {
+  -> empty;
+  -> TypeIdList;
+}
+
+nonterm ExceptionSpecification {
+  -> "throw" "(" TypeIdListOpt ")";
+}
+
+nonterm TypeIdList {
+  -> TypeId;
+  -> TypeIdList "," TypeId;
+}
+
+
+// A.14 Preprocessing directives: deferring to separate preprocessor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

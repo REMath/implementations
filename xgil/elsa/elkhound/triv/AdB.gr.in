@@ -1,0 +1,23 @@
+// AdB.gr   -*- c++ -*-
+// cyclic grammar
+
+// A -> d | B
+// B -> A
+
+terminals {
+  68 : d   ;
+}
+
+nonterm A {
+  fun merge(p1, p2) [ cout << "merging nonterminal A\n"; return p1; ]
+
+  -> d;
+  -> B;
+}
+
+nonterm B {
+  -> A;
+}
+
+
+

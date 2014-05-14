@@ -1,0 +1,319 @@
+// gnu.ast            see license.txt for copyright and terms of use
+// extension to cc.ast to support GNU language extensions
+
+// sm: this contains both the representation language and the
+// annotations used by the type checker, unlike the cc.ast
+// vs. cc_tcheck.ast split, since there seemed little profit in that
+// split for this file
+
+verbatim {
+  #define GNU_EXTENSION         // this extension module is active
+
+  #include <limits.h>           // INT_MIN
+}
+
+
+// additional contexts in the GNU extensions
+enum DeclaratorContext {
+    // inside ASTTypeId
+  DC_TS_TYPEOF_TYPE,
+  DC_E_COMPOUNDLIT,
+  DC_E_ALIGNOFTYPE,
+  DC_E_BUILTIN_VA_ARG,
+  DC_E_TYPE_FUNCTION,
+}
+
+
+// The AST extensions in this file are organized in parallel with the
+// syntactic extensions in gnu.gr.
+
+
+// ----------- gcc statement expression -----------
+class Expression {
+  // statement-expression
+  // http://gcc.gnu.org/onlinedocs/gcc-3.1/gcc/Statement-Exprs.html
+  -> E_statement(S_compound s) {
+       // sort of like E_compoundLit::tcheckedType, this ensures we
+       // only tcheck this once even though it might appear in
+       // ambiguous contexts
+       public bool tchecked = false;
+     }
+}
+
+
+// ----------- gcc compound literals -----------
+class Expression {
+  // http://gcc.gnu.org/onlinedocs/gcc-3.1/gcc/Compound-Literals.html
+  // and C99 6.5.2.5
+  -> E_compoundLit(ASTTypeId stype, IN_compound init) {
+       // help for dealing with expressions being tchecked more than once
+       public bool tcheckedType = false;
+     }
+}
+
+
+// ----------- gcc misc -----------
+class Statement {
+  // nested function definition
+  -> S_function(Function f);
+
+  // case ranges
+  -> S_rangeCase(Expression exprLo, Expression exprHi, Statement s) {
+       public(xml) int labelValLo = 0;
+       public(xml) int labelValHi = 0;
+  }
+}
+
+class Expression {
+  // miscellanous builtins that for whatever reason find themselves
+  // as AST nodes instead of ordinary function calls (...)
+  // http://gcc.gnu.org/onlinedocs/gcc-3.1/gcc/Other-Builtins.html
+  -> E___builtin_constant_p(SourceLoc loc, Expression expr);
+  -> E___builtin_va_arg(SourceLoc loc, Expression expr, ASTTypeId atype);
+  -> E___builtin_va_arg_pack(SourceLoc loc);
+
+  // alignment inquiry
+  // http://gcc.gnu.org/onlinedocs/gcc-3.1/gcc/Alignment.html
+  -> E_alignofType(ASTTypeId atype) {
+       public virtual CValue extConstEval(ConstEval &env) const;
+       public(xml) int alignment = 0; // set by tcheck
+     }
+     
+  -> E_alignofExpr(Expression expr) {
+       public virtual CValue extConstEval(ConstEval &env) const;
+       public(xml) int alignment = 0;
+     }
+
+  // bhackett: miscellaneous builtin which takes a type argument and queries
+  // some property of the type. see gnu_ext.tok for the possible function names
+  // that can appear here. TODO: make the property an enum.
+  -> E_typeUnary(SourceLoc loc, ASTTypeId atype, StringRef property);
+  -> E_typeBinary(SourceLoc loc, ASTTypeId atype0, ASTTypeId atype1, StringRef property);
+
+  // conditional with no middle operand
+  // http://gcc.gnu.org/onlinedocs/gcc-3.1/gcc/Conditionals.html
+  -> E_gnuCond(Expression cond, Expression el) {
+       public virtual CValue extConstEval(ConstEval &env) const;
+       public virtual bool extHasUnparenthesizedGT();
+     }
+}
+
+
+// ----------- gcc dangling labels -----------
+// (no AST extensions required)
+
+
+// ----------- gcc typeof -----------
+// types denoted with 'typeof' keyword
+new class ASTTypeof {
+  // same as we do for statements
+  public ASTTypeof *ambiguity;  ctor ambiguity=NULL;
+  public void addAmbiguity(ASTTypeof *alternative);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  // yield the ASTTypeof selected by ambiguity resolution; the
+  // type is in its 'type' member
+  public ASTTypeof *tcheck(Env &env, DeclFlags dflags);
+  public void mid_tcheck(Env &env, DeclFlags &dflags);
+  pure_virtual Type *itcheck(Env &env, DeclFlags dflags);
+
+  // dsw: I had to move this here to deal with the mid_tcheck design
+  // pattern that is used to resolve ambiguities.
+  public(xml_TY) Type *type;
+
+  // dsw: I'm assuming that ASTTypeof should terminate the top of the
+  // Expression tree, but I don't feel absolutely sure about it.
+  -> TS_typeof_expr(FullExpression expr);
+
+  -> TS_typeof_type(ASTTypeId atype);
+}
+
+
+class TypeSpecifier {
+  -> TS_typeof(ASTTypeof atype);
+}
+
+
+// ----------- gcc C++ min and max operators -----------
+// (2005-04-07: there used to be a special E_gnuMinMax, but because
+// those operators are overloadable, they become intertwined with much
+// more of the tchecker structure, and therefore I folded them into
+// BinaryOp)
+
+
+// ----------- gcc asm -----------
+// (no AST extension b/c extra info dropped on floor)
+
+
+// ----------- gcc asm labels -----------
+// (no AST extension b/c extra info dropped on floor)
+
+
+// ----------- C99 designated initializers -----------
+class Initializer {
+  // a designator (list of fields/subscripts) in front of an
+  // undesignated initializer
+  -> IN_designated(FakeList<Designator> *designator_list,
+                   Initializer init);
+}
+
+class Designator (SourceLoc loc) {
+  // FakeList link; use setNext
+  public Designator *next;  ctor next=NULL;
+  public void setNext(Designator *newNext);
+
+  // dsw: I seem to need all of this ambiguity stuff in order to use
+  // genericSetNext
+
+  // ambiguity representation
+  public Designator *ambiguity; ctor ambiguity=NULL;
+  public void addAmbiguity(Designator *alternative);
+  custom traverse { if (ambiguity) ambiguity->traverse(vis); }
+
+  // print ambiguities
+  public void printAmbiguities(ostream &os, int indent) const;
+  custom preemptDebugPrint {
+    if (ambiguity) {
+      printAmbiguities(os, indent);
+      return;     // skip the normal, unambiguous-node print code
+    }
+  }
+
+  pure_virtual void print(PrintEnv &env);
+
+  -> FieldDesignator(StringRef id);
+
+  -> SubscriptDesignator(Expression idx_expr, // taken from D_array
+                         Expression /*nullable*/ idx_expr2)
+  {
+    public(xml) int idx_computed  = INT_MIN; // index computed at compile time
+    public(xml) int idx_computed2 = INT_MIN; // index range end computed at compile time
+  }
+}
+
+
+// ----------- C99 restrict keyword -----------
+// (no AST extensions required b/c cc_flags.h already has *_RESTRICT)
+
+
+// ----------- C99 qualifiers in array brackets -----------
+// (no AST extension b/c extra info dropped on floor)
+
+
+// ------------ gcc computed goto ----------
+class Expression {                      
+  // address of a label, e.g., "&&labelName"
+  -> E_addrOfLabel(StringRef labelName);      
+}
+
+class Statement {
+  // goto a label whose address has been taken
+  -> S_computedGoto(Expression target);
+}
+
+
+// ----------- gcc/C99 complex/imaginary ----------
+class Expression {
+  -> E_fieldAcc {
+       // tcheck a __real__ or __imag__
+       public Type *itcheck_complex_selector(Env &env, LookupFlags flags,
+                                             LookupSet &candidates);
+     }
+     
+  -> E_binary {
+       // tcheck arith involving complex or imaginary types
+       public Type *itcheck_complex_arith(Env &env);
+     }
+}
+
+
+// ----------- gcc __attribute__ -----------
+// For now, this is a very literal, parse-tree-like representation of
+// attributes.  I don't know very much about how they will be used (I
+// don't know much about what they *mean*), so it is hard to do any
+// semantic digestion.  Therefore, I will not try.
+
+
+// a sequence of __attribute__((..)) specifiers
+class AttributeSpecifierList(
+  AttributeSpecifier spec,
+  AttributeSpecifierList /*nullable*/ next
+);
+
+
+// a single __attribute__((...)) specifier; there may be many
+// individual attributes inside the parens
+class AttributeSpecifier(
+  Attribute attr,
+  AttributeSpecifier /*nullable*/ next
+);
+
+
+// one attribute, somewhere inside __attribute((...)); syntactically,
+// attributes are separated by commas in the parens
+class Attribute(SourceLoc loc) {
+  // e.g., __attribute__(( ))
+  //                      ^                      
+  // I decided to keep these even though the GNU documentation states
+  // that they are always ignored, because it would be a bit awkward
+  // to drop them in the parser, and they shouldn't occur frequently
+  // anyway.
+  -> AT_empty();
+
+  // e.g., __attribute__((packed))
+  //                      ^^^^^^
+  // Note that even C++ keywords will just get stored as StringRefs.
+  -> AT_word(StringRef w);
+
+  // e.g., __attribute__((format(printf, 1, 2)))
+  //                      ^^^^^^^^^^^^^^^^^^^^
+  // the 'args' can be empty (NULL) to indicate an empty list (which
+  // is still different from AT_word)
+  -> AT_func(StringRef f, FakeList<ArgExpression> *args);
+}
+
+  
+// Here's a clever idea: rather than making a completely new node to
+// carry the attributes, I will inherit from D_grouping!  Then
+// everyone will treat D_attribute like D_grouping, basically ignoring
+// it, except the few pieces of code that want to know about it.  This
+// seems much better than polluting the code with explicit knowledge
+// of D_attribute.
+//
+// My astgen tool does not know how to introduce ad-hoc inheritance,
+// so I will write this one by hand.
+verbatim {
+  // __attribute__ occurring directly after a declarator
+  class D_attribute : public D_grouping {
+  public:
+    // NOTE: 'traverse' does *not* automatically go into this field,
+    // because I want most clients to be oblivious to its presence.
+    // They can explicitly intercept D_grouping and check for
+    // D_attribute if traversal is desired.
+    AttributeSpecifierList *alist;       // owner
+
+  public:
+    D_attribute(SourceLoc loc, IDeclarator *base,
+                AttributeSpecifierList *alist);
+    virtual ~D_attribute();
+    
+    virtual void debugPrint(ostream &os, int indent, char const *subtreeName = "tree") const;
+    virtual void traverse(ASTVisitor &vis);
+
+    virtual D_attribute *clone() const;
+
+    virtual void tcheck(Env &env, Declarator::Tcheck &dt);
+  };
+}
+
+
+// EOF

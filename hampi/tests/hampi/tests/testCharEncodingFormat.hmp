@@ -1,0 +1,6 @@
+var v : 3;
+cfg S :=  \097 | \099 T ;              //cfg S :=  a | c T
+cfg T :=  \098 | A ;                   //cfg T :=  b | A ;     
+cfg A :=  \097 "k" ;                   //cfg A :=  ak ;
+reg limit := fix(S, 3);
+assert v in limit;

@@ -1,0 +1,160 @@
+                     =================
+                        CFGAnalyzer 
+                       =============
+
+       http://www.tcs.ifi.lmu.de/~mlange/cfganalyzer
+
+
+0) INTRODUCTION
+---------------
+CFGAnalyzer is a tool that implements semi-decision procedures
+for undecidable problems about context-free languages (CFL) and
+grammars (CFG).
+
+
+1) AUTHORSHIP
+-------------
+CFGAnalyzer was written by Martin Lange, University of Munich, 
+2007. 
+
+
+2) LICENSE
+----------
+The source code is distributed under the BSD license, see
+http://www.opensource.org/licenses/bsd-license.php .
+
+
+3) REQUIREMENTS
+---------------
+You will need the following to build a working copy
+of cfganalyzer.
+
+- The OCaml compiler. The code was written for version 3.09.2
+  but should also work with lower ones. It can be obtained from
+  http://www.ocaml.org
+
+- A C++ compiler, for example g++ version 4.1.3.
+
+- The SAT solver zChaff. Version 2007.03.12 is recommended, but
+  version 2004.11.15 does the trick as well. It can be obtained
+  from http://
+
+
+4) INSTALLATION
+---------------
+First compile zChaff according to the instructions delivered with
+it, using the C++ compiler.
+
+Edit the Makefile in the top-level directory of the cfganalyzer 
+package. Make sure that the following variables are set to correct
+values in the top of the file.
+
+- OCAMLOPT etc. must point to the ocamlopt compiler. If they are
+  not in the current PATH, then specify the whole directory in which
+  they can be found.
+
+- CPP must point to the C++ compiler that was used to compile
+  zChaff.
+
+- OCAML_DIR must point to the directory in which the OCaml include
+  and library files can be found.
+
+- ZCHAFF_INST_DIR must point to the directory in which libsat.a
+  (the library version of zChaff) can be found.
+
+Then, execute
+
+   make .depend
+   make
+
+The executable `cfganalyzer' will reside in the subdirectory `bin'.
+
+You can run `make clean' to remove all temporary files. But note that 
+it also deletes `cfganalyzer' in `bin'.
+
+
+5) USAGE GUIDE
+--------------
+Type `bin/cfganalyzer --help' to see a list of command line switches
+and arguments understood by the program. In general it assumes the 
+input context-free grammars (CFG) to be given in files listed on the 
+command line. In each run, cfganalyzer can analyse the given CFGs
+w.r.t. one particular problem. This is specified by an argument again.
+For example,
+
+  bin/cfganalyzer -i <file1> <file2> -v 2 -c
+
+will result in cfganalyzer to check whether the language of the CFG
+given in <file1> is included ("-i") in the language of the CFG given
+in <file2>. It will be quite verbose printing status information 
+("-v 2") and it will run continuously ("-c"), i.e. not stop after
+finding a counterexample.
+
+
+6) INPUT FORMAT
+---------------
+Context-free grammars are specified as follows. A nonterminal can be 
+(almost) any string. All productions for a nonterminal must be given 
+at once, i.e. not interrupted by productions for another nonterminal. 
+It is assumed that the first nonterminal given in the definition is
+the starting symbol for the grammar.
+
+Each production is started with a colon and finished with a semi-colon.
+Sentential forms are denoted using concatentation with white spaces
+in between the symbols. Terminal symbols are strings enclosed in
+hyphenation. Currently, it is not possible to include a hyphen in
+a terminal symbol. The empty string is denoted by the empty sequence,
+i.e.\ a semi-colon following a colon. 
+
+A CFG definition can include comments in Java style, i.e. "/* ... */".
+Futhermore, each rule can be given a symbolic name in square brackets
+before the colon. Currently, these names are just ignored.
+
+Example:
+
+S : A B C ;
+A : "f" "p" "b" A ;
+  : ;
+B : "h" "f" "h" B ;
+  : ;
+C : "r" "g" ;
+
+
+7) OUTPUT
+---------
+Output depends on the exact problem chosen to be analyzed, e.g.
+universality, inclusion, etc.
+
+In general, cfganalyzer searches ranges of Sigma* with Sigma being
+the least alphabet for all underlying input grammars for witnesses
+or counterexamples. Suppose you want to analyze two grammars w.r.t.
+inclusion of their languages. Then cfganalyzer will give you reports
+of the form 
+
+L(G1) contains every word of length k with 1 <= k <= 1.
+L(G1) contains every word of length k with 2 <= k <= 2.
+L(G1) contains every word of length k with 3 <= k <= 3.
+L(G1) contains every word of length k with 4 <= k <= 4.
+A word not in L(G1) is, e.g., "aaaaa" of length 5
+
+where G1 is the grammar given in the first file on the command line etc.
+
+Note that, when analyzing for ambiguity, cfganalyzer does not necessarily
+report as a counterexample an ambiguous word in the languages of the 
+given CFG. Instead it first reduces the grammar such that all nonterminals
+are reachable and productive. It then looks for an ambiguous word derived
+by any nonterminal. It is guaranteed that this can be extended to an 
+ambiguous word in the language of the CFG. Currently, finding such an
+extension is not implemented yet.
+
+
+8) TROUBLESHOOTING
+------------------
+- If you get an OCaml compiler error saying that two modules make
+  inconsistent assumptions over some interface, then simply type
+  `make clean' and run `make' again.
+
+- If you get a linker error make sure that your C++ compiler is
+  indeed the same as the one used to compile zChaff.
+
+ 

@@ -1,0 +1,38 @@
+%%% parse-tree: 
+  TranslationUnit -> Declaration TranslationUnit   %attr { }
+    Declaration -> FunctionDefinition   %attr { }
+      FunctionDefinition -> DeclSpecifier Declarator FunctionBody   %attr { }
+        DeclSpecifier -> StorageClassOpt TypeSpecifier   %attr { }
+          StorageClassOpt -> empty   %attr { }
+          TypeSpecifier -> SimpleTypeSpecifier   %attr { }
+            SimpleTypeSpecifier -> "int"   %attr { }
+              int
+        Declarator -> DirectDeclarator   %attr { }
+          DirectDeclarator -> DirectDeclarator "(" ParameterDeclarationClause ")" CVQualifierSeqOpt   %attr { }
+            DirectDeclarator -> VariableName   %attr { }
+              VariableName -> L2_NAME   %attr { }
+                NAME(foo)
+            (
+            ParameterDeclarationClause -> empty   %attr { }
+            )
+            CVQualifierSeqOpt -> empty   %attr { }
+        FunctionBody -> CompoundStatement   %attr { }
+          CompoundStatement -> "{" StatementSeqOpt "}"   %attr { }
+            {
+            StatementSeqOpt -> StatementSeqOpt Statement   %attr { }
+              StatementSeqOpt -> empty   %attr { }
+              Statement -> "return" Expression ";"   %attr { }
+                return
+                Expression -> AssignmentExpression   %attr { }
+                  AssignmentExpression -> ConditionalExpression   %attr { }
+                    ConditionalExpression -> BinaryExpression   %attr { }
+                      BinaryExpression -> CastExpression   %attr { prec=100 }
+                        CastExpression -> UnaryExpression   %attr { }
+                          UnaryExpression -> PostfixExpression   %attr { }
+                            PostfixExpression -> PrimaryExpression   %attr { }
+                              PrimaryExpression -> Literal   %attr { }
+                                Literal -> L2_INT_LITERAL   %attr { }
+                                  INT_LITERAL(3)
+                ;
+            }
+    TranslationUnit -> empty   %attr { }

@@ -1,0 +1,6 @@
+var v:18;
+cfg S := "(" ")" | S S | "(" S ")";
+reg Sbound := fix(S, 18);
+
+assert v in Sbound;
+assert v contains ")(())(";

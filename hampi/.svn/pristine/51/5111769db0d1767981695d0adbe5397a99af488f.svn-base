@@ -1,0 +1,29 @@
+/* AMBIGUOUS
+
+*/
+
+
+declar_list
+: declar ;
+: declar_list declar ;
+
+declar
+: type decl_list ";" ;
+: type declar "{" "}" ;
+
+type
+: "t" ;
+: "s" "{" declar_list "}" ;
+: ;
+
+decl_list
+: decl ;
+: decl_list "," declar ;
+
+decl
+: "t" ;
+: "i" ;
+: "*" decl ;
+: "(" decl ")" ;
+: decl "(" ")" ;
+: decl "[" "]" ;

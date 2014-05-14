@@ -1,0 +1,6 @@
+Analysis results for 'sendmail/CVE-2003-0161/prescan':
+======================================================
+
+- prescan_arr_min/med_test_bad.c:
+    After analyzing this file, STAC marks as BAD all three problems described in the 
+    initial source.

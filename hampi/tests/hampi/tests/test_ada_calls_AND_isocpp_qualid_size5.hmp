@@ -1,0 +1,27 @@
+/*CFG Analyzer, version 03/12/2007
+
+The intersection of L(G1) ... L(G2) is empty when restricted  to words of length k with 5 <= k <= 5.
+*/
+var hampiStringVar : 5;
+cfg simple_statement0 :=  procedure_call_statement0 | assignment_statement0 ;
+cfg procedure_call_statement0 :=  procedure_name0 actual_parameter_part_opt0 ";" ;
+cfg procedure_name0 :=  "i" ;
+cfg actual_parameter_part_opt0 :=  | actual_parameter_part0 ;
+cfg actual_parameter_part0 :=  "(" parameter_association_list0 ")" ;
+cfg parameter_association_list0 :=  parameter_association_list0 "," parameter_association0 | parameter_association0 ;
+cfg parameter_association0 :=  "e" | variable_name0 ;
+cfg assignment_statement0 :=  variable_name0 "a" "e" ";" ;
+cfg variable_name0 :=  "i" | indexed_component0 ;
+cfg indexed_component0 :=  "i" "(" expression_list0 ")" ;
+cfg expression_list0 :=  expression_list0 "," "e" | "e" ;
+reg limit0 := fix(simple_statement0, 5);
+assert hampiStringVar in limit0;
+cfg id_expression1 :=  unqualified_id1 | qualified_id1 ;
+cfg unqualified_id1 :=  "i" | template_id1 ;
+cfg qualified_id1 :=  nested_name_specifier1 unqualified_id1 ;
+cfg nested_name_specifier1 :=  class_name1 "c" nested_name_specifier1 | class_name1 "c" ;
+cfg class_name1 :=  "i" | template_id1 ;
+cfg template_id1 :=  "i" "<" template_argument1 ">" ;
+cfg template_argument1 :=  id_expression1 ;
+reg limit1 := fix(id_expression1, 5);
+assert hampiStringVar in limit1;

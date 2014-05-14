@@ -1,0 +1,39 @@
+// forbid.gr
+// demonstrate 'forbid' feature
+
+// the 'forbid' directive should ensure this
+option shift_reduce_conflicts 0;
+
+option unreachable_terminals 97;
+
+context_class Forbid : public UserActions {
+public:
+};
+
+terminals {
+   0: CHAR_EOF;
+  97: CHAR_A           "a";    // plays role of identifier
+  98: CHAR_B           "b";    // plays role of "::" qualifier
+}
+
+nonterm Start {
+  // like a declaration "int x", only both the type and
+  // the declarator are possibly-qualified identifiers
+  -> TopA TopA ;
+}
+
+nonterm TopA {
+  // might be global-scope qualified
+  -> "b" A ;
+  -> A ;
+}
+
+nonterm A {
+  // might have intermediate qualification
+  
+  // by forbidding this reduction when "b" is in the lookahead, we
+  // force any available b's to be consumed as early as possible
+  -> "a"          forbid_next("b") ;
+
+  -> "a" "b" A ;
+}

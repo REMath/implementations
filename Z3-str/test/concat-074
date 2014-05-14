@@ -1,0 +1,16 @@
+(declare-variable x String)
+(declare-variable y String)
+(declare-variable z String)
+(declare-variable m String)
+(declare-variable k String)
+(declare-variable n1 String)
+(declare-variable n2 String)
+
+(assert (= z (Concat x "gkhi" ) ) )
+(assert (= z (Concat y "hi"   ) ) )
+(assert (= z (Concat "abcd" m ) ) )
+(assert (= z (Concat "ab" k ) ) )
+(assert (= z (Concat n1 n2 ) ) )
+
+(check-sat)
+(get-model)

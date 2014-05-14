@@ -1,0 +1,7 @@
+var v:5;
+val prefix := v[0:3];
+val suffix := v[2:3];
+reg r1 := star("a");
+reg r2 := star("b");
+assert prefix in r1;
+assert suffix in r2;

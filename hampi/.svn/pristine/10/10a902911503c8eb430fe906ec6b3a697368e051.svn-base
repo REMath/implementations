@@ -1,0 +1,61 @@
+#!/bin/sh
+
+#********************************************************************
+# Copyright 2008 Adam Kiezun, Vijay Ganesh
+#********************************************************************
+# AUTHORS: Adam Kiezun, Vijay Ganesh
+#
+# BEGIN DATE: October/November 2008
+#
+# This file belongs to the Hampi string solver project (solver for
+# equations over regular expressions)
+# 
+# LICENSE: Please view LICENSE file in the home dir of this Program
+#********************************************************************
+
+#Check javac
+#Check ant
+
+#check gnuplot and export it to an ENV variable
+export gnuplot=/usr/bin/gnuplot
+export JAVA_INCLUDE_PATH=/usr/lib/jvm/java-6-sun-1.6.0.26/include/
+#/usr/lib/jvm/java-6-sun/include
+
+#create buildlexerparserast.sh
+echo `which java` -Djava.library.path=$PWD/lib -Xmx700M -classpath $PWD/bin:$PWD/lib/jpaul.jar:$PWD/lib/STPJNI.jar:$PWD/lib/antlr-3.1b1.jar:$PWD/lib/antlr-2.7.7.jar:$PWD/lib/stringtemplate-3.1.jar:$PWD/lib/junit.jar hampi.parser.MakeTree > buildlexerparserast.sh
+echo `which java` -Djava.library.path=$PWD/lib -Xmx700M -classpath $PWD/bin:$PWD/lib/jpaul.jar:$PWD/lib/STPJNI.jar:$PWD/lib/antlr-3.1b1.jar:$PWD/lib/antlr-2.7.7.jar:$PWD/lib/stringtemplate-3.1.jar:$PWD/lib/junit.jar hampi.parser.MakeLexerParser >> buildlexerparserast.sh
+chmod a+x buildlexerparserast.sh
+
+#creating hampi.sh
+
+echo `which java` -Djava.library.path=$PWD/lib -Xmx700M -classpath $PWD/bin:$PWD/lib/jpaul.jar:$PWD/lib/STPJNI.jar:$PWD/lib/antlr-3.1b1.jar:$PWD/lib/antlr-2.7.7.jar:$PWD/lib/stringtemplate-3.1.jar:$PWD/lib/junit.jar hampi.Hampi "\$@" > hampi.sh
+chmod a+x hampi.sh
+
+#create cfg2hmp.sh
+
+echo `which java` -Djava.library.path=$PWD/lib -Xmx700M -ea -classpath $PWD/bin:$PWD/lib/jpaul.jar:$PWD/lib/STPJNI.jar:$PWD/lib/antlr-3.1b1.jar:$PWD/lib/antlr-2.7.7.jar:$PWD/lib/stringtemplate-3.1.jar:$PWD/lib/junit.jar hampi.utils.CFG2HMP "\$@" > cfg2hmp.sh
+chmod a+x cfg2hmp.sh
+
+#create hampiServ.sh
+
+echo `which java` -Djava.library.path=$PWD/lib -Xmx700M -classpath $PWD/bin:$PWD/lib/jpaul.jar:$PWD/lib/STPJNI.jar:$PWD/lib/antlr-3.1b1.jar:$PWD/lib/antlr-2.7.7.jar:$PWD/lib/stringtemplate-3.1.jar hampi.HampiServer "\$@" "&" > hampi_server.sh
+chmod a+x hampi_server.sh
+
+#create run-all-tests.sh
+
+echo `which java` -Djava.library.path=$PWD/lib -Xmx700M -ea -classpath $PWD/bin:$PWD/lib/jpaul.jar:$PWD/lib/STPJNI.jar:$PWD/lib/antlr-3.1b1.jar:$PWD/lib/antlr-2.7.7.jar:$PWD/lib/stringtemplate-3.1.jar:$PWD/lib/junit.jar AllTests > runAllTests.sh
+chmod a+x runAllTests.sh
+
+#create a generic run script
+echo `which java` -Djava.library.path=$PWD/lib -Xmx700M -ea -classpath $PWD/bin:$PWD/lib/jpaul.jar:$PWD/lib/STPJNI.jar:$PWD/lib/antlr-3.1b1.jar:$PWD/lib/antlr-2.7.7.jar:$PWD/lib/stringtemplate-3.1.jar:$PWD/lib/junit.jar \$@ > run.sh
+chmod a+x run.sh
+
+#create runHampiProfiler.sh
+
+echo `which java` -agentlib:hprof=heap=sites,cpu=times,depth=30 -Djava.library.path=$PWD/lib -Xmx700M -classpath $PWD/bin:$PWD/lib/jpaul.jar:$PWD/lib/STPJNI.jar:$PWD/lib/antlr-3.1b1.jar:$PWD/lib/antlr-2.7.7.jar:$PWD/lib/stringtemplate-3.1.jar:$PWD/lib/junit.jar hampi.Hampi "\$@" > runHampiProfiler.sh
+chmod a+x runHampiProfiler.sh
+
+echo "echo \$2 | nc 127.0.0.1 \$1" > hampi_client.sh
+chmod a+x hampi_client.sh
+
+echo "Configure Successful"

@@ -1,0 +1,66 @@
+echo 
+3.402s
+3.421s
+ls
+10.6s
+10.8s
+python
+1.63
+2.387
+46.4%
+perl
+50.882s
+4m35.787s
+4.42x slower
+
+tar
+15.967s
+16.679s
+
+175.vpr
+65.9
+71.6
+
+
+164.gzip
+87.9
+92.9
+
+181.mcf
+50.3
+52.5
+
+186.crafty
+47.3
+100
+
+197.parser
+94.0 1914
+97.0 1855
+
+252.gap (switch)
+40.7 2702
+344 320
+
+
+256.bzip2
+81.9 1832
+85.9 1747
+
+300.twolf
+92.5 3244
+97.0 3093
+
+
+
+GUI program & size
+cc1 1.8million  1m32s  3m34s
+lyx 1.65million
+gimp 839k
+lynx 235k
+python 345k
+perl 297k
+gvim 438k
+gedit 112k
+bash 167k
+

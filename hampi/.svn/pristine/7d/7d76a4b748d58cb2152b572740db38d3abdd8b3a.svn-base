@@ -1,0 +1,7 @@
+S : E T ;
+  : F ;
+E : "a" A S "b" ;
+T : "b" A S "a" ;
+F : A ;
+A : "a" A ;
+  : ;

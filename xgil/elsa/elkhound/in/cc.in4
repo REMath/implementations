@@ -1,0 +1,500 @@
+// grammar.h
+// representation and algorithms for context-free grammars
+
+// Author: Scott McPeak, April 2000
+
+// Unfortunately, representation and algorithm tend to get
+// mixed together.  Separating them entirely is possible,
+// but syntactically inconvenient.  So, instead, I try to
+// document the separation in comments.  Specifically,
+// sections beginning with ---- representation ---- are data
+// for representation of the underlying concept, while
+// sections with ---- annotation ---- are data created by
+// algorithms manipulating the data.
+
+// Another measure is I've split all grammar-wide algorithm
+// stuff into GrammarAnalysis (gramanl.h).  Things should
+// only be put into Grammar if they are directly related
+// to the grammar representation.  (However, constitutent
+// objects like Production will continue to be a mix.)
+
+#ifndef __GRAMMAR_H
+#define __GRAMMAR_H
+
+#include <iostream.h>  // ostream
+
+#include "str.h"       // string
+#include "objlist.h"   // ObjList
+#include "sobjlist.h"  // SObjList
+#include "util.h"      // OSTREAM_OPERATOR, INTLOOP
+#include "action.h"    // Actions
+#include "cond.h"      // Conditions
+
+class StrtokParse;     // strtokp.h
+
+// fwds defined below
+class Symbol;
+class Terminal;
+class Nonterminal;
+class Production;
+class DottedProduction;
+class Grammar;
+
+
+// ---------------- Symbol --------------------
+// either a nonterminal or terminal symbol
+class Symbol {
+// ------ representation ------
+public:
+  string const name;        // symbol's name in grammar
+  bool const isTerm;        // true: terminal (only on right-hand sides of productions)
+                            // false: nonterminal (can appear on left-hand sides)
+  bool isEmptyString;       // true only for the emptyString nonterminal
+
+public:
+  Symbol(char const *n, bool t)
+    : name(n), isTerm(t), isEmptyString(false) {}
+  virtual ~Symbol();
+
+  // uniform selectors
+  bool isTerminal() const { return isTerm; }
+  bool isNonterminal() const { return !isTerm; }
+
+  // casting
+  Terminal const &asTerminalC() const;       // checks 'isTerminal' for cast safety
+  Terminal &asTerminal()
+    { return const_cast<Terminal&>(asTerminalC()); }
+
+  Nonterminal const &asNonterminalC() const;
+  Nonterminal &asNonterminal()
+    { return const_cast<Nonterminal&>(asNonterminalC()); }
+
+  // debugging
+  virtual void print(ostream &os) const;
+  OSTREAM_OPERATOR(Symbol);
+    // print as '$name: isTerminal=$isTerminal' (no newline)
+};
+
+// I have several needs for serf lists of symbols, so let's use this for now
+typedef SObjList<Symbol> SymbolList;
+typedef SObjListIter<Symbol> SymbolListIter;
+typedef SObjListMutator<Symbol> SymbolListMutator;
+
+#define FOREACH_SYMBOL(list, iter) FOREACH_OBJLIST(Symbol, list, iter)
+#define MUTATE_EACH_SYMBOL(list, iter) MUTATE_EACH_OBJLIST(Symbol, list, iter)
+#define SFOREACH_SYMBOL(list, iter) SFOREACH_OBJLIST(Symbol, list, iter)
+#define SMUTATE_EACH_SYMBOL(list, iter) SMUTATE_EACH_OBJLIST(Symbol, list, iter)
+
+// format: "s1 s2 s3"
+string symbolSequenceToString(SymbolList const &list);
+
+
+// ---------------- Terminal --------------------
+// something that only appears on the right-hand side of
+// productions, and is an element of the source language
+// NOTE:  This is really a terminal *class*, in that it's possible
+// for several different tokens to be classified into the same
+// terminal class (e.g. "foo" and "bar" are both identifiers)
+class Terminal : public Symbol {
+// ------ annotation ------
+public:     // data
+  // terminal class index - this terminal's id; -1 means unassigned
+  int termIndex;
+
+  // whereas 'name' is the canonical name for the terminal class,
+  // this field is an alias; for example, if the canonical name is
+  // L2_EQUALEQUAL, the alias might be "==" (i.e. the alias
+  // should include quotes if the grammar should have them too);
+  // if the alias's is NULL or "", there is no alias
+  string alias;
+
+public:     // funcs
+  Terminal(char const *name)        // canonical name for terminal class
+    : Symbol(name, true /*terminal*/),
+      termIndex(-1),
+      alias(NULL) {}
+
+  virtual void print(ostream &os) const;
+  OSTREAM_OPERATOR(Terminal);
+                          
+  // return alias if defined, name otherwise
+  string toString() const;
+};
+
+typedef SObjList<Terminal> TerminalList;
+typedef SObjListIter<Terminal> TerminalListIter;
+
+#define FOREACH_TERMINAL(list, iter) FOREACH_OBJLIST(Terminal, list, iter)
+#define MUTATE_EACH_TERMINAL(list, iter) MUTATE_EACH_OBJLIST(Terminal, list, iter)
+#define SFOREACH_TERMINAL(list, iter) SFOREACH_OBJLIST(Terminal, list, iter)
+#define SMUTATE_EACH_TERMINAL(list, iter) SMUTATE_EACH_OBJLIST(Terminal, list, iter)
+
+// casting aggregates
+inline ObjList<Symbol> const &toObjList(ObjList<Terminal> const &list)
+  { return reinterpret_cast< ObjList<Symbol>const& >(list); }
+
+// format: "t1 t2 t3"
+string terminalSequenceToString(TerminalList const &list);
+
+
+// ---------------- Nonterminal --------------------
+// something that can appear on the left-hand side of a production
+// (or, emptyString, since we classify that as a nonterminal also)
+class Nonterminal : public Symbol {
+// ------ annotation ------
+public:     // funcs
+  int ntIndex;           // nonterminal index; see Grammar::computeWhatCanDeriveWhat
+  bool cyclic;           // true if this can derive itself in 1 or more steps
+  TerminalList first;    // set of terminals that can be start of a string derived from 'this'
+  TerminalList follow;   // set of terminals that can follow a string derived from 'this'
+
+public:     // funcs
+  Nonterminal(char const *name);
+  virtual ~Nonterminal();
+
+  virtual void print(ostream &os) const;
+  OSTREAM_OPERATOR(Nonterminal);
+};
+
+typedef SObjList<Nonterminal> NonterminalList;
+typedef SObjListIter<Nonterminal> NonterminalListIter;
+
+#define FOREACH_NONTERMINAL(list, iter) FOREACH_OBJLIST(Nonterminal, list, iter)
+#define MUTATE_EACH_NONTERMINAL(list, iter) MUTATE_EACH_OBJLIST(Nonterminal, list, iter)
+#define SFOREACH_NONTERMINAL(list, iter) SFOREACH_OBJLIST(Nonterminal, list, iter)
+#define SMUTATE_EACH_NONTERMINAL(list, iter) SMUTATE_EACH_OBJLIST(Nonterminal, list, iter)
+
+// casting aggregates
+inline ObjList<Symbol> const &toObjList(ObjList<Nonterminal> const &list)
+  { return reinterpret_cast< ObjList<Symbol>const& >(list); }
+
+
+// ---------------- Production --------------------
+// a rewrite rule
+class Production {
+// ------ representation ------
+public:	    // data
+  // fundamental context-free grammar (CFG) component
+  Nonterminal * const left;     // (serf) left hand side; must be nonterminal
+  SymbolList right;             // (serf) right hand side; terminals & nonterminals
+
+  // tags applied to the symbols for purposes of unambiguous naming in
+  // actions, and for self-commenting value as role indicators; an
+  // empty tag (NULL or "") is allowed and means there is no tag
+  string leftTag;      	       	// tag for LHS symbol
+  ObjList<string> rightTags;    // tag for each RHS symbol, in order
+
+  // NOTE: 'right' and 'rightTags' should always have the same number of
+  // elements.  they are public to avoid syntactic (and possible runtime,
+  // if repr. changes) overhead of access via member fn.  use 'append' to
+  // add new elements.
+
+  // extras
+  Conditions conditions;       	// every condition must be satisfied for a rule to be used
+  Actions actions;              // when used, a rule has these effects
+
+public:	    // funcs
+  Production(Nonterminal *left, char const *leftTag);
+  ~Production();
+
+  // length *not* including emptySymbol, if present
+  // UPDATE: I'm now disallowing emptySymbol from ever appearing in 'right'
+  int rhsLength() const;
+
+  // number of nonterminals on RHS
+  int numRHSNonterminals() const;
+
+  // append a RHS symbol
+  void append(Symbol *sym, char const *tag);
+
+  // call this when production is built, so it can compute dprods
+  void finished();
+
+  // find a symbol by name and tag (tag can be NULL); returns 0 to
+  // identify LHS symbol, 1 for first RHS symbol, 2 for second, etc.;
+  // returns -1 if the name/tag doesn't match anything
+  int findTaggedSymbol(char const *name, char const *tag) const;
+
+  // given an index as returned by 'findTaggedSymbol', translate that
+  // back into a string consisting of name and optional tag
+  string taggedSymbolName(int symbolIndex) const;
+
+  // retrieve an item
+  DottedProduction const *getDProdC(int dotPlace) const;
+  DottedProduction *getDProd(int dotPlace)
+    { return const_cast<DottedProduction*>(getDProdC(dotPlace)); }
+
+  // print 'A -> B c D' (no newline)
+  string toString() const;
+  string rhsString() const;       // 'B c D' for above example rule
+  void print(ostream &os) const;
+  OSTREAM_OPERATOR(Production);
+
+  // print entire input syntax, with newlines, e.g.
+  //   A -> B c D
+  //     %action { A.x = B.x }
+  //     %condition { B.y > D.y }
+  string toStringWithActions() const;
+
+// ------ annotation ------
+private:    // data
+  int numDotPlaces;             // after finished(): equals rhsLength()+1
+  DottedProduction *dprods;     // (owner) array of dotted productions
+};
+
+typedef SObjList<Production> ProductionList;
+typedef SObjListIter<Production> ProductionListIter;
+
+#define FOREACH_PRODUCTION(list, iter) FOREACH_OBJLIST(Production, list, iter)
+#define MUTATE_EACH_PRODUCTION(list, iter) MUTATE_EACH_OBJLIST(Production, list, iter)
+#define SFOREACH_PRODUCTION(list, iter) SFOREACH_OBJLIST(Production, list, iter)
+#define SMUTATE_EACH_PRODUCTION(list, iter) SMUTATE_EACH_OBJLIST(Production, list, iter)
+
+
+// ---------------- DottedProduction --------------------
+// a production, with an indicator that says how much of this
+// production has been matched by some part of the input string
+// (exactly which part of the input depends on where this appears
+// in the algorithm's data structures)
+class DottedProduction {
+// ------ representation ------
+public:	    // data
+  Production * const prod;       // (serf) the base production
+  int const dot;                 // 0 means it's before all RHS symbols, 1 means after first, etc.
+  bool const dotAtEnd;           // performance optimization
+
+public:	    // funcs
+  DottedProduction()       // for later filling-in
+    : prod(NULL), dot(-1), dotAtEnd(false) {}
+  DottedProduction(Production *p, int d)
+    : prod(NULL), dot(-1), dotAtEnd(false)     // silence warning about const init
+    { setProdAndDot(p, d); }
+
+  bool isDotAtStart() const { return dot==0; }
+  bool isDotAtEnd() const { return dotAtEnd; }
+
+  // call this to change prod and dot; don't change them directly
+  // (I didn't make them private because of the syntactic hassle
+  // of accessing them.  Instead I hacked them as 'const'.)
+  void setProdAndDot(Production *p, int d) /*mutable*/;
+
+  // dot must not be at the start (left edge)
+  Symbol const *symbolBeforeDotC() const;
+  Symbol *symbolBeforeDot() { return const_cast<Symbol*>(symbolBeforeDotC()); }
+
+  // dot must not be at the end (right edge)
+  Symbol const *symbolAfterDotC() const;
+  Symbol *symbolAfterDot() { return const_cast<Symbol*>(symbolAfterDotC()); }
+
+  // print to cout as 'A -> B . c D' (no newline)
+  void print(ostream &os) const;
+  OSTREAM_OPERATOR(DottedProduction);
+};
+
+// (serf) lists of dotted productions
+typedef SObjList<DottedProduction> DProductionList;
+typedef SObjListIter<DottedProduction> DProductionListIter;
+
+#define FOREACH_DOTTEDPRODUCTION(list, iter) FOREACH_OBJLIST(DottedProduction, list, iter)
+#define MUTATE_EACH_DOTTEDPRODUCTION(list, iter) MUTATE_EACH_OBJLIST(DottedProduction, list, iter)
+#define SFOREACH_DOTTEDPRODUCTION(list, iter) SFOREACH_OBJLIST(DottedProduction, list, iter)
+#define SMUTATE_EACH_DOTTEDPRODUCTION(list, iter) SMUTATE_EACH_OBJLIST(DottedProduction, list, iter)
+
+
+// ---------------- ItemSet -------------------
+// a set of dotted productions, and the transitions between
+// item sets, as in LR(0) set-of-items construction
+class ItemSet {
+private:    // data
+  // kernel items: the items that define the set; except for
+  // the special case of the initial item in the initial state,
+  // the kernel items are distinguished by having the dot *not*
+  // at the left edge
+  DProductionList kernelItems;
+
+  // nonkernel items: those derived as the closure of the kernel
+  // items by expanding symbols to the right of dots; here I am
+  // making the choice to materialize them, rather than derive
+  // them on the spot as needed (and may change this decision)
+  DProductionList nonkernelItems;
+
+  // transition function (where we go on shifts)
+  //   Map : (Terminal id or Nonterminal id)  -> ItemSet*
+  ItemSet **termTransition;		     // (owner ptr to array of serf ptrs)
+  ItemSet **nontermTransition;		     // (owner ptr to array of serf ptrs)
+
+  // bounds for above
+  int terms;
+  int nonterms;
+
+  // profiler reports I'm spending significant time rifling through
+  // the items looking for those that have the dot at the end; so this
+  // array will point to all such items
+  DottedProduction const **dotsAtEnd;        // (owner ptr to array of serf ptrs)
+  int numDotsAtEnd;                          // number of elements in 'dotsAtEnd'
+  
+  // profiler also reports I'm still spending time comparing item sets; this
+  // stores a CRC of the numerically sorted kernel item pointer addresses,
+  // concatenated into a buffer of sufficient size
+  unsigned long kernelItemsCRC;
+
+public:	    // data
+  // numerical state id, should be unique among item sets
+  // in a particular grammar's sets
+  int id;
+
+  // it's useful to have a BFS tree superimposed on the transition
+  // graph; for example, it makes it easy to generate sample inputs
+  // for each state.  so we store the parent pointer; we can derive
+  // child pointers by looking at all outgoing transitions, and
+  // filtering for those whose targets' parent pointers equal 'this'.
+  // the start state's parent is NULL, since it is the root of the
+  // BFS tree
+  ItemSet *BFSparent;                        // (serf)
+
+private:    // funcs
+  int bcheckTerm(int index);
+  int bcheckNonterm(int index);
+  ItemSet *&refTransition(Symbol const *sym);
+                      
+  // computes things derived from the item set lists
+  void changedItems();
+
+public:     // funcs
+  ItemSet(int id, int numTerms, int numNonterms);
+  ~ItemSet();
+
+  // ---- item queries ----
+  // the set of items names a symbol as the symbol used
+  // to reach this state -- namely, the symbol that appears
+  // to the left of a dot.  this fn retrieves that symbol
+  // (if all items have dots at left edge, returns NULL; this
+  // would be true only for the initial state)
+  Symbol const *getStateSymbolC() const;
+
+  // equality is defined as having the same items (basic set equality)
+  bool operator== (ItemSet const &obj) const;
+
+  // sometimes it's convenient to have all items mixed together
+  // (CONSTNESS: allows modification of items...)
+  void getAllItems(DProductionList &dest) const;
+
+  // ---- transition queries ----
+  // query transition fn for an arbitrary symbol; returns
+  // NULL if no transition is defined
+  ItemSet const *transitionC(Symbol const *sym) const;
+  ItemSet *transition(Symbol const *sym)
+    { return const_cast<ItemSet*>(transitionC(sym)); }
+
+  // get the list of productions that are ready to reduce, given
+  // that the next input symbol is 'lookahead' (i.e. in the follow
+  // of a production's LHS); parsing=true means we are actually
+  // parsing input, so certain tracing output is appropriate
+  void getPossibleReductions(ProductionList &reductions,
+                             Terminal const *lookahead,
+                             bool parsing) const;
+
+  // ---- item mutations ----
+  // add a kernel item; used while constructing the state
+  void addKernelItem(DottedProduction *item);
+
+  // add a nonkernel item; used while computing closure; this
+  // item must not already be in the item set
+  void addNonkernelItem(DottedProduction *item);
+
+  // ---- transition mutations ----
+  // set transition on 'sym' to be 'dest'
+  void setTransition(Symbol const *sym, ItemSet *dest);
+
+  // ---- debugging ----
+  void writeGraph(ostream &os) const;
+  void print(ostream &os) const;
+  OSTREAM_OPERATOR(ItemSet);
+};
+
+
+// ---------------- Grammar --------------------
+// represent a grammar: nonterminals, terminals, productions, and start-symbol
+class Grammar {
+// ------ representation ------
+public:	    // data
+  ObjList<Nonterminal> nonterminals;    // (owner list)
+  ObjList<Terminal> terminals;          // (owner list)
+  ObjList<Production> productions;      // (owner list)
+  Nonterminal *startSymbol;             // (serf) a particular nonterminal
+
+  // the special terminal for the empty string; does not appear in the
+  // list of nonterminals or terminals for a grammar, but can be
+  // referenced by productions, etc.; the decision to explicitly have
+  // such a symbol, instead of letting it always be implicit, is
+  // motivated by things like the derivability relation, where it's
+  // nice to treat empty like any other symbol
+  Nonterminal emptyString;
+
+private:    // funcs
+  bool parseAnAction(char const *keyword, char const *insideBraces,
+                     Production *lastProduction);
+
+  bool declareToken(char const *symbolName, int code, char const *alias);
+
+public:     // funcs
+  Grammar();                            // set everything manually
+  ~Grammar();
+
+  // simple queries
+  int numTerminals() const;
+  int numNonterminals() const;
+
+
+  // ---- building a grammar ----
+  // add a new production; the rhs arg list must be terminated with a NULL
+  void addProduction(Nonterminal *lhs, Symbol *rhs, ...);
+
+  // add a pre-constructed production
+  void addProduction(Production *prod);
+
+  // print the current list of productions
+  void printProductions(ostream &os) const;
+
+  // ---- whole-grammar stuff ----
+  // after adding all rules, check that all nonterminals have
+  // at least one rule
+  void checkWellFormed() const;
+
+  // output grammar in Bison's syntax
+  // (coincidentally, when bison dumps its table with '-v', its table
+  // dump syntax is identical to my (current) input syntax!)
+  void printAsBison(ostream &os) const;
+
+  // ---- grammar parsing ----
+  void readFile(char const *fname);
+
+  // parse a line like "LHS -> R1 R2 R3", return false on parse error
+  bool parseLine(char const *grammarLine);
+  bool parseLine(char const *preLine, SObjList<Production> &lastProductions);
+
+
+  // ---- symbol access ----
+  #define SYMBOL_ACCESS(Thing)                              \
+    /* retrieve, return NULL if not there */                \
+    Thing const *find##Thing##C(char const *name) const;    \
+    Thing *find##Thing(char const *name)                    \
+      { return const_cast<Thing*>(find##Thing##C(name)); }  \
+                                                            \
+    /* retrieve, or create it if not already there */       \
+    Thing *getOrMake##Thing(char const *name) /* user ; */
+
+  SYMBOL_ACCESS(Symbol);       // findSymbolC, findSymbol, getOrMakeSymbol
+  SYMBOL_ACCESS(Terminal);     //   likewise
+  SYMBOL_ACCESS(Nonterminal);  //   ..
+  #undef SYMBOL_ACCESS
+
+  // the inverse of transition: map a target state to the symbol that
+  // would transition to that state (from the given source state)
+  Symbol const *inverseTransitionC(ItemSet const *source,
+                                   ItemSet const *target) const;
+};
+
+
+#endif // __GRAMMAR_H
+

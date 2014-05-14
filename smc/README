@@ -1,0 +1,45 @@
+This is the development described in “Verified Abtract Interpretation
+Techniques for Disassembling Low-level Self-modifying Code”, submitted
+to ITP’14.
+
+# Coq source
+
+This directory contains the Coq files. They can be compiled running
+
+    make
+
+in the current directory.
+
+It requires Coq 8.4, available at <http://coq.inria.fr/download>
+(any of 8.4pl1, 8.4pl2 or 8.4pl3 should work).
+
+It depends on the Containers library, available at:
+<http://coq.inria.fr/pylons/pylons/contribs/view/Containers/v8.4>
+
+This compilation produces OCaml files in the `extraction` directory,
+required below.
+
+# OCaml frontend
+
+The `front` directory contains the source of an OCaml front-end
+to the analyzer. It can be compiled running
+
+    make
+
+in the `front` directory.
+
+It requires OCaml, available at <http://caml.inria.fr/ocaml/>. It has
+been tested with version 4.01.0.
+
+This compilation produces an executable program: `main.native`. Running
+
+    ./main.native -help
+
+should give you access to more information on how to use it.
+
+Some sample programs are provided in the `front/examples` directory.
+
+When the analysis of a program succeeds, an approximation of its control-flow
+graph is dumped in [Graphviz](http://www.graphviz.org/) syntax, in the file
+`graph.dot`.
+

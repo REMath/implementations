@@ -1,0 +1,3 @@
+var a:6;
+val compose := concat("a",a,"b",a);
+assert compose contains "aaabaa";

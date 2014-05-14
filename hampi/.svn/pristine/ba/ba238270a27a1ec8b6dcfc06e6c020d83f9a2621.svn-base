@@ -1,0 +1,17 @@
+/* UNAMBIGUOUS */
+
+L : G A ;
+: A N D ;
+
+A : "a" "b" ;
+: "a" A ;
+: "a" ;
+
+N : "a" "b" ;
+
+D : D "a" ;
+: "b" "a" ;
+
+G : "b" "a" ;
+: "b" "a" G ;
+: "b" G ;

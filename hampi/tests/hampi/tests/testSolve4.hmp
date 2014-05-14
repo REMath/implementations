@@ -1,0 +1,3 @@
+var v : 3;
+reg sigmaStar := star(['a'-'z']);
+assert v in sigmaStar; 

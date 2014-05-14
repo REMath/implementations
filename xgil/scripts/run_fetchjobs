@@ -1,0 +1,304 @@
+#!/usr/bin/perl
+
+# Sixgill: Static assertion checker for C/C++ programs.
+# Copyright (C) 2009-2010  Stanford University
+# Author: Brian Hackett
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# monitor an external HTTP server for jobs to run on some local databases.
+# these jobs either specify a new annotation and a check to reanalyze,
+# or just the check to reanalyze. after the job finishes, posts the result
+# back to the server.
+
+use strict;
+use IO::Handle;
+use Cwd;
+use File::Copy;
+
+# use LWP;
+
+#################################
+# environment specific settings #
+#################################
+
+# directory containing addjob CGI script.
+my $script_dir = "/path/to/www/scripts";
+
+# directory containing report subdirectories.
+my $base_dir = "/path/to/www";
+
+# number of worker processes to use.
+my $worker_count = 4;
+
+# how often some worker should attempt to fetch a new job. if the workers
+# are busy then some fetch attempts may be skipped.
+my $fetch_delay = 5;
+
+# root directory of the project, as in run_complete.
+my $build_dir = "/path/to/project";
+die "Need build directory: $build_dir\n" if (not -d $build_dir);
+
+# directory containing gcc wrapper scripts, as in run_complete.
+my $wrap_dir = "/path/to/wrap_gcc";
+die "Bad wrapper directory: $wrap_dir" if (not (-e "$wrap_dir/basecc"));
+
+# commands to run xgill binaries, as in run_complete.
+my $xmanager = "xmanager";
+my $xsource = "xsource";
+my $xcheck = "xcheck -timeout=30";
+
+##########################
+# general purpose script #
+##########################
+
+# this script should run from a result directory.
+die "Need database: src_body.xdb" if (not (-e "src_body.xdb"));
+
+my $result_dir = getcwd();
+my $log_file = "$result_dir/build_fetch.log";
+my $ann_file = "$result_dir/annots.list";
+
+# make sure the annotation file exists.
+open(ANNOT, ">> $ann_file");
+print ANNOT "\n";
+close(ANNOT);
+
+# make sure the script directory exists if specified.
+if ($script_dir ne "") {
+    die "Need directory: $script_dir/jobs"
+        if (not -d "$script_dir/jobs");
+    die "Need directory: $script_dir/jobs_todo"
+        if (not -d "$script_dir/jobs_todo");
+    die "Need directory: $base_dir" if (not -d $base_dir);
+}
+
+# fork a manager process.
+defined(my $pid = fork) or die;
+if (!$pid) {
+    exec("$xmanager > fetch.manager.log 2>&1");
+}
+
+# get the manager's address, as in run_complete.
+sleep(1);
+my $log_data = `cat fetch.manager.log`;
+$log_data =~ /Listening on ([\.\:0-9]*)/ or die;
+my $address = $1;
+
+# fork the worker processes.
+for (my $ind = 0; $ind < $worker_count; $ind++) {
+    defined($pid = fork) or die;
+    if (!$pid) {
+        run_fetch_loop($ind);
+        exit;
+    }
+}
+
+print "Workers forked, exiting...\n";
+exit;
+
+# main loop for fetch workers.
+sub run_fetch_loop {
+    my $index = shift;
+
+    # open a log for this and redirect all output.
+    open(OUT, "> fetch.$index.log");
+    STDOUT->fdopen(\*OUT, "w");
+    STDERR->fdopen(\*OUT, "w");
+
+    # my $browser = LWP::UserAgent->new;
+    my $browser;
+    my $response;
+
+    my $secshift = $worker_count * $fetch_delay;
+    my $secpos = $index * $fetch_delay;
+
+    while (1) {
+        # figure out how many seconds to sleep before making a fetch.
+        (my $sec, my $min) = localtime(time);
+        my $secmod = ($min * 60 + $sec) % $secshift;
+
+        if ($secpos > $secmod) {
+            sleep($secpos - $secmod);
+        }
+        else {
+            sleep($secpos + $secshift - $secmod);
+        }
+
+        # check if we should terminate.
+        if (-e "fetch.finish") {
+            system("$xsource -remote=$address -end-manager") if ($index == 0);
+            last;
+        }
+
+        my @lines;
+
+        opendir(TODO, "$script_dir/jobs_todo");
+        my @files = readdir(TODO);
+        closedir(TODO);
+
+        while (my $file = shift @files) {
+            chomp $file;
+            if ($file =~ /\.job$/) {
+                open(JOB, "$script_dir/jobs_todo/$file");
+                @lines = <JOB>;
+                chomp @lines;
+                close(JOB);
+
+                move("$script_dir/jobs_todo/$file", "$script_dir/jobs");
+                last;
+            }
+        }
+
+        # if the response is empty there is no job to do.
+        my $ext = shift @lines or next;
+
+        my $report = shift @lines or die;
+        my $link = shift @lines or die;
+        my $prev = shift @lines or die;
+        my $next = shift @lines or die;
+        my $hook = shift @lines or "";
+        my $text = shift @lines or "";
+        my $trust = shift @lines or "";
+
+        print "Processing $ext...\n";
+
+        my $message = "";
+        my $html = "";
+        my $err_file = "$result_dir/$ext.err";
+
+        if ($hook ne "") {
+            # append to the annotation file. because of the fetch delay there
+            # shouldn't be contention between multiple workers for this append.
+            open(ANNOT, ">> $ann_file");
+
+            print ANNOT "$hook\n";
+            print ANNOT "$text\n";
+            print ANNOT "$trust\n\n";
+
+            close(ANNOT);
+
+            # break up and reanalyze all functions in the hook.
+            my @hook_list = split(/\$/, $hook);
+            for my $hook_entry (@hook_list) {
+                $hook_entry =~ s/point \'.*?\' //;
+                $hook_entry =~ /.*? (.*)/;
+                my $key = $1;
+                my $body;
+
+                # get the command for reanalyzing this function/global/type.
+                # if the function has a body then use its build command.
+                # otherwise find a caller and use the command for building
+                # that caller. this might miss functions without bodies that
+                # are called indirectly. fix?
+
+                if ($hook =~ /^global/) {
+                  $body = `xdbfind src_init.xdb '$key'`;
+                }
+                elsif ($hook =~ /^type/) {
+                  $body = `xdbfind src_comp.xdb '$key'`;
+                }
+                else {
+                  $body = `xdbfind src_body.xdb '$key'`;
+                }
+
+                my $command = "";
+                if ($body =~ /\ncommand: (.*?)\n/) {
+                    $command = $1;
+                }
+                else {
+                    my $callers = `xdbfind body_caller.xdb '$key'`;
+                    if ($callers =~ /\n  (.*?):\d+ -> /) {
+                        my $caller = $1;
+                        my $caller_body = `xdbfind src_body.xdb '$caller'`;
+                        if ($caller_body =~ /\ncommand: (.*?)\n/) {
+                            $command = $1;
+                        }
+                    }
+                }
+                if ($command eq "") {
+                    print "WARNING: Could not figure out command for '$key'\n";
+                    next;
+                }
+
+                $command =~ /(.*?): (.*)/;
+                my $command_dir = $1;
+                my $command_run = $2;
+
+                print "Running: $command\n";
+
+                # add any extra arguments to the gcc command, as is performed
+                # by basecc. we don't use basecc here as the arguments differ
+                # across jobs and the workers could race.
+                $ENV{'XGILL_COMMAND'} = $command;
+                my $xgillargs = " -DXGILL_PLUGIN -fplugin=$wrap_dir/xgill.so";
+                $xgillargs .= " -fplugin-arg-xgill-gcc=gcc";
+                $xgillargs .= " -fplugin-arg-xgill-basedir=$build_dir";
+                $xgillargs .= " -fplugin-arg-xgill-remote=$address";
+                $xgillargs .= " -fplugin-arg-xgill-log=$log_file";
+                $xgillargs .= " -fplugin-arg-xgill-annfile=$ann_file";
+                $xgillargs .= " -fplugin-arg-xgill-annsingle=$err_file";
+
+                chdir $command_dir;
+                system("$command_run $xgillargs");
+                chdir $result_dir;
+
+                # check if an error was generated. this will be the second to last line
+                # in the log, provided that this was the only new anntoation and
+                # we haven't raced with another worker handling another new
+                # annotation.
+                if (-e $err_file) {
+                  my $error_line = `cat $err_file`;
+                  chomp $error_line;
+                  $message = "Error processing annotation: $error_line";
+                }
+            }
+        }
+
+        if ($message eq "") {
+            my $res = system("$xcheck '$report' -xml-out=$ext.xml -remote=$address");
+
+            if ($res != 0) {
+                $message = "Failure during analysis";
+            }
+            else {
+                if (-e "$ext.xml") {
+                    $message = "New report generated. Refresh your browser.";
+                    $html = `make_report $link $prev $next < $ext.xml`;
+                }
+                else {
+                    $message = "Assertion successfully checked. Refresh your browser.";
+                    $html = `make_report $link $prev $next -success`;
+                }
+            }
+        }
+
+        open(OUT, "> $script_dir/$ext.done");
+        print OUT "$message\n";
+        close(OUT);
+
+        if ($html ne "") {
+            $report =~ /(.*?)\$/ or die;
+            my $dir = $1;
+
+            die if (not (-e "$base_dir/$dir"));
+
+            open(HTML, "> $base_dir/$dir/$link.html");
+            print HTML $html;
+            close(HTML);
+        }
+
+        move("$script_dir/$ext.done", "$script_dir/jobs");
+    }
+}

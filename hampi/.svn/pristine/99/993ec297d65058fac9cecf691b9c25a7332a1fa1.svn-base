@@ -1,0 +1,5 @@
+var v : 1 .. 2;
+cfg E := "()" | "(" E ")" | E E ;
+reg R := star("()");
+assert v in E ;
+assert v in R ;

@@ -1,0 +1,41 @@
+2005-05-27 20:06
+
+Complex types in Elsa
+---------------------
+
+To parse complex types in Elsa, we regard _Complex and _Imaginary
+(and also __complex__) as new type keywords.  They are assembled
+as UberModifiers and become SimpleTypeIds when uberCombined.
+
+Alongside ST_FLOAT and friends, we have SimpleTypes like
+ST_FLOAT_COMPLEX and ST_DOUBLE_IMAGINARY.  These are the types
+given to variables and expressions of complex/imaginary type.
+
+(see cc_flags, cc_type, gnu_ext.tok, gnu.lex)
+
+
+The GNU component selectors __real__ and __imag__ are parsed as
+field accesses, e.g.:
+
+  __real__ c          -->     c.__real__
+  __imag__ c          -->     c.__imag__
+
+In fact, if someone writes "c.__real__", Elsa will handle it
+exactly the same as "__real__ c".
+
+(see cc_env.h, gnu.gr)
+
+
+When the result is typechecked, the E_fieldAcc::field member is
+set to point at one of six predefined fields standing for the
+components of the three complex types.  (Note that there are no
+predefined complex structures, just the fields.)
+
+When an arithmetic operation involving complex/imaginary types
+is checked, the result type is computed according to rules like
+imag+imag=imag and real*imag=imag.  The computation is, for now,
+not well tested and might have a variety of bugs.  If an analysis
+is depending on accurate computation of complex/imaginary type
+expressions, this code will have to be more carefully examined.
+
+(see gnu.ast, gnu.cc)

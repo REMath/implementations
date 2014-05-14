@@ -1,0 +1,12 @@
+(declare-variable get_fileName String)
+(declare-variable name0 String)
+(declare-variable i Int)
+
+
+(assert (= i (Indexof get_fileName  ".php") ) )
+(assert (> i 2 ) )
+%(assert (= name0 "efg" ) )
+
+
+(check-sat)
+(get-model)

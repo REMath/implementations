@@ -1,0 +1,7 @@
+S = U_break  | U_break X1  | U_continue  | U_continue X0  ;
+Sym0 = "id"  ;
+Sym1 = ";"  ;
+U_break = "break"  ;
+U_continue = "continue"  ;
+X0 = Sym0  | Sym0 Sym1  | Sym1  ;
+X1 = Sym0  | Sym0 Sym1  | Sym1  ;

@@ -1,0 +1,80 @@
+// cc.in1
+// testing various constructs in c++ parser
+
+class Foo;
+
+int foo()
+{
+  int a = B::c;
+  a = ::d;
+  a = e;
+  
+  Foo f;
+  f.~Foo();
+  
+  int *p = new int;
+  p = new int(5);
+  p = new int[6];
+  delete[] p;
+  delete p;
+  
+  (a.*b)();
+  (a->*b)();
+  
+  throw up;
+
+  try {
+    fizzle();
+  }
+  catch (int) {
+    frazzle();
+  }
+  catch (float f) {
+    floozy();
+  }
+  catch (...) {
+    armageddon();
+  }
+}
+
+class Foo {
+  virtual int slam();
+};
+
+class Bar : public Foo {
+  friend float kazam(int y);
+
+  Bar& operator = (Bar const &obj);
+
+public:
+  explicit Bar(int y);
+
+  operator int () const;
+  
+  mutable int x;
+};
+
+Bar::Bar()
+  : x(5)
+{
+  printf("hi\n");
+}
+
+
+int foobar()
+{
+  // ambiguous at the moment
+  //List<Apple> apples;
+}
+
+
+int x;
+char y;
+float z;
+
+
+  // ptr to a function; isFunction = 0
+  int (*ptrToFn)(int);
+
+  // function that returns a pointer to a fn; isFunction = 1
+  int (*  fn(char)  )(int);

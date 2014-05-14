@@ -1,0 +1,12 @@
+#!/bin/sh
+# run mlsstr on a bunch of ocaml sources lying around
+
+./mlsstr ocaml/*.ml || exit
+
+./mlsstr ../Kettle/ocamlutil/*.ml || exit
+./mlsstr ../Kettle/src/*.ml || exit
+
+./mlsstr ../../safec/cil/src/*.ml || exit
+./mlsstr ../../safec/cil/src/ccured/*.ml || exit
+
+# EOF

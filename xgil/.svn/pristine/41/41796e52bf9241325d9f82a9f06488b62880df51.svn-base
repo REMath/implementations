@@ -1,0 +1,65 @@
+%%% parse-tree: 
+  TranslationUnit -> Declaration TranslationUnit   %attr { }
+    Declaration -> FunctionDefinition   %attr { }
+      FunctionDefinition -> DeclSpecifier Declarator FunctionBody   %attr { }
+        DeclSpecifier -> StorageClassOpt TypeSpecifier   %attr { }
+          StorageClassOpt -> empty   %attr { }
+          TypeSpecifier -> SimpleTypeSpecifier   %attr { }
+            SimpleTypeSpecifier -> "int"   %attr { }
+              int
+        Declarator -> DirectDeclarator   %attr { }
+          DirectDeclarator -> DirectDeclarator "(" ParameterDeclarationClause ")" CVQualifierSeqOpt   %attr { }
+            DirectDeclarator -> VariableName   %attr { }
+              VariableName -> L2_NAME   %attr { }
+                NAME(foo)
+            (
+            ParameterDeclarationClause -> ParameterDeclarationList   %attr { }
+              ParameterDeclarationList -> ParameterDeclaration   %attr { }
+                2 ALTERNATIVE PARSES for nonterminal ParameterDeclaration:
+                  ---- alternative 1 ----
+                  ParameterDeclaration -> DeclSpecifier Declarator   %attr { }
+                    DeclSpecifier -> StorageClassOpt TypeSpecifier   %attr { }
+                      StorageClassOpt -> empty   %attr { }
+                      TypeSpecifier -> SimpleTypeSpecifier   %attr { }
+                        SimpleTypeSpecifier -> "int"   %attr { }
+                          int
+                    Declarator -> DirectDeclarator   %attr { }
+                      DirectDeclarator -> "(" Declarator ")"   %attr { }
+                        (
+                        Declarator -> DirectDeclarator   %attr { }
+                          DirectDeclarator -> VariableName   %attr { }
+                            VariableName -> L2_NAME   %attr { }
+                              NAME(x)
+                        )
+                  ---- alternative 2 ----
+                  ParameterDeclaration -> DeclSpecifier AbstractDeclarator   %attr { }
+                    DeclSpecifier -> StorageClassOpt TypeSpecifier   %attr { }
+                      StorageClassOpt -> empty   %attr { }
+                      TypeSpecifier -> SimpleTypeSpecifier   %attr { }
+                        SimpleTypeSpecifier -> "int"   %attr { }
+                          int
+                    AbstractDeclarator -> DirectAbstractDeclarator   %attr { }
+                      DirectAbstractDeclarator -> DirectAbstractDeclarator "(" ParameterDeclarationClause ")" CVQualifierSeqOpt   %attr { }
+                        DirectAbstractDeclarator -> empty   %attr { }
+                        (
+                        ParameterDeclarationClause -> ParameterDeclarationList   %attr { }
+                          ParameterDeclarationList -> ParameterDeclaration   %attr { }
+                            ParameterDeclaration -> DeclSpecifier AbstractDeclarator   %attr { }
+                              DeclSpecifier -> StorageClassOpt TypeSpecifier   %attr { }
+                                StorageClassOpt -> empty   %attr { }
+                                TypeSpecifier -> SimpleTypeSpecifier   %attr { }
+                                  SimpleTypeSpecifier -> TypedefName   %attr { }
+                                    TypedefName -> L2_NAME   %attr { }
+                                      NAME(x)
+                              AbstractDeclarator -> DirectAbstractDeclarator   %attr { }
+                                DirectAbstractDeclarator -> empty   %attr { }
+                        )
+                        CVQualifierSeqOpt -> empty   %attr { }
+            )
+            CVQualifierSeqOpt -> empty   %attr { }
+        FunctionBody -> CompoundStatement   %attr { }
+          CompoundStatement -> "{" StatementSeqOpt "}"   %attr { }
+            {
+            StatementSeqOpt -> empty   %attr { }
+            }
+    TranslationUnit -> empty   %attr { }

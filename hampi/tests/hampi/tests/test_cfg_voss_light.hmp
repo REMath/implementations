@@ -1,0 +1,10 @@
+//created from CFGAnalyzer file voss-light.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg P :=  "(" P ")" | "(" Q ")" ;
+cfg Q :=  L P | P R | S P S | H ;
+cfg L :=  "." L | "." ;
+cfg R :=  "." R | "." ;
+cfg S :=  "." S | "." ;
+cfg H :=  "." H | "." ;
+reg limit := fix(P, 7);
+assert hampiStringVar in limit;

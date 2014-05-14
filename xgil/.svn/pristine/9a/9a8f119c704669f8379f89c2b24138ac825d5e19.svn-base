@@ -1,0 +1,50 @@
+#!/bin/sh
+# run delta in a loop to minimize tmp.i w.r.t. some message
+
+if [ "$1" = "" ]; then
+  echo "usage: $0 message_regexp"
+  echo "  This minimizes tmp.i s.t. ccparse fails with an error"
+  echo "  that matches message_regexp"
+  exit 0
+fi
+
+export msg="$1"
+             
+delta=../delta/bin/multidelta
+if [ ! -x $delta ]; then
+  echo "error: can't run $delta"
+  exit 2
+fi
+
+$delta -level=0 ./test-for-error tmp.i || exit
+$delta -level=1 ./test-for-error tmp.i || exit
+
+$delta -level=0 ./test-for-error tmp.i || exit
+$delta -level=1 ./test-for-error tmp.i || exit
+$delta -level=2 ./test-for-error tmp.i || exit
+
+$delta -level=0 ./test-for-error tmp.i || exit
+$delta -level=1 ./test-for-error tmp.i || exit
+$delta -level=2 ./test-for-error tmp.i || exit
+$delta -level=3 ./test-for-error tmp.i || exit
+
+$delta -level=0 ./test-for-error tmp.i || exit
+$delta -level=1 ./test-for-error tmp.i || exit
+$delta -level=2 ./test-for-error tmp.i || exit
+$delta -level=3 ./test-for-error tmp.i || exit
+$delta -level=4 ./test-for-error tmp.i || exit
+
+$delta -level=0 ./test-for-error tmp.i || exit
+$delta -level=1 ./test-for-error tmp.i || exit
+$delta -level=2 ./test-for-error tmp.i || exit
+$delta -level=3 ./test-for-error tmp.i || exit
+$delta -level=4 ./test-for-error tmp.i || exit
+
+# note: sometimes this breaks the input by changing "> >" into ">>" ...
+# I don't know a good solution at this point, so I just fix them by
+# hand when it happens
+indent tmp.i || exit
+
+#$delta -nf ./test-for-error tmp.i || exit
+
+#indent tmp.i || exit

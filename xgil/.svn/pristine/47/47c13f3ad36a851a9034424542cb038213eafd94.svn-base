@@ -1,0 +1,14 @@
+usage: ./configure [options]
+options:
+  -h:                print this message
+  -debug,-nodebug:   enable/disable debugging options [disabled]
+  -no-dash-g         disable -g
+  -no-dash-O2        disable -O2
+  -prof              enable profiling
+  -devel             add options useful while developing
+  -gnu=yes/no        enable or disable GNU extensions [enabled]
+  -ccflag <arg>:     add <arg> to gcc command line
+  -smbase=<dir>:     specify where the smbase library is [../smbase]
+  -ast=<dir>:        specify where the ast system is [../ast]
+  -elkhound=<dir>:   specify where the elkhound system is [../elkhound]
+  -useSerialNumbers: give serial numbers to some objects for debugging

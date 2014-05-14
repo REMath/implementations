@@ -1,0 +1,151 @@
+(declare-variable v_a58f9c4 String)
+
+(declare-variable v_phiBool8  bool )
+(declare-variable v_phiBool9  bool )
+(declare-variable v_a59c93c  bool )
+(declare-variable v_a592cdc  bool )
+(declare-variable v_a58fa64  bool )
+%------------- Taint declare -------------
+(declare-variable T_local__GET   (_ BitVec 1)  )
+(declare-variable T_local__GET_i_ajaxaction   (_ BitVec 1)  )
+(declare-variable T_local__SESSION   (_ BitVec 1)  )
+(declare-variable T_local__SESSION_i_trans   (_ BitVec 1)  )
+(declare-variable T_local__SESSION_i_trans_i_rightVarsOnly   (_ BitVec 1)  )
+(declare-variable T_local__SESSION_i_trans_i_rightVarsOnly_i_PMF_LANG_metaLanguage_   (_ BitVec 1)  )
+(declare-variable T_v_a585db8   (_ BitVec 1)  )
+(declare-variable T_v_a58f15c   (_ BitVec 1)  )
+(declare-variable T_v_a58f898   (_ BitVec 1)  )
+(declare-variable T_v_a58f928   (_ BitVec 1)  )
+(declare-variable T_v_a58fbac   (_ BitVec 1)  )
+(declare-variable T_v_a58fc4c   (_ BitVec 1)  )
+(declare-variable T_v_a58fd54   (_ BitVec 1)  )
+(declare-variable T_v_a58fdf4   (_ BitVec 1)  )
+(declare-variable T_v_a58fe94   (_ BitVec 1)  )
+(declare-variable T_v_a58ff34   (_ BitVec 1)  )
+(declare-variable T_v_a58ffd4   (_ BitVec 1)  )
+(declare-variable T_v_a590074   (_ BitVec 1)  )
+(declare-variable T_v_a59d030   (_ BitVec 1)  )
+(declare-variable T_v_a59d0cc   (_ BitVec 1)  )
+(declare-variable T_v_a59d16c   (_ BitVec 1)  )
+(declare-variable T_v_a59d20c   (_ BitVec 1)  )
+
+%-------------------------------------------------------------------
+% ASSERT( T_local__GET_i_ajaxaction = T_local__GET );
+(assert (= T_local__GET_i_ajaxaction T_local__GET ) )
+% ASSERT( T_local__GET = 0bin00000000000000000000000000000001 );
+(assert (= T_local__GET #b1 ) )
+% ASSERT( T_v_a590074 = 0bin00000000000000000000000000000001 );
+(assert (= T_v_a590074 #b1 ) )
+% ASSERT( T_v_a59d20c = T_v_a59d16c | 0bin00000000000000000000000000000000);
+(assert (= T_v_a59d20c (bvor T_v_a59d16c #b0) ) )
+% ASSERT( T_v_a59d16c = T_v_a59d0cc | T_local__SESSION_i_trans_i_rightVarsOnly_i_PMF_LANG_metaLanguage_);
+(assert (= T_v_a59d16c (bvor T_v_a59d0cc T_local__SESSION_i_trans_i_rightVarsOnly_i_PMF_LANG_metaLanguage_) ) )
+% ASSERT( T_v_a59d0cc = T_v_a59d030 | 0bin00000000000000000000000000000000);
+(assert (= T_v_a59d0cc (bvor T_v_a59d030 #b0) ) )
+% ASSERT( T_local__SESSION_i_trans_i_rightVarsOnly_i_PMF_LANG_metaLanguage_ = T_local__SESSION_i_trans_i_rightVarsOnly );
+(assert (= T_local__SESSION_i_trans_i_rightVarsOnly_i_PMF_LANG_metaLanguage_ T_local__SESSION_i_trans_i_rightVarsOnly ) )
+% ASSERT( T_local__SESSION_i_trans_i_rightVarsOnly = T_local__SESSION_i_trans );
+(assert (= T_local__SESSION_i_trans_i_rightVarsOnly T_local__SESSION_i_trans ) )
+% ASSERT( T_local__SESSION_i_trans = T_local__SESSION );
+(assert (= T_local__SESSION_i_trans T_local__SESSION ) )
+% ASSERT( T_v_a590074 = 0bin00000000000000000000000000000000 | T_v_a58ffd4);
+(assert (= T_v_a590074 (bvor #b0 T_v_a58ffd4) ) )
+% ASSERT( T_v_a58ffd4 = T_v_a58ff34 | 0bin00000000000000000000000000000000);
+(assert (= T_v_a58ffd4 (bvor #b0 T_v_a58ff34) ) )
+% ASSERT( T_v_a58ff34 = T_v_a58fe94 | T_v_a585db8);
+(assert (= T_v_a58ff34 (bvor T_v_a58fe94 T_v_a585db8) ) )
+% ASSERT( v_phiBool8 <=>  v_a58fa64  AND  v_a59c93c  AND  ( NOT v_a592cdc )  );
+(assert (= v_phiBool8 (and v_a58fa64 (and v_a59c93c (not v_a592cdc ) ) ) ) )
+% ASSERT( T_v_a585db8 = IF v_phiBool8 THEN T_v_a58fc4c ELSE T_v_a585db8 ENDIF);
+(assert (=> v_phiBool8 (= T_v_a585db8 T_v_a58fc4c) ) )
+% ASSERT( v_phiBool9 <=>  v_a59c93c  AND  ( NOT v_a592cdc )  );
+(assert (= v_phiBool9 (and v_a59c93c (not v_a592cdc) ) ) )
+% ASSERT( T_v_a585db8 = IF v_phiBool9 THEN T_v_a58f928 ELSE T_v_a585db8 ENDIF);
+(assert (=> v_phiBool9 (= T_v_a585db8 T_v_a58f928) ) )
+% ASSERT( v_a58fa64 <=> 0bin00000000000000000000000000000000 = v_a58f9c4 );
+(assert (= v_a58fa64 (=  v_a58f9c4 "" ) ) )
+% ASSERT( T_v_a58f898 = T_local__SESSION_i_trans_i_rightVarsOnly);
+(assert (= T_v_a58f898 T_local__SESSION_i_trans_i_rightVarsOnly ) )
+% ASSERT( T_local__SESSION_i_trans_i_rightVarsOnly = T_local__SESSION_i_trans );
+(assert (= T_local__SESSION_i_trans_i_rightVarsOnly T_local__SESSION_i_trans ) )
+% ASSERT( T_local__SESSION_i_trans = T_local__SESSION );
+(assert (= T_local__SESSION_i_trans T_local__SESSION ) )
+% ASSERT( T_v_a58fc4c = T_v_a58fbac | 0bin00000000000000000000000000000000);
+(assert (= T_v_a58fc4c (bvor T_v_a58fbac #b0) ) )
+% ASSERT( T_v_a58fbac = 0bin00000000000000000000000000000000 | T_v_a58f928);
+(assert (= T_v_a58fbac (bvor T_v_a58f928 #b0) ) )
+% ASSERT( T_v_a58f928 = T_local__SESSION_i_trans_i_rightVarsOnly);
+(assert (= T_v_a58f928 T_local__SESSION_i_trans_i_rightVarsOnly ) )
+% ASSERT( T_v_a58fe94 = T_v_a58fdf4 | 0bin00000000000000000000000000000000);
+(assert (= T_v_a58fe94 (bvor T_v_a58fdf4 #b0) ) )
+% ASSERT( T_v_a58fdf4 = T_v_a58fd54 | T_v_a58f898);
+(assert (= T_v_a58fdf4 (bvor T_v_a58fd54 T_v_a58f898) ) )
+% ASSERT( T_v_a58fd54 = T_v_a58f15c | 0bin00000000000000000000000000000000);
+(assert (= T_v_a58fd54 (bvor T_v_a58f15c #b0) ) )
+% ASSERT( T_v_a58f15c = 0bin00000000000000000000000000000000);
+(assert (= T_v_a58f15c #b0) )
+%===================================================================
+(declare-variable local__GET_i_ajaxaction String)
+(declare-variable v_a59d20c String)
+(declare-variable v_a59d16c String)
+(declare-variable v_a59d0cc String)
+(declare-variable local__SESSION_i_trans_i_rightVarsOnly_i_PMF_LANG_metaLanguage_ String)
+(declare-variable v_a59d030 String)
+(declare-variable v_a58ffd4 String)
+(declare-variable v_a590074 String)
+(declare-variable v_a58ff34 String)
+(declare-variable v_a58fe94 String)
+(declare-variable v_a585db8 String)
+(declare-variable v_a58fc4c String)
+(declare-variable v_a58f928 String)
+(declare-variable local__SESSION_i_trans_i_rightVarsOnly String)
+(declare-variable v_a58fbac String)
+(declare-variable v_a58f898 String)
+(declare-variable v_a58fdf4 String)
+(declare-variable v_a58fd54 String)
+(declare-variable v_a58f15c String)
+
+
+% v_a592cdc := local__GET_i_ajaxaction == "save_page_buffer"
+(assert (= v_a592cdc (= local__GET_i_ajaxaction "save_page_buffer" ) ) )
+% v_a59c93c := local__GET_i_ajaxaction == "save_translated_lang"
+(assert (= v_a59c93c (= local__GET_i_ajaxaction "save_translated_lang" ) ) )
+% v_a59d20c := v_a59d16c ".php"
+(assert (= v_a59d20c (Concat v_a59d16c ".php" ) ) )
+% v_a59d16c := v_a59d0cc local__SESSION_i_trans_i_rightVarsOnly_i_PMF_LANG_metaLanguage_
+(assert (= v_a59d16c (Concat v_a59d0cc local__SESSION_i_trans_i_rightVarsOnly_i_PMF_LANG_metaLanguage_ ) ) )
+% v_a59d0cc := v_a59d030 "/lang/language_"
+(assert (= v_a59d0cc (Concat v_a59d030 "/lang/language_" ) ) )
+% v_a590074 := "" v_a58ffd4
+(assert (= v_a590074 (Concat "" v_a58ffd4 ) ) )
+% v_a58ffd4 := v_a58ff34 ";"
+(assert (= v_a58ffd4 (Concat v_a58ff34 "semi" ) ) )
+% v_a58ff34 := v_a58fe94 v_a585db8
+(assert (= v_a58ff34 (Concat v_a58fe94 v_a585db8 ) ) )
+% v_phiBool8 | v_phiBool9 ? v_a585db8 := v_a58fc4c | v_a58f928
+(assert (=> v_phiBool8 (= v_a585db8 v_a58fc4c ) ) )
+(assert (=> v_phiBool9 (= v_a585db8 v_a58f928 ) ) )
+% v_a58f898 := local__SESSION_i_trans_i_rightVarsOnly
+(assert (= v_a58f898 local__SESSION_i_trans_i_rightVarsOnly ) )
+% v_a58fc4c := v_a58fbac "'"
+(assert (= v_a58fc4c (Concat v_a58fbac "coma" ) ) )
+% v_a58fbac := "'" v_a58f928
+(assert (= v_a58fbac (Concat "coma" v_a58f928 ) ) )
+% v_a58f928 := local__SESSION_i_trans_i_rightVarsOnly
+(assert (= v_a58f928 local__SESSION_i_trans_i_rightVarsOnly ) )
+% v_a58fe94 := v_a58fdf4 " = "
+(assert (= v_a58fe94 (Concat v_a58fdf4 "=" ) ) )
+% v_a58fdf4 := v_a58fd54 v_a58f898
+(assert (= v_a58fdf4 (Concat v_a58fd54 v_a58f898 ) ) )
+% v_a58fd54 := v_a58f15c "\n"
+(assert (= v_a58fd54 (Concat v_a58f15c "^newline^" ) ) )
+% v_a58f15c := ""
+(assert (= v_a58f15c "space" ) )
+
+%===================================================================
+
+
+
+
+(check-sat) 
+(get-model)

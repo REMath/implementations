@@ -1,0 +1,9 @@
+(declare-variable x String)
+(declare-variable bv Bool)
+
+(assert (= bv (Contains "abcdefg" x ) ) )
+(assert (not bv) )
+
+
+(check-sat)
+(get-model)

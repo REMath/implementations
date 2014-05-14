@@ -1,0 +1,9 @@
+//created from CFGAnalyzer file pascal_typed.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg declaration :=  "v" integer_id_list integer_type ";" | "v" real_id_list real_type ";" ;
+cfg integer_id_list :=  "i" "," integer_id_list | "i" ;
+cfg integer_type :=  ":" "n" ;
+cfg real_id_list :=  "i" "," real_id_list | "i" ;
+cfg real_type :=  ":" "r" ;
+reg limit := fix(declaration, 7);
+assert hampiStringVar in limit;

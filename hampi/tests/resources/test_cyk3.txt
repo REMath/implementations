@@ -1,0 +1,4 @@
+S = A B | B A | "d" ;
+A = A A | "a" | "b" ;
+B = C A | C C ;
+C = "d" | "b" ;

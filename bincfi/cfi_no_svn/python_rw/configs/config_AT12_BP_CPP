@@ -1,0 +1,50 @@
+#call_to_pushjmp = 1: call will be translated into a push and jump instruction
+call_to_pushjmp=0
+#fix_disasm = 1: checking disassembly issues and fix them
+fix_disasm=1
+#use_local_hash = 1: generate a hash table containing only local instruction addresses 
+use_local_hash=1
+#gen_hash = 1: generate hash table
+#gen_hash = 0: generate table for binary search (obsolute)
+gen_hash=1
+bundle_align=2
+# return2lookup = 0: return address will be bundle aligned 
+# return2lookup = 1: return address will be translated
+# return2lookup = 2: return instruction will be untouched 
+return2lookup=1
+# when return2lookup = 1, return2lookup_use_ret=1 will use ret in the lookup routine
+# when return2lookup = 1, return2lookup_use_ret=0 will use indirect jmp in the lookup routine
+return2lookup_use_ret=1
+use_trap_redirect4bundle=0
+
+#when only_local_lookup = 1, inter-module control flow won't be checked.
+only_local_lookup=0
+#when use_far_jmp = 1, indirect jmp lookup routine use far jmp to reach the global lookup routine
+#when use_far_jmp = 0, indirect jmp lookup routine does notuse far jmp, the global lookup routine address must be fixed
+use_far_jmp=0
+#when pic_change_stack = 1, indirect jump lookup routine will change stack when trying to get base address
+pic_change_stack=0
+#when ret_to_orig = 1, ret is allowed to use original address
+ret_to_orig=1
+#transform_plt = 1, plt will be transformed in a special way
+#transform_plt cannot be used along with enforce_plt !!!
+transform_plt=0
+#enforce_ret=1: return only goes to next of call; 
+#enforce_ret=0: 
+enforce_ret=0
+#speculate_icf=1: 
+speculate_icf=0
+translate_jmp_table=1
+transparent_call=1
+#debug_mode =1: allow a pre-generated "generated_asm.s" to be used
+debug_mode=0
+#save_eflags=1: eflag will be saved for ijmp/icall, not available for local search
+save_eflags=1
+#disasm_get_icf=1: dump2asm.pl will just check the disassembly and figure out potential icf targets
+disasm_get_icf=0
+enforce_e_cfi=0
+#enforce_plt=1: plt ijmp could only goes to exported symbol. In addition,
+#normal icall/ijmp CANNOT goes to exported symbol unless using dlsym(3)
+enforce_plt=0
+do_not_trans_syscall=1
+eh_handler_tool=/home/mingwei/Downloads/katana/katana/katana

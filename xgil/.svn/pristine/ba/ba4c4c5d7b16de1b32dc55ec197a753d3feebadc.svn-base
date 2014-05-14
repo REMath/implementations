@@ -1,0 +1,2675 @@
+// cc.gr            see license.txt for copyright and terms of use
+// grammar for C++
+
+// A word of warning: there are three sources of names running
+// around here:
+//   (1) the c++ standard's grammar's names
+//   (2) my modified grammar's names
+//   (3) names of AST nodes
+// (1) and (2) correspond everywhere except in places where I want
+// the grammar to do more parsing work than the standard's (mainly
+// for declarators) and where I've chosen to fold in "opt".  The
+// names in (3) are often different because later phases of analysis
+// want to see different conceptual structure.  Anyway, the point is
+// to be aware of which kind of name a given thing is.
+
+
+// Note about destructive actions: because semantic values can be
+// yielded to more than one reduction action (a phenomenon I call
+// "multi-yield"), actions which modify one of their subtree semantic
+// values are dangerous, because you can have actions from one
+// interpretation interfering with actions from another
+// interpretation.
+//
+// Therefore, to the extent reasonable, I avoid destructive actions.
+// 
+// However there are a few places where I want destructive actions
+// anyway, and there are two broad strategies employed for managing
+// them:                                                   
+//
+//   (1) Disable multi-yield for the modified subtrees.  If an action
+//       modifies subtree nonterminal 'A', then in the definition of
+//       'A' I say "dup(n) { return NULL; }" to ensure that once the
+//       value is yielded once, it can't be yielded again.  Thus, if
+//       in fact it *is* yielded a second time, I'll get a segfault
+//       which will alert me to the design flaw in my rules.
+//       (DeclSpecifier is a good example of this.)
+//
+//   (2) Design the actions to that multiple modifications are
+//       checked for bad interactions.  In this grammar that is what
+//       I do for FakeLists, where I either (a) prevent putting a
+//       node at the head of two lists, or else (b) make sure that
+//       the two lists are in fact the same list both times.  For
+//       potentially-ambiguous nodes with FakeList links (Expression
+//       and Declarator), additional measures are taken to ensure
+//       the consistency of interaction with the ambiguity links.
+//       (See Expression::addAmbiguity and Expression::setNext in
+//       cc_ast_aux.cc.)
+//
+// Every place there's a destructive modification which isn't handled
+// by FakeLists is marked by the phrase 'destructive action'.
+
+
+// this makes it so that, by default, dup() is the identity function,
+// and del() is a no-op
+option useGCDefaults;
+
+// if I don't specify a merge(), and we want to merge(),
+// then abort
+option defaultMergeAborts;
+
+// expected statistics
+option shift_reduce_conflicts 58;
+option reduce_reduce_conflicts 70;
+option unreachable_nonterminals 0;
+option unreachable_terminals 6;
+
+verbatim {
+
+#include "cc_type.h"      // type identifiers like ST_CHAR (r)
+#include "cc_tokens.h"    // lexer's token ids for classify()
+#include "trace.h"        // trace
+#include "cc_ast.h"       // C++ abstract syntax
+#include "cc_lang.h"      // CCLang
+#include "ccparse.h"      // ParseEnv, the parser context class
+
+#define D(msg) \
+  trace("cc") << msg << endl
+
+inline ostream& operator<< (ostream &os, SourceLoc sl)
+  { return os << toString(sl); }
+
+// implemented in implint.cc
+bool filterOutImplIntFirstParam
+  (SourceLoc loc,
+   IDeclarator *base,
+   FakeList<ASTTypeId> *&params);
+
+// implemented at end of file
+bool isGlobalScopeQualified(PQName const *pq);
+bool endsWithIdentifier(TypeSpecifier const *ts);
+bool keepDeclaration(Declaration const *d);
+
+
+// this is the shareable fragment of CCParse, since the new
+// Elkhound behavior prevents extension modules from inheriting
+// directly from CCParse
+class CCParseShareable : public UserActions, public ParseEnv {
+public:
+  CCParseShareable(StringTable &table, CCLang &lang)
+    : ParseEnv(table, lang) {}
+
+  // when this is the last element in a parameter list, the function
+  // is a vararg function
+  ASTTypeId *ellipsisTypeId(SourceLoc loc)
+  {
+    ASTTypeId *tid =
+      new ASTTypeId(new TS_simple(loc, loc, ST_ELLIPSIS),
+                    new Declarator(new D_name(loc, NULL /*name*/),
+                                   NULL /*init*/));
+    return tid;
+  }
+
+  // make a TS_name, and supply CV flags
+  TS_name *new_TS_name(SourceLoc loc, CVFlags cv, PQName *n,
+                       bool typenameUsed)
+  {
+    TS_name *ret = new TS_name(loc, loc, n, typenameUsed);
+    ret->cv = cv;
+    return ret;
+  }
+
+  // make a TS_simple, and supply CV flags
+  TS_simple *new_TS_simple(SourceLoc loc, CVFlags cv, SimpleTypeId id)
+  {
+    TS_simple *ret = new TS_simple(loc, loc, id);
+    ret->cv = cv;
+    return ret;
+  }
+
+  // make a D_func but not if it attempts to be the return value of
+  // another function (this helps resolve an ambiguity in the presence
+  // of implicit int.. is it needed even without implicit int?)
+  D_func *new_D_func
+    (SourceLoc loc,
+     IDeclarator *base,
+     FakeList<ASTTypeId> *params,
+     CVFlags cv,
+     ExceptionSpec /*nullable*/ *exnSpec)
+  {
+    if (base->isD_func()) {
+      TRACE("cancel", loc << ": function returning a function");
+      return NULL;
+    }
+    if (lang.allowImplicitInt
+        && !filterOutImplIntFirstParam(loc, base, params)) {
+      return NULL;
+    }
+    return new D_func(loc, base, params, cv, exnSpec);
+  }
+
+  D_array *new_D_array
+    (SourceLoc loc, IDeclarator *base, Expression * /*nullable*/ size)
+  {
+    if (base->isD_func()) {
+      TRACE("cancel", loc << ": function returning an array");
+      return NULL;
+    }
+    return new D_array(loc, base, size);
+  }
+  
+  TemplateArgument *templateUsed(TemplateArgument *list)
+  {
+    return new TA_templateUsed(list);
+  }
+};
+
+} // verbatim
+
+
+context_class CCParse : public CCParseShareable {
+public:
+  CCParse(StringTable &table, CCLang &lang)
+    : CCParseShareable(table, lang) {}
+};
+
+
+terminals {
+  // grab token list
+  include("cc_tokens.ids")
+
+  // all literals are yielded as their syntax strings
+  token(StringRef) TOK_INT_LITERAL ;
+  token(StringRef) TOK_FLOAT_LITERAL ;
+  token(StringRef) TOK_CHAR_LITERAL ;
+  token(StringRef) TOK_STRING_LITERAL ;
+
+  // similar for identifiers
+  token(StringRef) TOK_NAME ;
+  token(StringRef) TOK_TYPE_NAME;
+  token(StringRef) TOK_VARIABLE_NAME;
+
+  precedence {
+    // high precedence
+    prec  200 TOK_PREFER_REDUCE;
+    right 195 "::";           // 2005-08-14: see doc/coloncolon.txt
+    prec  190 "const" "volatile" "else" "[";
+
+    left  120 ".*" "->*";     // 7/07/03: changed from "right".. why was it that way?
+    left  110 "*" "/" "%";
+    left  100 "+" "-";
+    left   90 "<<" ">>";
+    
+    // part of the solution to the angle bracket problem requires
+    // dropping these precedence specs and implementing them in the
+    // grammar instead
+    //left   80 "<" ">" "<=" ">=";
+
+    left   70 "==" "!=";
+    left   60 "&";
+    left   50 "^";
+    left   40 "|";
+    left   30 "&&";
+    left   20 "||";
+
+    prec    1 TOK_PREFER_SHIFT;
+    // low precedence
+  }
+}
+
+
+nonterm(TranslationUnit*) File -> t:TranslationUnit
+  { return t; }
+
+
+// 4/20/04: Removed long-since defunct EnterScope and LeaveScope  
+
+
+// ------------- identifiers -------------------
+// simple string of characters
+nonterm(StringRef) Identifier {
+  fun dup(n) { return n; }
+  fun del(n) {}
+  -> n:TOK_NAME          { return n; }
+}
+
+// another name that comes up in a few places; it's supposed
+// to refer to a type, but the typechecker will have to enforce
+// that later
+//
+// update: I've substituted it into the grammar elsewhere, since
+// it's just causing s/r conflicts with no gain
+//  nonterm(StringRef) TypeName {
+//    -> id:Identifier      { return id; }
+//  }
+
+
+// ---------------- higher-level syntax -----------------
+// the section labels that follow (like "A.3") are from the
+// C++ standard document
+
+// ------ A.3 Basic Concepts ------
+nonterm(TranslationUnit*) TranslationUnit {
+// bhackett: disabled
+//  fun dup(n) { return NULL; }    // prevent multi-yield
+
+  -> empty                                { return new TranslationUnit(NULL); }
+
+  // destructive action on 't'
+  -> t:TranslationUnit d:Declaration      { t->topForms.append(d); return t; }
+
+  // arg!  Mozilla is littered with toplevel semicolons..
+  -> t:TranslationUnit ";"                { return t; }
+}
+
+// ------ A.4 Expressions ------
+nonterm(Expression*) PrimaryExpression {
+  -> e:Literal
+       { return e; }
+
+  -> "this"
+       { return new E_this; }
+
+  -> "(" e:Expression ")"
+       { return new E_grouping(e); }
+
+  -> e:IdExpression
+       { return new E_variable(e); }
+}
+
+nonterm(Expression*) Literal {
+  -> i:TOK_INT_LITERAL    { return new E_intLit(i); }
+  -> f:TOK_FLOAT_LITERAL  { return new E_floatLit(f); }
+  -> s:StringLiteral      { return s; }
+  -> c:TOK_CHAR_LITERAL   { return new E_charLit(c); }
+  -> TOK_TRUE             { return new E_boolLit(true); }
+  -> TOK_FALSE            { return new E_boolLit(false); }
+}
+
+// a single quoted sequence of characters; this nonterminal exists
+// so that gnu.gr can extend it
+nonterm(StringRef) PreprocString {
+  -> s:TOK_STRING_LITERAL                   { return s; }
+}
+
+// a string literal, with all concatenated parts
+nonterm(E_stringLit*) StringLiteral {
+  -> s:PreprocString                        { return new E_stringLit(s); }
+  -> s:PreprocString cont:StringLiteral     { return new E_stringLit(s, cont); }
+}
+
+
+// possibly-qualified name
+nonterm(PQName*) IdExpression {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> id:PQualifiedId              { return id; }
+
+  // a bare "::" qualifier can only appear at the start of a qualifier
+  // sequence; I'm enforcing it a little bit differently than the std
+  // does
+  -> "::" id:PQualifiedId
+       { return new PQ_qualifier(loc, NULL /*qualifier*/, NULL /*targs*/, id); }
+}
+
+// names that are not qualified
+nonterm(PQName*) UnqualifiedId {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> id:Identifier                { return new PQ_name(loc, id); }
+  -> on:OperatorFunctionId        { return new PQ_operator(loc, on, str(on->getOperatorName())); }
+  -> on:ConversionFunctionId      { return new PQ_operator(loc, on, str(on->getOperatorName())); }
+
+  // std has `"~" ClassName' here, but I've chosen to separate out the
+  // places that a destructor name can occur, since it avoids an
+  // ambiguity with the "~" unary operator
+
+  -> id:TemplateId                { return id; }
+}
+
+// optional qualifier sequence (with no bare "::"), then an
+// UnqualifiedId; there is no option here that uses "~", since that
+// is handled by PQDtorName
+nonterm(PQName*) PQualifiedId {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> id:UnqualifiedId             precedence("::")
+       { return id; }
+
+  -> n:Identifier "::" id:PQualifiedId
+       { return new PQ_qualifier(loc, n, NULL /*targs*/, id); }
+
+  -> n:Identifier "<" targs:TemplateArgumentListOpt ">" "::" id:PQualifiedId
+       { return new PQ_qualifier(loc, n, templateUsed(targs), id); }
+
+  // versions with "template" in front (it's not clear to me that this
+  // is equivalent to the standard grammar.. I'm hacking it for now);
+  // I just ignore the keyword (is that right?)
+  // NOTE: the pattern here is repeated FIVE times!  argh...
+  // marking all as TEMPLATE_QUALIFIER_HACK
+  //
+  // here, as below, I now realize that the first alternative (using
+  // "template" but not supplying template arguments) is illegal
+  //-> "template" n:Identifier "::" id:PQualifiedId
+  //     { return new PQ_qualifier(loc, n, NULL /*targs*/, id); }
+  -> "template" n:Identifier "<" targs:TemplateArgumentListOpt ">" "::" id:PQualifiedId
+       { return new PQ_qualifier(loc, n, templateUsed(targs), id); }
+}
+
+
+// This is a little subtle.  Most of the function calls in a C++
+// source program appear to be ambiguous between E_funCall and
+// E_constructor.  However both of these constructs contain an
+// argument list, and I want the constructed AST nodes to share that
+// list, instead of duplicating it (and only sharing argument
+// subexpressions), for space efficiency reasons.
+//
+// To do that, I insert this nonterminal, which effectively hides the
+// differences in context from the parsing algorithm, so it will be
+// able to share the expression list one level higher than it
+// otherwise would.  (To see the effect, print the node addresses in
+// the resulting ASTs.)
+nonterm(FakeList<ArgExpression>*) ArgumentList {
+  -> "(" e:ExpressionListOpt ")"      { return e; }
+}
+
+
+nonterm(Expression*) PostfixExpression {
+  // ambiguous:
+  //   x(y)
+  // can either be a function call (x is a function)
+  // or a constructor call (x is a type)
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> e:PrimaryExpression
+       { return e; }
+
+  // array access
+  -> a:PostfixExpression "[" e:Expression "]"
+       { return new E_binary(a, BIN_BRACKETS, e); }
+
+  // fn call
+  -> f:PostfixExpression a:ArgumentList
+       { return new E_funCall(f, a); }
+       
+  // cppstd has two things with "typename", but I can't find anyplace
+  // where their semantics are spelled out.. I have some code from
+  // a gcc header which seems to be using them to mean E_constructor,
+  // so I will assume that is the right interpretation
+  //
+  // Note 1: The two "typename" rules are folded into one, with the
+  // variation (planned to be) captured down inside 'IdExpression'.
+  //
+  // Note 2: cppstd uses the grammar to enforce the restriction that
+  // "typename" can only be used with a qualified name, whereas I
+  // enforce that in the type checker (more informative message).
+  -> "typename" t:IdExpression a:ArgumentList
+       { return new E_constructor(new TS_name(loc, loc, t, true /*typenameUsed*/), 
+                                  a); }
+
+  // function-style cast, or (equivalently) call to constructor; will
+  // almost always be ambiguous with function call, so the distinction
+  // will have to be delayed until typechecking
+  -> spec:CtorExpressionType a:ArgumentList
+       { return new E_constructor(spec, a); }
+
+  // field access (includes pseudo-destructor)
+  -> p:PostfixExpression "." n:NameAfterDot
+       { return new E_fieldAcc(p, n); }
+
+  // deref + field access
+  -> p:PostfixExpression "->" n:NameAfterDot
+       { return new E_arrow(p, n); }
+
+  -> p:PostfixExpression "++"
+       { return new E_effect(EFF_POSTINC, p); }
+  -> p:PostfixExpression "--"
+       { return new E_effect(EFF_POSTDEC, p); }
+
+  -> k:CastKeyword "<" t:TypeId ">" "(" e:Expression ")"
+       { return new E_keywordCast(k, t, e); }
+
+  -> "typeid" "(" e:Expression ")"
+       { return new E_typeidExpr(e); }
+  -> "typeid" "(" t:TypeId ")"
+       { return new E_typeidType(t); }
+}
+                                            
+// the std calls this SimpleTypeSpecifier, but then also uses that
+// name in some other roles; this is only for the name of a class or
+// type, used as a constructor name
+nonterm(TypeSpecifier*) CtorExpressionType {
+  //-> ColonColonOpt NestedNameSpecifier "template" TemplateId;
+
+  -> n:PQTypeName        { return new TS_name(loc, loc, n, false /*typename*/); }
+  -> "char"              { return new TS_simple(loc, loc, ST_CHAR); }
+  -> "wchar_t"           { return new TS_simple(loc, loc, ST_WCHAR_T); }
+  -> "bool"              { return new TS_simple(loc, loc, ST_BOOL); }
+  -> "short"             { return new TS_simple(loc, loc, ST_SHORT_INT); }
+  -> "int"               { return new TS_simple(loc, loc, ST_INT); }
+  -> "long"              { return new TS_simple(loc, loc, ST_LONG_INT); }
+  -> "signed"            { return new TS_simple(loc, loc, ST_INT); }
+  -> "unsigned"          { return new TS_simple(loc, loc, ST_UNSIGNED_INT); }
+  -> "float"             { return new TS_simple(loc, loc, ST_FLOAT); }
+  -> "double"            { return new TS_simple(loc, loc, ST_DOUBLE); }
+
+  // std has this, but I don't think it makes sense
+  //
+  // 2005-04-16: but it is used in real code, e.g., in/k0043.cc
+  -> "void"              { return new TS_simple(loc, loc, ST_VOID); } 
+}
+
+nonterm(CastKeyword) CastKeyword {
+  -> "dynamic_cast"      { return CK_DYNAMIC; }
+  -> "static_cast"       { return CK_STATIC; }
+  -> "reinterpret_cast"  { return CK_REINTERPRET; }
+  -> "const_cast"        { return CK_CONST; }
+}
+
+// here, and everywhere else that FakeList is used, I use right
+// recursion to construct the list; this does mean the stack size
+// is linear in the size of the list, but the benefit of not
+// having to reverse the list or use ASTList (which is difficult
+// to share) is worth it
+nonterm(FakeList<ArgExpression>*) ExpressionList {
+  // ambiguous; see t0182.cc
+  fun merge(L,R) { L->first()->addAmbiguity(R->first()); return L; }
+
+  -> a:AssignmentExpression
+       { return FakeList<ArgExpression>::makeList(new ArgExpression(a)); }
+  -> a:AssignmentExpression "," e:ExpressionList
+       { ArgExpression *aa = new ArgExpression(a);
+         aa->setNext(e->first());
+         return FakeList<ArgExpression>::makeList(aa); }
+
+  // bhackett: ... can appear as the final thing in an argument list
+  // when used with template arguments. I don't know what any of this syntax means.
+  -> a:AssignmentExpression "..."
+       { return FakeList<ArgExpression>::makeList(new ArgExpression(a)); }
+  -> a:AssignmentExpression "..."
+       { return FakeList<ArgExpression>::makeList(new ArgExpression(a)); }
+}
+
+nonterm(FakeList<ArgExpression>*) ExpressionListOpt {
+  -> empty               { return FakeList<ArgExpression>::emptyList(); }
+  -> e:ExpressionList    { return e; }
+}
+
+// I am pulling these out since PQVarName can be ~class
+//PseudoDestructorName -> "~" ClassName
+//PseudoDestructorName -> Qualifier PseudoDestructorName
+
+nonterm(Expression*) UnaryExpression {
+  // ambiguous:
+  //   sizeof(x)
+  // could either be size of an expression 'x', or
+  // size of a type called 'x'
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> e:PostfixExpression         { return e; }
+
+  -> "++" e:CastExpression       { return new E_effect(EFF_PREINC, e); }
+  -> "--" e:CastExpression       { return new E_effect(EFF_PREDEC, e); }
+
+  // size of expression
+  -> "sizeof" e:UnaryExpression  { return new E_sizeof(e); }
+
+  // bhackett: more template varargs
+  -> "sizeof" "..." e:UnaryExpression  { return new E_sizeof(e); }
+
+  -> e:DeleteExpression          { return e; }
+
+  // dereference, addrof
+  -> "*" e:CastExpression        { return new E_deref(e); }
+  -> "&" e:CastExpression        { return new E_addrOf(e); }
+
+  // other unary operators
+  -> "+" e:CastExpression        { return new E_unary(UNY_PLUS, e); }
+  -> "-" e:CastExpression        { return new E_unary(UNY_MINUS, e); }
+  -> "!" e:CastExpression        { return new E_unary(UNY_NOT, e); }
+  -> "~" e:CastExpression        { return new E_unary(UNY_BITNOT, e); }
+                                               
+  // size of type
+  -> "sizeof" "(" t:TypeId ")"   { return new E_sizeofType(t); }
+
+  -> e:NewExpression             { return e; }
+}
+
+
+// ---------------- "new" and "delete" expressions --------------
+nonterm(bool) ColonColonOpt {
+  -> empty     { return false; }
+  -> "::"      { return true; }
+}
+
+nonterm(E_new*) NewExpression {
+  // ambiguous (see in/t0482.cc)
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> c:ColonColonOpt "new" p:NewPlacementOpt t:NewTypeId i:NewInitializerOpt
+       { return new E_new(c, p, t, i); }
+  -> c:ColonColonOpt "new" p:NewPlacementOpt "(" t:TypeId ")" i:NewInitializerOpt
+       { return new E_new(c, p, t, i); }
+}
+
+nonterm(FakeList<ArgExpression>*) NewPlacementOpt {
+  -> empty                          { return FakeList<ArgExpression>::emptyList(); }
+  -> "(" lst:ExpressionList ")"     { return lst; }
+}
+
+nonterm(ASTTypeId*) NewTypeId {
+  -> spec:TypeSpecifier decl:NewDeclaratorOpt
+       { return new ASTTypeId(spec, new Declarator(decl, NULL)); }
+}
+
+// NewDeclaratorOpt is, as a regular expression:
+//   (PtrOperator)*  ("[" Expression "]"  ("[" ConstExpression "]")* )?
+// where PtrOperator is
+//   "*" CVQualifierSeqOpt, or
+//   "&"    
+// however, I cannot find any explanation in the spec of whether "&"
+// is in fact allowed (it doesn't make sense to me) so I do not allow
+// it (so I'll see the counterexample syntax if it exists)
+nonterm(IDeclarator*) NewDeclaratorOpt {
+  -> empty
+       { return new D_name(loc, NULL); }
+
+  // pointers
+  -> "*" cv:CVQualifierSeqOpt d:NewDeclaratorOpt
+       { return new D_pointer(loc, cv, d); }
+  -> n:PtrToMemberName "*" cv:CVQualifierSeqOpt d:NewDeclaratorOpt
+       { return new D_ptrToMember(loc, n, cv, d); }
+
+  // commit to at least one "[" ... "]"
+  -> d:DirectNewDeclarator               { return d; }
+}
+nonterm(IDeclarator*) DirectNewDeclarator {
+  fun keep(x) { return x!=NULL; }
+
+  -> /*abstract declarator*/ "[" sz:Expression "]"
+       { return new_D_array(loc, new D_name(loc, NULL), sz); }
+  -> d:DirectNewDeclarator "[" sz:ConstantExpression "]"
+       { return new_D_array(loc, d, sz); }
+}
+
+nonterm(ArgExpressionListOpt*) NewInitializerOpt {
+  -> empty                            { return NULL; }
+  -> "(" lst:ExpressionListOpt ")"    { return new ArgExpressionListOpt(lst); }
+}
+
+nonterm(Expression*) DeleteExpression {
+  -> c:ColonColonOpt "delete" e:CastExpression
+       { return new E_delete(c, false /*array*/, e); }
+  -> c:ColonColonOpt "delete" "[" "]" e:CastExpression
+       { return new E_delete(c, true /*array*/, e); }
+}
+// ------------ end of "new" and "delete" expressions -------------
+
+
+// -------------- BEGIN: syntax after "." or "->" -------------------
+// The standard calls this part
+//
+//   template_opt id-expression
+//
+// but there are some more restrictions I want to add, and I need to
+// build my AST in a certain way (bottom-up), so I redesigned this
+// part of the grammar.
+                     
+nonterm(PQName*) NameAfterDot {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> n:NAD1     
+       { return n; }
+
+  // cannot say ":: ~", nor ":: template"
+  -> "::" n:NAD2
+       { return new PQ_qualifier(loc, NULL /*qualifier*/, NULL /*targs*/, n); }
+}
+
+// can begin with "~" or "template" or Identifier or "operator"
+nonterm(PQName*) NAD1 {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> n:NAD2
+       { return n; }
+
+  // final names
+  -> "template" n:Identifier "<" list:TemplateArgumentListOpt ">"
+       { return new PQ_template(loc, n, templateUsed(list)); }
+  -> "~" n:Identifier
+       { return new PQ_name(loc, str(stringc << "~" << n)); }
+  -> "~" n:Identifier "<" list:TemplateArgumentListOpt ">"
+       { return new PQ_template(loc, str(stringc << "~" << n), list); }
+  -> on:ConversionFunctionId      
+       { return new PQ_operator(loc, on, str(on->getOperatorName())); }
+
+  // qualifier name
+  -> "template" n:Identifier "<" list:TemplateArgumentListOpt ">" "::" rest:NAD1
+       { return new PQ_qualifier(loc, n, templateUsed(list), rest); }
+}
+
+// can only begin with Identifier or "operator"; this is essentially
+// what follows "::" in cppstd's qualified-id
+nonterm(PQName*) NAD2 {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  // final names
+  -> n:Identifier "<" list:TemplateArgumentListOpt ">"
+       { return new PQ_template(loc, n, list); }
+  -> n:Identifier
+       { return new PQ_name(loc, n); }
+  -> on:OperatorFunctionId
+       { return new PQ_operator(loc, on, str(on->getOperatorName())); }
+
+  // qualifier names
+  -> n:Identifier "<" list:TemplateArgumentListOpt ">" "::" rest:NAD1
+       { return new PQ_qualifier(loc, n, list, rest); }
+  -> n:Identifier "::" rest:NAD1
+       { return new PQ_qualifier(loc, n, NULL /*targs*/, rest); }
+}
+// -------------- END: syntax after "." or "->" -------------------
+
+
+nonterm(Expression*) CastExpression {
+  // ambiguous:
+  //   (x)(y)
+  // could either be a call to function 'x' with argument 'y', or
+  // it could be a cast to type 'x' of the expression 'y'
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> e:UnaryExpression
+       { return e; }
+  -> "(" t:TypeId ")" e:CastExpression
+       { return new E_cast(t, e); }
+}
+
+// ---- binary operator expression ----
+// binary exprs with precedence higher than ">"
+nonterm(Expression*) BinExp_high {
+  // ambiguous:
+  //   (x) - (y)
+  // could either be the difference of expressions x and y, or
+  // it could be negation of expression y, cast to type x
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> e:CastExpression                          { return e; }
+
+  -> left:BinExp_high ".*"  right:BinExp_high  { return new E_binary(left, BIN_DOT_STAR, right); }
+  -> left:BinExp_high "->*" right:BinExp_high  { return new E_binary(left, BIN_ARROW_STAR, right); }
+
+  -> left:BinExp_high "*"  right:BinExp_high   { return new E_binary(left, BIN_MULT, right); }
+  -> left:BinExp_high "/"  right:BinExp_high   { return new E_binary(left, BIN_DIV, right); }
+  -> left:BinExp_high "%"  right:BinExp_high   { return new E_binary(left, BIN_MOD, right); }
+  -> left:BinExp_high "+"  right:BinExp_high   { return new E_binary(left, BIN_PLUS, right); }
+  -> left:BinExp_high "-"  right:BinExp_high   { return new E_binary(left, BIN_MINUS, right); }
+  -> left:BinExp_high "<<" right:BinExp_high   { return new E_binary(left, BIN_LSHIFT, right); }
+  -> left:BinExp_high ">>" right:BinExp_high   { return new E_binary(left, BIN_RSHIFT, right); }
+}
+
+// binary exprs with same precedence as ">"
+//
+// The binary expressions are split like this because I removed the
+// precedence from ">", etc.  But now (8/21/03) I'm not sure *why* I
+// had to remove them; couldn't I have just forced the other rules
+// that mention ">" to have no precedence (perhaps by adding syntax to
+// Elkhound to say that)?  Hmm... oh well.
+nonterm(Expression*) BinExp_mid {
+  // ambiguous:
+  //   x<y>(z)
+  // could either be two relationals (E_binary), with redundant parens
+  // around 'z', or else it could be the construction of a templatized
+  // object (E_constructor), depending on whether 'x' names a type
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> e:BinExp_high                             { return e; }
+
+  // must express associativity directly; since these are all
+  // left-associative, we require that there not be any reduced
+  // ">" operators in the right context
+  -> left:BinExp_mid "<"  right:BinExp_high    { return new E_binary(left, BIN_LESS, right); }
+  -> left:BinExp_mid ">"  right:BinExp_high    { return new E_binary(left, BIN_GREATER, right); }
+  -> left:BinExp_mid "<=" right:BinExp_high    { return new E_binary(left, BIN_LESSEQ, right); }
+  -> left:BinExp_mid ">=" right:BinExp_high    { return new E_binary(left, BIN_GREATEREQ, right); }
+}
+
+// binary exprs with lower precedence than ">"
+nonterm(Expression*) BinaryExpression {
+  // ambiguous:
+  //   (x) & (y)
+  // could either be the bitwise AND of expressions x and y, or
+  // it could be the address of expression y, cast to type x
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> e:BinExp_mid                                        { return e; }
+
+  -> left:BinaryExpression "==" right:BinaryExpression   { return new E_binary(left, BIN_EQUAL, right); }
+  -> left:BinaryExpression "!=" right:BinaryExpression   { return new E_binary(left, BIN_NOTEQUAL, right); }
+  -> left:BinaryExpression "&"  right:BinaryExpression   { return new E_binary(left, BIN_BITAND, right); }
+  -> left:BinaryExpression "^"  right:BinaryExpression   { return new E_binary(left, BIN_BITXOR, right); }
+  -> left:BinaryExpression "|"  right:BinaryExpression   { return new E_binary(left, BIN_BITOR, right); }
+
+  -> left:BinaryExpression "&&" right:BinaryExpression   { return new E_binary(left, BIN_AND, right); }
+  -> left:BinaryExpression "||" right:BinaryExpression   { return new E_binary(left, BIN_OR, right); }
+}
+
+
+nonterm(Expression*) ConditionalExpression {
+  // in/k0012.cc
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> e:BinaryExpression
+       { return e; }
+
+  -> cond:BinaryExpression "?" th:Expression ":" el:AssignmentExpression 
+       { return new E_cond(cond, th, el); }
+}
+
+// why is conditional not allowed on left side of = ?  can I confirm
+// that in another language spec?  clearly both alternatives would have
+// to be like-typed lvalues, but...
+nonterm(Expression*) AssignmentExpression {
+  -> e:ConditionalExpression 
+       { return e; }
+
+  -> e1:BinaryExpression op:AssignmentOperator e2:AssignmentExpression
+       { return new E_assign(e1, op, e2); }
+       
+  -> e:ThrowExpression
+       { return e; }
+}
+
+nonterm(enum BinaryOp) AssignmentOperator {
+  -> "*="  { return BIN_MULT; }
+  -> "/="  { return BIN_DIV; }
+  -> "%="  { return BIN_MOD; }
+  -> "+="  { return BIN_PLUS; }
+  -> "-="  { return BIN_MINUS; }
+  -> ">>=" { return BIN_RSHIFT; }
+  -> "<<=" { return BIN_LSHIFT; }
+  -> "&="  { return BIN_BITAND; }
+  -> "^="  { return BIN_BITXOR; }
+  -> "|="  { return BIN_BITOR; }
+  -> "="   { return BIN_ASSIGN; }
+}
+
+
+// this is the same definition as ExpressionList, and perhaps it
+// makes sense to collapse them?  the meaning of ',' is quite
+// different in the two cases.. does that matter?
+// update: now that I'm doing translation too, the difference
+// in the meanings is great enough that I think they should be
+// separate, as they are
+nonterm(Expression*) Expression {
+  // ambiguous:
+  //   a < b , c > (d)
+  // could either be a comma-exp with two relationals, or
+  // it could be creating an instance of template a with template
+  // arguments b,c and ctor argument d
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> ae:AssignmentExpression
+       { return ae; }
+
+  -> e:Expression "," ae:AssignmentExpression 
+       { return new E_binary(e, BIN_COMMA, ae); }
+}
+
+nonterm(Expression*) ExpressionOpt {
+  // empty expression is a true no-op
+  -> empty         { return new E_boolLit(true); }
+  -> e:Expression  { return e; }
+}
+
+// this is an expression with the additional requirement that
+// it be entirely evaluable to an int at compile time
+// (the name exists simply to help document that fact; the grammar
+// cannot enforce it)
+nonterm(Expression*) ConstantExpression {
+  // cppstd says 'ConditionalExpression', but gcc allows assignments
+  // here too, for its dynamically-sized arrays extension; if that
+  // extension is *not* enabled, we will still reject an assignment
+  // expression here, but because it is not const-eval'able, rather
+  // than due to grammar violation (in/k0042.cc)
+  -> e:AssignmentExpression { return e; }
+}
+
+nonterm(Expression*) ConstantExpressionOpt {
+  -> empty                   { return NULL; }
+  -> e:ConstantExpression    { return e; }
+}
+
+
+// sm: At one point we had a FullExpression nonterminal.  I decided to
+// switch to just inserting FullExpressions into the AST at the
+// appropriate points in the action code, since it's no less clear,
+// leads to less lines of grammar code, and will perform slightly
+// better that way.
+//
+// The same could be argued of ConstantExpression, but I do think it's
+// a little clearer to have a nonterminal instead of sprinkled
+// comments, and much less added code than FullExpression was.  It's a
+// matter of taste, I guess.
+
+
+// ------ A.5 Statements ------
+// pull the label and colon out to make things easier in gnu.gr
+nonterm(StringRef) LabelAndColon {
+  // 10/20/04: The precedence specification here fixes in/c/t0018.c by
+  // telling the parser to shift any __attribute__ that follows the ":".
+  -> n:Identifier ":"    precedence(TOK_PREFER_SHIFT)
+       { return n; }
+}
+
+// labeled-statement
+nonterm(Statement*) Statement {
+  // ambiguous:
+  //   x(y);
+  // can either be an Expression statement (constructor call)
+  // or a BlockDeclaration (declare variable y, of type x)
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> n:LabelAndColon s:Statement
+       { return new S_label(loc, loc, n, s); }
+
+  -> "case" e:ConstantExpression ":" s:Statement
+       { return new S_case(loc, loc, e, s); }
+
+  -> "default" ":" s:Statement
+       { return new S_default(loc, loc, s); }
+
+  // expression-statement
+  -> s:ExpressionStatement
+       { return s; }
+
+  // compound-statement
+  -> s:CompoundStatement
+       { return s; }
+
+  // selection-statement
+  // (prefer to shift "else" over reducing by this rule)
+  -> "if" "(" e:Condition ")" s:Statement     precedence(TOK_PREFER_SHIFT)
+       { return new S_if(loc, s->end_loc, e, s, new S_skip(loc, loc)); }
+
+  // if-then-else preferred over if-then when ambiguous
+  -> "if" "(" e:Condition ")" s1:Statement "else" s2:Statement
+       { return new S_if(loc, s2->end_loc, e, s1, s2); }
+
+  -> "switch" "(" e:Condition ")" s:Statement
+       { return new S_switch(loc, s->end_loc, e, s); }
+
+  -> "while" "(" e:Condition ")" s:Statement
+       { return new S_while(loc, s->end_loc, e, s); }
+
+  -> "do" s:Statement "while" "(" e:Expression ")" semi:semicolon_loc
+       { return new S_doWhile(loc, semi, s, new FullExpression(e)); }
+
+  // I might like to rework this so both semicolons appear here instead
+  // of buried in ForInitStatement; it's this way now because that is how
+  // the standard does it.  
+  -> "for" "(" s1:ForInitStatement c:ConditionOpt ";" e:ExpressionOpt ")" s2:Statement
+       { return new S_for(loc, s2->end_loc, s1, c, new FullExpression(e), s2); }
+
+  -> "break" ";"                        { return new S_break(loc, loc); }
+
+  -> "continue" ";"                     { return new S_continue(loc, loc); }
+
+  -> "return" e:Expression ";"          { return new S_return(loc, loc, new FullExpression(e)); }
+
+  -> "return" ";"                       { return new S_return(loc, loc, NULL); }
+
+  -> "goto" n:Identifier ";"            { return new S_goto(loc, loc, n); }
+
+  // declaration-statement
+  -> d:BlockDeclaration                 { return new S_decl(loc, loc, d); }
+
+  // try-block
+  -> s:TryBlock                         { return s; }
+  
+  // assembly statement
+  -> a:AsmDefinition                    { return new S_asm(loc, loc, a); }
+  
+  // namespace declaration
+  -> n:NamespaceDecl                    { return new S_namespaceDecl(loc, loc, n); }
+}
+
+nonterm(SourceLoc) semicolon_loc {
+  -> ";"  { return loc; }
+}
+
+nonterm(Statement*) ExpressionStatement {
+  -> ";"                  { return new S_skip(loc, loc); }
+  -> e:Expression ";"     { return new S_expr(loc, loc, new FullExpression(e)); }
+}
+
+nonterm(S_compound*) CompoundStatement {
+  -> seq:CompoundStmtHelper brace:closebrace_loc
+       { seq->end_loc = brace; return seq; }
+}
+
+nonterm(S_compound*) CompoundStmtHelper {
+  // I pushed "{" into this nonterminal so the 'loc' would reflect
+  // its location, instead of the location of the first statement inside
+  // (and in fact since 'empty' has no location, I wouldn't even have
+  // been able to get that..)
+  -> "{" empty
+       { return new S_compound(loc, loc, NULL); }
+  -> c:CompoundStmtHelper s:Statement
+       { c->stmts.append(s); return c; }
+}
+
+nonterm(SourceLoc) closebrace_loc {
+  -> "}"  { return loc; }
+}
+
+// the guard of e.g. an 'if' statement
+nonterm(Condition*) Condition {
+  // ambiguous:
+  //   if (A * a = 0) { /*...*/ }
+  // could either be a CN_expr (mult+assign) or CN_decl (of variable 'a')
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> e:Expression
+       { return new CN_expr(new FullExpression(e)); }
+
+  // variable declaration in the condition clause
+  -> spec:TypeSpecifier decl:Declarator "=" e:AssignmentExpression
+       { return new CN_decl(new ASTTypeId(spec, 
+                  new Declarator(decl, new IN_expr(loc, loc, e)))); }
+}
+
+nonterm(Condition*) ConditionOpt {
+  // an empty condition (e.g. in a for loop) is interpreted as true
+  -> empty             { return new CN_expr(new FullExpression(new E_boolLit(true))); }
+  -> c:Condition       { return c; }
+}
+
+nonterm(Statement*) ForInitStatement {
+  // ambiguous:
+  //   x * y = z
+  // could be an expression or a declaration
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> s:ExpressionStatement     { return s; }
+  -> s:SimpleDeclaration       { return new S_decl(loc, loc, s); }
+}
+
+
+// ----- A.6 Declarations ------
+//nonterm(ASTList<Declaration>*) DeclarationSeqOpt {
+//  -> empty
+//       { return new ASTList<Declaration>(); }
+//  -> seq:DeclarationSeqOpt d:Declaration
+//       { seq->append(d); return seq; }
+//} 
+
+nonterm(TopForm*) Declaration {
+  -> d:BlockDeclaration        { return new TF_decl(loc, d); }
+  -> f:FunctionDefinition      { return new TF_func(loc, f); }
+  -> t:TemplateDeclaration     { return new TF_template(loc, t); }
+  -> d:ExplicitInstantiation   { return d; }
+  //-> ExplicitSpecialization  // folded into TemplateDeclaration
+  -> s:LinkageSpecification    { return s; }
+
+  // substituted from BlockDeclaration
+  -> a:AsmDefinition           { return new TF_asm(loc, a); }
+  -> n:NamespaceDefinition     { return n; }
+  -> n:NamespaceDecl           { return new TF_namespaceDecl(loc, n); }
+
+  // error recovery productions
+  error -> ";" { return new TF_error(loc); }
+  error -> "}" { return new TF_error(loc); }
+}
+
+nonterm(Declaration*) BlockDeclaration {
+  -> d:SimpleDeclaration     { return d; }
+
+  // all of these have been substituted into the places BlockDeclaration occurs
+  // (namely Declaration and Statement)
+  //-> AsmDefinition;
+  //-> NamespaceAliasDefinition;
+  //-> UsingDeclaration;
+  //-> UsingDirective;
+}
+
+// is the DeclSpecifierSeq optional for implicit-int??
+//   no, it's for constructors, destructors, and conversion operators,
+//   all of which are C++ only, so the DeclSpecifierSeq is now mandatory
+//   (I've moved those guys into more specialized contexts)
+// ok, why is the InitDeclaratorList optional?
+//   for declaring classes and enums
+nonterm(Declaration*) SimpleDeclaration {
+  fun keep(d) {
+    return keepDeclaration(d);     // e.g. in/t0057.cc
+  }
+
+  // destructive action on 'spec'
+  //e.g.: int                x                  ;
+  -> spec:DeclSpecifier list:InitDeclaratorList ";"
+       { spec->decllist = list; return spec; }
+
+  // a bare specifier is a type definition or forward declaration
+  -> spec:DeclSpecifier ";"
+       { return spec; }
+
+}
+
+
+// type specifier, i.e. the "int" in "int x;"
+//
+// The legal language of type specifiers is much larger than most
+// people's usage of them; for example, "int signed" is legal, as is
+// "const unsigned volatile long static int".  Reading the standard, I
+// drew up a state diagram from which the following grammar was
+// produced, and will at some point scan my drawing.
+//
+// The basic idea is to have a bitmap (UberModifiers) of all the
+// relevant keywords, to allow collecting them in any order.  Then,
+// since a type specifier can only name one type, once I see something
+// which commits the syntax to one particular kind of type specifier
+// (e.g. TS_name, or TS_simple) then I drop down into collecting a
+// possibly different set of keywords.
+//
+// I explicitly substitute UberModifierSeqOpt into the left sides of
+// the productions below as a performance optimization to avoid
+// shift/reduce conflicts.  That is, I write
+//   ->                    PQTypeName UberModifierSeqOpt
+//   -> UberModifierSeq    PQTypeName UberModifierSeqOpt
+// instead of
+//   -> UberModifierSeqOpt PQTypeName UberModifierSeqOpt
+// because the latter would cause shift/reduce conflicts.
+nonterm(Declaration*) DeclSpecifier {
+  fun dup(d) { return NULL; }    // prevent multi-yield
+
+  // TS_name: triggered by PQTypeName
+  -> n:PQTypeName m2:UberModifierSeqOpt
+       { return new Declaration(uberDeclFlags(m2),
+           new_TS_name(loc, uberCVFlags(m2), n, false /*typename*/), NULL); }
+
+  -> m1:UberModifierSeq n:PQTypeName m2:UberModifierSeqOpt
+       { UberModifiers m = uberCombine(loc, m1, m2);
+         return new Declaration(uberDeclFlags(m),
+           new_TS_name(loc, uberCVFlags(m), n, false /*typename*/), NULL); }
+
+  // TS_simple: triggered by UberTypeKeyword
+  -> k1:UberTypeKeyword m2:UberTypeAndModifierSeqOpt
+       { UberModifiers k = uberCombine(loc, k1, m2);
+         return new Declaration(uberDeclFlags(m2),
+           new_TS_simple(loc, uberCVFlags(m2), uberSimpleType(loc, k)), NULL); }
+
+  -> m1:UberModifierSeq k1:UberTypeKeyword m2:UberTypeAndModifierSeqOpt
+       { UberModifiers m = uberCombine(loc, m1, m2);
+         UberModifiers k = uberCombine(loc, k1, m2);
+         return new Declaration(uberDeclFlags(m),
+           new_TS_simple(loc, uberCVFlags(m), uberSimpleType(loc, k)), NULL); }
+
+  // TS_elaborated, TS_classSpec, TS_enumSpec:
+  // triggered by one of "class", "struct", "union", "enum", "typename",
+  // with the particular instance sorted out by ElaboratedOrSpecifier
+  -> e:ElaboratedOrSpecifier m2:UberModifierSeqOpt
+       { e->cv |= uberCVFlags(m2);     // destructive action
+         return new Declaration(uberDeclFlags(m2), e, NULL); }
+
+  -> m1:UberModifierSeq e:ElaboratedOrSpecifier m2:UberModifierSeqOpt
+       { UberModifiers m = uberCombine(loc, m1, m2);
+         e->cv |= uberCVFlags(m);      // destructive action
+         return new Declaration(uberDeclFlags(m), e, NULL); }
+}
+
+// choose among TS_elaborated, TS_classSpec and TS_enumSpec
+nonterm(TypeSpecifier*) ElaboratedOrSpecifier {
+// bhackett: disabled
+//  fun dup(n) { return NULL; }              // prevent multi-yield
+
+  -> s:ElaboratedTypeSpecifier { return s; }
+  -> s:ClassSpecifier          { return s; }
+  -> s:EnumSpecifier           { return s; }
+}
+
+
+// nonempty sequence of UberModifiers; note that the act of combining
+// UberModifiers sets checks for and complains about duplication
+nonterm(UberModifiers) UberModifierSeq {
+  -> u:UberModifier                    { return u; }
+  -> s:UberModifierSeq u:UberModifier  { return uberCombine(loc, s,u); }
+}
+
+nonterm(UberModifiers) UberModifierSeqOpt {
+  -> empty                    { return UM_NONE; }
+  -> s:UberModifierSeq        { return s; }
+}
+
+
+// possibly empty sequence of modifiers (e.g. "static") or type
+// keywords (e.g. "int")
+nonterm(UberModifiers) UberTypeAndModifierSeqOpt {
+  -> empty                                          { return UM_NONE; }
+  -> s:UberTypeAndModifierSeqOpt u:UberModifier     { return uberCombine(loc, s,u); }
+  -> s:UberTypeAndModifierSeqOpt u:UberTypeKeyword  { return uberCombine(loc, s,u); }
+}
+
+
+// repetition of above rules when the only modifiers allowed
+// are "const" and "volatile"; this is for TypeSpecifier
+nonterm(UberModifiers) UberCVQualifierSeq {
+  -> u:UberCVQualifier                       { return u; }
+  -> s:UberCVQualifierSeq u:UberCVQualifier  { return uberCombine(loc, s,u); }
+}
+
+nonterm(UberModifiers) UberCVQualifierSeqOpt {
+  -> empty                       { return UM_NONE; }
+  -> s:UberCVQualifierSeq        { return s; }
+}
+
+nonterm(UberModifiers) UberTypeAndCVQualifierSeqOpt {
+  -> empty                                             { return UM_NONE; }
+  -> s:UberTypeAndCVQualifierSeqOpt u:UberCVQualifier  { return uberCombine(loc, s,u); }
+  -> s:UberTypeAndCVQualifierSeqOpt u:UberTypeKeyword  { return uberCombine(loc, s,u); }
+}
+
+
+// modifiers
+nonterm(UberModifiers) UberModifier {
+  // storage-class-specifier
+  -> "auto"      { return UM_AUTO; }
+  -> "register"  { return UM_REGISTER; }
+  -> "static"    { return UM_STATIC; }
+  -> "extern"    { return UM_EXTERN; }
+  -> "mutable"   { return UM_MUTABLE; }
+
+  // function-specifier
+  -> "inline"    { return UM_INLINE; }
+  -> "virtual"   { return UM_VIRTUAL; }
+  //-> "explicit"  { return UM_EXPLICIT; }    // can only appear in CDtorModifier
+
+  // decl-specifier terminals
+  -> "friend"    { return UM_FRIEND; }
+  -> "typedef"   { return UM_TYPEDEF; }
+
+  // cv-qualifier
+  -> "const"     { return UM_CONST; }
+  -> "volatile"  { return UM_VOLATILE; }
+}
+
+// just the cv-qualifiers
+nonterm(UberModifiers) UberCVQualifier {
+  -> "const"     { return UM_CONST; }
+  -> "volatile"  { return UM_VOLATILE; }
+}
+
+// keywords that name a type, or part of one
+nonterm(UberModifiers) UberTypeKeyword {
+  -> "char"      { return UM_CHAR; }
+  -> "wchar_t"   { return UM_WCHAR_T; }
+  -> "bool"      { return UM_BOOL; }
+  -> "short"     { return UM_SHORT; }
+  -> "int"       { return UM_INT; }
+  -> "long"      { return UM_LONG; }
+  -> "signed"    { return UM_SIGNED; }
+  -> "unsigned"  { return UM_UNSIGNED; }
+  -> "float"     { return UM_FLOAT; }
+  -> "double"    { return UM_DOUBLE; }
+  -> "void"      { return UM_VOID; }
+}
+
+
+nonterm(TypeSpecifier*) ElaboratedTypeSpecifier {
+  -> k:ClassKey n:PQTypeName    { return new TS_elaborated(loc, loc, k, n); }
+  -> "enum" n:PQTypeName        { return new TS_elaborated(loc, loc, TI_ENUM, n); }
+
+  // cppstd grammar ensures "typename" is only applied to qualified
+  // names, but I find that more natural to enforce during typechecking
+  -> "typename" n:PQTypeName    { return new TS_name(loc, loc, n, true /*typename*/); }
+
+  // bhackett: sometimes the varargs template ellipsis goes here too.
+  // maybe it's too general putting this here. who knows!?
+  -> "typename" n:PQTypeName "..."   { return new TS_name(loc, loc, n, true /*typename*/); }
+}
+
+
+// plays role of "TypeSpecifierSeq" in cppstd; this is a
+// version of DeclSpecifier restricted to only allow "const" and
+// "volatile" UberModifiers
+nonterm(TypeSpecifier*) TypeSpecifier {
+  // TS_name
+  -> n:PQTypeName cv2:UberCVQualifierSeqOpt
+       { return new_TS_name(loc, uberCVFlags(cv2), n, false /*typename*/); }
+
+  -> cv1:UberCVQualifierSeq n:PQTypeName cv2:UberCVQualifierSeqOpt
+       { UberModifiers cv = uberCombine(loc, cv1, cv2);
+         return new_TS_name(loc, uberCVFlags(cv), n, false /*typename*/); }
+
+  // TS_simple
+  -> k1:UberTypeKeyword m2:UberTypeAndCVQualifierSeqOpt
+       { UberModifiers k = uberCombine(loc, k1, m2);
+         return new_TS_simple(loc, uberCVFlags(m2), uberSimpleType(loc, k)); }
+
+  -> m1:UberCVQualifierSeq k1:UberTypeKeyword m2:UberTypeAndCVQualifierSeqOpt
+       { UberModifiers m = uberCombine(loc, m1, m2);
+         UberModifiers k = uberCombine(loc, k1, m2);
+         return new_TS_simple(loc, uberCVFlags(m), uberSimpleType(loc, k)); }
+
+  // TS_elaborated, TS_classSpec, TS_enumSpec
+  -> e:ElaboratedOrSpecifier m2:UberCVQualifierSeqOpt
+       { e->cv |= uberCVFlags(m2);     // destructive action
+         return e; }
+
+  -> m1:UberCVQualifierSeq e:ElaboratedOrSpecifier m2:UberCVQualifierSeqOpt
+       { UberModifiers m = uberCombine(loc, m1, m2);
+         e->cv |= uberCVFlags(m);      // destructive action
+         return e; }
+}
+
+
+// I had been separating these into typedef/enum/class names, but
+// the parser can never distinguish, so the grammar shouldn't suggest
+// that it can
+nonterm(PQName*) PQTypeName {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> n:PQTypeName_ncc
+       { return n; }
+  -> "::" n:PQTypeName_ncc
+       { return new PQ_qualifier(loc, NULL /*qualifier*/, NULL /*targs*/, n); }
+}
+
+// no-colon-colon
+nonterm(PQName*) PQTypeName_ncc {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> n:Identifier                  precedence("::")
+       { return new PQ_name(loc, n); }
+  -> id:TemplateId                 precedence("::")
+       { return id; }
+
+  -> q:Identifier "::" n:PQTypeName_notfirst
+       { return new PQ_qualifier(loc, q, NULL /*targs*/, n); }
+  -> q:Identifier "<" targs:TemplateArgumentList ">" "::" n:PQTypeName_notfirst
+       { return new PQ_qualifier(loc, q, targs, n); }
+}
+
+// after at least one qualifier other than "::"; 'template' has to be
+// squirreled away down here because otherwise it becomes ambiguous
+// with the 'template' at the start of an ElaboratedTypeSpecifier
+nonterm(PQName*) PQTypeName_notfirst {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> id:PQTypeName_ncc             precedence("::")
+       { return id; }
+
+  // template declaration (in/t0254.cc)
+  -> "template" id:TemplateId      precedence("::")
+       { id->templArgs = templateUsed(id->templArgs);    // destructive action
+         return id; }
+
+  // TEMPLATE_QUALIFIER_HACK
+  //-> "template" q:Identifier "::" n:PQTypeName_notfirst
+  //     { return new PQ_qualifier(loc, q, NULL /*targs*/, n); }
+  -> "template" q:Identifier "<" targs:TemplateArgumentList ">" "::" n:PQTypeName_notfirst
+       { return new PQ_qualifier(loc, q, templateUsed(targs), n); }
+}
+
+
+nonterm(TS_enumSpec*) EnumSpecifier {
+  -> "enum" "{" list:EnumeratorListOpt brace:closebrace_loc
+       { return new TS_enumSpec(loc, brace, NULL /*name*/, list); }
+  -> "enum" n:Identifier "{" list:EnumeratorListOpt brace:closebrace_loc
+       { return new TS_enumSpec(loc, brace, n, list); }
+}
+
+
+// rewrote this definition so I can always tell with one token of
+// lookahead whether this is the last enumerator definition; this
+// allows an optional comma at the end, on purpose
+nonterm(FakeList<Enumerator>*) EnumeratorListOpt {
+  -> empty
+       { return FakeList<Enumerator>::emptyList(); }
+  -> def:EnumeratorDefinition
+       { return FakeList<Enumerator>::makeList(def); }
+  -> def:EnumeratorDefinition "," list:EnumeratorListOpt
+       { return list->prepend(def); }
+}
+
+
+nonterm(Enumerator*) EnumeratorDefinition {
+  -> name:Identifier
+       { return new Enumerator(loc, name, NULL /*expr*/); }
+  -> name:Identifier "=" expr:ConstantExpression
+       { return new Enumerator(loc, name, expr); }
+}
+
+
+// dsw: this is ambiguous and redundant with a similar thing in
+// gnu.gr; should it be here at all?
+//
+// sm: Yes it should be here.  First, we don't always use the gnu.gr
+// extension module.  Second, gnu.gr's AsmDefinition *extends* this
+// one, which is how it should be.  This is the AsmDefinition for
+// C++.
+nonterm(E_stringLit*) AsmDefinition {
+  -> "asm" "(" s:StringLiteral ")" ";"    { return s; }
+}
+
+
+nonterm(TopForm*) LinkageSpecification {
+  -> "extern" n:TOK_STRING_LITERAL "{" tu:TranslationUnit "}"
+       { return new TF_linkage(loc, n, tu); }
+
+  -> "extern" n:TOK_STRING_LITERAL tf:Declaration
+       { return new TF_one_linkage(loc, n, tf); }
+}
+
+
+// ------ A.7 Declarators ------
+// -- declarator --
+// a declarator is the "x" in a declaration like "int x"
+
+nonterm(FakeList<Declarator>*) InitDeclaratorList {
+  -> d:InitDeclarator
+       { return FakeList<Declarator>::makeList(d); }
+  -> d:InitDeclarator "," list:InitDeclaratorList
+       { d->setNext(list->first());
+         return FakeList<Declarator>::makeList(d); }
+}
+
+// obsolete now that I've substituted it into SimpleDeclaration
+//  nonterm(FakeList<Declarator>*) InitDeclaratorListOpt {
+//    -> empty
+//         { return FakeList<Declarator>::emptyList(); }
+//    -> list:InitDeclaratorList
+//         { return list; }
+//  }
+
+
+nonterm(Declarator*) InitDeclarator {
+  // ambiguous:
+  //   int f(x *y);
+  // could be declaring a variable called "f" with ctor-initializer "(x*y)",
+  // or it could be declaring a function called "f" which accepts a pointer
+  // to an 'x' as a parameter
+  //
+  // another example:
+  //   int m(int (n));
+  // could be declaring a variable called "m" with ctor-initializer "int (n)"
+  // which itself is a call to the constructor for "int", or it could be
+  // declaring a function called "m" with an integer parameter called "n",
+  // the latter surrounded by a redundant set of parens
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> d:Declarator                       // (int)  x
+       { return new Declarator(d, NULL); }
+
+  -> d:Declarator i:Initializer         // (int)  x = 5
+       { return new Declarator(d, i); }
+}
+
+nonterm(Initializer*) Initializer {
+  -> "=" i:SimpleInitializerClause
+       { return i; }
+
+  -> "(" args:ExpressionList ")"
+       { return new IN_ctor(loc, loc, args); }
+       
+  // NOTE: there is no alternative for "(" ")"!  
+  // see [cppstd. sec. 8.5 para 8]
+}
+
+nonterm(Initializer*) SimpleInitializerClause {
+  -> e:AssignmentExpression              // scalar
+       { return new IN_expr(loc, loc, e); }
+  -> c:CompoundInitializer               // array/structure initializer
+       { return c; }
+}
+
+// this nonterminal exists so that extensions can augment it with
+// possibilities for designated initializers
+nonterm(Initializer*) InitializerClause {
+  -> init:SimpleInitializerClause
+    { return init; }
+}
+
+nonterm(IN_compound*) CompoundInitializer {
+  // array/structure initializer
+  -> "{" list:InitializerList CommaOpt brace:closebrace_loc
+        { list->end_loc = brace;
+          return list; }
+
+  // zero whatever it is
+  -> "{" brace:closebrace_loc  { return new IN_compound(loc, brace, NULL); }
+}
+
+// useful syntactic quirk
+nonterm CommaOpt {
+  -> empty ;
+  -> "," ;
+}
+
+nonterm(IN_compound*) InitializerList {
+  fun dup(i) { return NULL; }     // prevent multi-yield
+
+  -> init:InitializerClause
+       { IN_compound *list = new IN_compound(loc, loc, NULL);
+         list->inits.append(init);
+         return list; }
+
+  // destructive action on 'list'
+  -> list:InitializerList "," init:InitializerClause
+       { list->inits.append(init); return list; }
+}
+
+
+// perhaps confusing name correspondence:
+//   The AST name "Declarator" corresponds to the grammar name
+//   "InitDeclarator"; the AST name "IDeclarator" (inner declarator)
+//   corresponds to the grammar name "Declarator"
+// this name shift simply reflects the different interests of the
+// parser vs. subsequent phases of analysis
+//
+// regex for this nonterm: (PtrOperator)* DirectDeclarator
+nonterm(IDeclarator*) Declarator {
+  -> "*" cv:CVQualifierSeqOpt d:Declarator
+       { return new D_pointer(loc, cv, d); }
+  -> "&" d:Declarator
+       { return new D_reference(loc, d); }
+  -> n:PtrToMemberName "*" cv:CVQualifierSeqOpt d:Declarator
+       { return new D_ptrToMember(loc, n, cv, d); }
+  -> d:DirectDeclarator
+       { return d; }
+
+  // bhackett: used for template varargs
+  -> "..." d:DirectDeclarator
+       { return d; }
+}
+
+nonterm(IDeclarator*) DirectDeclarator {
+  fun keep(x) { return x!=NULL; }
+
+  // it doesn't matter how this was classified before, because a
+  // declarator binds a new name, so it shadows any prior definitions;
+  // note: this rule handles constructor names!
+  // note: this also handles operator names!
+  -> n:IdExpression//_no_colon_colon
+       { return new D_name(loc, n); }
+
+  // dtor
+  -> n:PQDtorName
+       { return new D_name(loc, n); }
+
+  // function declarator; the return type comes from the type
+  // specifier that precedes this
+  -> d:DirectDeclarator                        // name of function
+     "(" params:ParameterDeclarationClause ")" // parameters
+     cv:CVQualifierSeqOpt                      // optional "const"
+     e:ExceptionSpecificationOpt               // optional "throw" clause
+       { return new_D_func(loc, d, params, cv, e); }
+
+  // array with optional size
+  -> d:DirectDeclarator "[" sz:ConstantExpressionOpt "]"
+       { return new_D_array(loc, d, sz); }
+
+  // precedence grouping; must be recorded in the AST for disambiguation
+  -> "(" d:Declarator ")"
+       { return new D_grouping(loc, d); }
+}
+
+// I choose to encode ctor and dtor names as ordinary PQNames, because
+// the parser can't tell them apart from other PQNames; but the dtor
+// must be handled specially because if I just allowed "~" before any
+// name, then I couldn't tell if the expression "~a" is unary "~" or
+// the name of a destructor.  Destructor names are encoded by prepending
+// a "~" to them, so later phases of analysis will have to look for that.
+// (I notice the standard calls this PseudoDestructorName; I'll stick with
+// my terminology.)
+nonterm(PQName*) PQDtorName {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> "~" n:Identifier              
+       { return new PQ_name(loc, str(stringc << "~" << n)); }
+  -> "~" n:Identifier "<" list:TemplateArgumentList ">"
+       { return new PQ_template(loc, str(stringc << "~" << n), list); }
+
+  // as above for PQName_no_colon_colon, I'm temporarily removing an
+  // ambiguity that relates to namespaces (e.g. "::F::~F()")
+  //-> q:Qualifier rhs:PQDtorName  { return new PQ_qualifier(q, rhs); }
+  -> q:Identifier "::" rhs:PQDtorName
+       { return new PQ_qualifier(loc, q, NULL /*targs*/, rhs); }
+
+  -> q:Identifier "<" targs:TemplateArgumentList ">" "::" rhs:PQDtorName
+       { return new PQ_qualifier(loc, q, targs, rhs); }
+
+  // TEMPLATE_QUALIFIER_HACK
+  //-> "template" q:Identifier "::" rhs:PQDtorName
+  //     { return new PQ_qualifier(loc, q, NULL /*targs*/, rhs); }
+  -> "template" q:Identifier "<" targs:TemplateArgumentList ">" "::" rhs:PQDtorName
+       { return new PQ_qualifier(loc, q, templateUsed(targs), rhs); }
+
+  // this rule from cppstd is partially subsumed by the "template" hack
+  //-> ColonColonOpt NestedNameSpecifier "template" TemplateId "::" "~" TypeName;
+}
+
+
+// syntax that precedes "*" in the pointer-to-member declarator syntax
+nonterm(PQName*) PtrToMemberName {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> n:IdExpression "::"    { return n; }
+}
+
+
+// I'll leave this here because it's harmless and the cppstd has it;
+// also, it reminds me that every place I've substituted PtrOperator
+// into the syntaxes elsewhere has an implicit TODO for the
+// pointer-to-member syntax
+//  nonterm PtrOperator {
+//    -> "*" q:CVQualifierSeqOpt ;
+//    -> "&"                     ;
+
+//    // TODO: pointer to member
+//    //-> ColonColonOpt NestedNameSpecifier "*" CvQualifierSeqOpt;
+//  }
+
+
+nonterm(enum CVFlags) CVQualifierSeqOpt {
+  -> empty                       { return CV_NONE; }
+  -> s:CVQualifierSeq            { return s; }
+}
+
+nonterm(enum CVFlags) CVQualifierSeq {
+  -> q:CVQualifier                       { return q; }
+  -> q:CVQualifier s:CVQualifierSeq      { return (CVFlags)(q | s); }
+}
+
+nonterm(enum CVFlags) CVQualifier {
+  -> "const"                 { return CV_CONST; }
+  -> "volatile"              { return CV_VOLATILE; }
+}
+
+
+// -- type-id --
+// a type-id is like a declaration of one thing, but without the variable name;
+// it is, for example, what appears inside the parens of a typecast
+nonterm(ASTTypeId*) TypeId {
+  -> spec:TypeSpecifier decl:AbstractDeclaratorOpt
+       { return new ASTTypeId(spec, new Declarator(decl, NULL)); }
+}
+
+nonterm(IDeclarator*) AbstractDeclaratorOpt {
+  -> empty                 { return new D_name(loc, NULL); }
+  -> d:AbstractDeclarator  { return d; }
+}
+
+// an abstract declarator (not opt) must have *some* ground syntax in it
+nonterm(IDeclarator*) AbstractDeclarator {
+  -> "*" cv:CVQualifierSeqOpt d:AbstractDeclaratorOpt
+       { return new D_pointer(loc, cv, d); }
+  -> "&" d:AbstractDeclaratorOpt
+       { return new D_reference(loc, d); }
+  -> n:PtrToMemberName "*" cv:CVQualifierSeqOpt d:AbstractDeclaratorOpt
+       { return new D_ptrToMember(loc, n, cv, d); }
+  -> d:DirectAbstractDeclarator
+       { return d; }
+}
+
+nonterm(IDeclarator*) DirectAbstractDeclaratorOpt {
+  -> empty                       { return new D_name(loc, NULL /*name*/); }
+  -> d:DirectAbstractDeclarator  { return d; }
+}
+
+// this also must have some ground syntax
+nonterm(IDeclarator*) DirectAbstractDeclarator {
+  fun keep(x) { return x!=NULL; }
+
+  // note: the "opt" in the DirectAbstractDeclarator part of the
+  // function type constructor creates an ambiguity:
+  //   typedef int x;
+  //   int foo(int (x));
+  // Is the parameter an int, or a function accepting an 'x'?
+  //
+  // This is addressed by cppstd 8.2 para 7; see D_name_tcheck.
+  //
+  // This ambiguity doesn't show up until ParameterDeclaration, below.
+
+  // function
+  -> d:DirectAbstractDeclaratorOpt
+     "(" args:ParameterDeclarationClause ")"
+     cv:CVQualifierSeqOpt
+     e:ExceptionSpecificationOpt
+       { return new_D_func(loc, d, args, cv, e); }
+
+  // array with optional size
+  -> d:DirectAbstractDeclaratorOpt "[" sz:ConstantExpressionOpt "]"
+       { return new_D_array(loc, d, sz); }
+
+  // precedence grouping; shouldn't need to record this in AST, but
+  // I will for consistency with Declarator
+  -> "(" d:AbstractDeclarator ")"
+       { return new D_grouping(loc, d); }
+}
+
+
+nonterm(FakeList<ASTTypeId>*) ParameterDeclarationClause {
+  -> p:ParameterDeclarationList              // some args
+       { return p; }
+  -> empty                                   // no args
+       { return FakeList<ASTTypeId>::emptyList(); }
+}
+
+// little bending over backwards here to accomodate FakeList
+nonterm(FakeList<ASTTypeId>*) ParameterDeclarationList {
+  // last (and perhaps only) arg is "..."
+  -> "..."
+       { return FakeList<ASTTypeId>::makeList(ellipsisTypeId(loc)); }
+
+  // last arg is "...", and 2nd-to-last is not separated by
+  // a comma from the "..."
+  -> d:ParameterDeclaration "..."
+       { FakeList<ASTTypeId> *list =
+           FakeList<ASTTypeId>::makeList(ellipsisTypeId(loc));
+         d->setNext(list->first());
+         return FakeList<ASTTypeId>::makeList(d); }
+
+  // bhackett: for template varargs
+  -> d:ParameterDeclaration "..." "..."
+       { return FakeList<ASTTypeId>::makeList(d); }
+
+  // last arg is not "..."
+  -> d:ParameterDeclaration
+       { return FakeList<ASTTypeId>::makeList(d); }
+
+  // argument then "," then arg or "..." or list
+  -> d:ParameterDeclaration "," list:ParameterDeclarationList
+       { d->setNext(list->first());
+         return FakeList<ASTTypeId>::makeList(d); }
+}
+
+nonterm(ASTTypeId*) ParameterDeclaration {
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  // NOTE: The 'register' keyword is simply ignored.
+
+  -> s:TypeSpecifier pd:ParameterDeclarator
+       { return new ASTTypeId(s, pd); }
+  -> "register" s:TypeSpecifier pd:ParameterDeclarator
+       { return new ASTTypeId(s, pd); }
+  -> s:TypeSpecifier "register" pd:ParameterDeclarator
+       { return new ASTTypeId(s, pd); }
+}
+
+nonterm(Declarator*) ParameterDeclarator {
+  // ambiguity:
+  //   int (x)
+  // is either type "int" with Declarator "(x)", or
+  // it could be type "int f(x q)" such that "(x)" is an
+  // AbstractDeclarator
+  //
+  // see D_name_tcheck in tcheck.cc for resolution
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> d:UnqualifiedDeclarator
+       { return new Declarator(d, NULL /*init*/); }
+  -> d:UnqualifiedDeclarator "=" e:AssignmentExpression
+       { return new Declarator(d, new IN_expr(loc, loc, e)); }
+
+  -> d:AbstractDeclaratorOpt
+       { return new Declarator(d, NULL /*init*/); }
+  -> d:AbstractDeclaratorOpt "=" e:AssignmentExpression
+       { return new Declarator(d, new IN_expr(loc, loc, e)); }
+}
+
+
+// -- function definition --
+nonterm(Function*) FunctionDefinition {
+  // whereas the std merges c/dtors and ordinary functions by making
+  // the DeclSpecifier optional, I split cases; this way in the common
+  // case where I can clearly see a return type, ctor is ruled out;
+  // in fact I wonder if there will ever be an ambiguity, since ordinary
+  // functions always have at least two words before "(" while ctors
+  // always have just one..
+
+  // ambiguous:
+  //   F::G() {}
+  // can either be a definition of F's constructor (then G equals F), or
+  // it can be a definition of a function G in the global scope, with
+  // return type F
+  //
+  // cppstd isn't clear about this, but both gcc and icc eagerly consume
+  // "::" after an identifier, so I cancel a function definition if the
+  // retspec is a typedef and the name begins with "::"
+
+  // in/c/t0015.c contains some code that is not legal C++, though it
+  // is legal K&R C, but which nonetheless triggers a FunctionDefinition
+  // merge in C++ mode:
+  //   x(y) {}
+  // could either have 'x' as return type and 'y' as "function" name,
+  // but missing the D_func, or 'x' as constructor name and 'y' as a
+  // parameter type.  So I will cancel any FunctionDefinition whose
+  // declarator doesn't have a D_func at the bottom.
+  fun keep(f)
+  {
+    if (!f->nameAndParams->decl->bottomIsDfunc()) {
+      xfailure("should not happen anymore due to use of FDDeclarator");
+      TRACE("cancel", "rejecting FunctionDefinition w/o D_func at bottom");
+      return false;
+    }
+    else if (endsWithIdentifier(f->retspec) &&
+             isGlobalScopeQualified(f->nameAndParams->decl->getDeclaratorIdC())) {
+      TRACE("cancel", "rejecting TYPENAME ::NAME");     // e.g. in/t0015.cc
+      return false;
+    }
+    else {
+      return true;
+    }
+  }
+
+  // destructive action on 'r'
+
+  // ordinary function:
+  // return type      name/params   body
+  -> r:DeclSpecifier  d:FDDeclarator  b:FunctionBody
+       {
+         Function *ret = new Function(
+           r->dflags,                // decl flags (static, extern, etc.)
+           r->spec,                  // type specifier for return value
+           new Declarator(d, NULL),  // declarator with fn name, params
+           NULL,                     // ctor member inits
+           b,                        // function body statement
+           NULL                      // exception handlers
+         );
+         r->spec = NULL;    // stole it above (ownership transfer)
+         delete r;          // was just a carrier of dflags/spec
+         return ret;
+       }
+
+  // 2005-03-09: I didn't even realize this was possible for non-ctors
+  // return type      name/params            body            handlers
+  -> r:DeclSpecifier  d:FDDeclarator  "try"  b:FunctionBody  h:HandlerSeq
+       {
+         Function *ret = new Function(
+           r->dflags,                // decl flags (static, extern, etc.)
+           r->spec,                  // type specifier for return value
+           new Declarator(d, NULL),  // declarator with fn name, params
+           NULL,                     // ctor member inits
+           b,                        // function body statement
+           h                         // exception handlers
+         );
+         r->spec = NULL;    // stole it above (ownership transfer)
+         delete r;          // was just a carrier of dflags/spec
+         return ret;
+       }
+
+  // I've now substituted the RHSs of CDtorModifierOpt, to eliminiate
+  // a few s/r conflicts at the toplevel of parsing (where they are
+  // the most harmful to performance)
+
+  // constructor, destructor or conversion operator
+  // "explicit"?         name/params     member inits          body
+  -> m:CDtorModifierSeq  d:FDDeclarator  c:CtorInitializerOpt  b:FunctionBody
+       {
+         return new Function(
+           m,                             // decl flags: explicit, virtual, or none
+           new TS_simple(loc, loc, ST_CDTOR),  // type specifier: ctor or dtor
+           new Declarator(d, NULL),       // declarator with fn name, params
+           c,                             // ctor member inits
+           b,                             // function body statement
+           NULL                           // exception handlers
+         );
+       }
+  -> /*no modifier*/     d:FDDeclarator  c:CtorInitializerOpt  b:FunctionBody
+       {
+         return new Function(
+           DF_NONE,
+           new TS_simple(loc, loc, ST_CDTOR),
+           new Declarator(d, NULL),
+           c,
+           b,
+           NULL
+         );
+       }
+
+  // ctor with a try block
+  // "explicit"?         name/params          member inits         body           handlers
+  -> e:CDtorModifierSeq  d:FDDeclarator "try" c:CtorInitializerOpt b:FunctionBody h:HandlerSeq
+       {
+         return new Function(
+           e,                        // decl flags: explicit is only possibility
+           new TS_simple(loc, loc, ST_CDTOR),
+           new Declarator(d, NULL),
+           c,
+           b,
+           h                         // exception handlers
+         );
+       }
+  -> /*no modifier*/     d:FDDeclarator "try" c:CtorInitializerOpt b:FunctionBody h:HandlerSeq
+       {
+         return new Function(
+           DF_NONE,
+           new TS_simple(loc, loc, ST_CDTOR),
+           new Declarator(d, NULL),
+           c,
+           b,
+           h
+         );
+       }
+}
+
+// function definition declarator; must have D_func at the
+// bottom; moved this down from FunctionDefinition itself
+// to get earlier parse filtering for in/k0041.cc
+nonterm(IDeclarator*) FDDeclarator {
+  fun keep(d)
+  {
+    if (!d->bottomIsDfunc()) {
+      TRACE("cancel", "rejecting FDDeclarator w/o D_func at bottom");
+      return false;
+    }
+    else {
+      return true;
+    }
+  }
+
+  -> d:Declarator    { return d; }
+}
+
+nonterm(S_compound*) FunctionBody -> s:CompoundStatement
+  { return s; }
+
+nonterm(FakeList<MemberInit>*) CtorInitializerOpt {
+  -> empty                        { return FakeList<MemberInit>::emptyList(); }
+  -> ":" list:MemInitializerList  { return list; }
+}
+
+
+// ------ A.8 Classes ------
+nonterm(TS_classSpec*) ClassSpecifier {
+  -> k:ClassKey n:ClassHeadNameOpt b:BaseClauseOpt "{" memb:MemberDeclarationSeqOpt brace:closebrace_loc
+       { popClassName(); return new TS_classSpec(loc, brace, k, n, b, memb); }
+}
+
+// this is the name portion of what the standard calls "ClassHead"
+nonterm(PQName*) ClassHeadNameOpt {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> empty               { pushClassName(NULL); return NULL; }
+  -> n:ClassHeadName     { pushClassName(n->getName()); return n; }
+}
+
+// a possibly-qualified Identifier or TemplateId
+nonterm(PQName*) ClassHeadName {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> n:Identifier             precedence("::")
+       { return new PQ_name(loc, n); }
+  -> t:TemplateId             precedence("::")
+       { return t; }
+
+  -> n:Identifier "::" rest:ClassHeadName
+       { return new PQ_qualifier(loc, n, NULL /*targs*/, rest); }
+  -> n:Identifier "<" targs:TemplateArgumentList ">" "::" rest:ClassHeadName
+       { return new PQ_qualifier(loc, n, targs, rest); }
+
+  // TEMPLATE_QUALIFIER_HACK
+  //-> "template" n:Identifier "::" rest:ClassHeadName
+  //     { return new PQ_qualifier(loc, n, NULL /*targs*/, rest); }
+  -> "template" n:Identifier "<" targs:TemplateArgumentList ">" "::" rest:ClassHeadName
+       { return new PQ_qualifier(loc, n, templateUsed(targs), rest); }
+}
+
+nonterm(enum TypeIntr) ClassKey {
+  -> "class"       { return TI_CLASS; }
+  -> "struct"      { return TI_STRUCT; }
+  -> "union"       { return TI_UNION; }
+}
+
+
+// I'm using an encapsulated ASTList to avoid right recursion,
+// since there are often many members of classes
+nonterm(MemberList*) MemberDeclarationSeqOpt {
+  fun dup(m) { return NULL; }       // prevent multi-yield
+
+  -> empty
+       { return new MemberList(NULL); }
+
+  // gcc allows multiple semicolons in a row in a member declaration
+  // list; it would be nontrivial to confine this flexibility to an
+  // extension, and it's not that big a deal, so we just tolerate it
+  // always
+  -> list:MemberDeclarationSeqOpt ";"
+       { return list; }
+
+  // destructive actions on 'list'
+  -> list:MemberDeclarationSeqOpt decl:MemberDeclaration
+       { list->list.append(decl); return list; }
+
+  // explicitly include access specifiers in the AST, instead of
+  // propagating them in the parser, to avoid the complexities of
+  // maintaining the state in the parser context
+  -> list:MemberDeclarationSeqOpt k:AccessSpecifier ":"
+       { list->list.append(new MR_access(loc, k)); return list; }
+}
+
+nonterm(AccessKeyword) AccessSpecifier {
+  -> "public"     { return AK_PUBLIC; }
+  -> "private"    { return AK_PRIVATE; }
+  -> "protected"  { return AK_PROTECTED; }
+}
+
+nonterm(Member*) MemberDeclaration {
+  fun keep(m) { return m!=NULL; }
+
+  // destructive action on 'spec'
+  // member fn decl, or data member
+  -> spec:DeclSpecifier list:MemberDeclaratorList ";"
+       { if (lang.isCplusplus &&        // 10/20/04: e.g. in/c/t0017.c
+             list->firstC()->decl->skipGroups()->isD_name() &&
+             !(spec->dflags & (DF_TYPEDEF | DF_STATIC)) &&
+             spec->spec->isTS_name()) {
+           PQName const *n = spec->spec->asTS_nameC()->name;
+           if (n->isPQ_name() &&
+               n->asPQ_nameC()->name == curClassName()) {
+             // you can't declare an embedded instance of your own class
+             // name, and this might be ambiguous with a constructor
+             // declaration, so cancel it
+             TRACE("cancel", loc << ": declaration of embedded self class instance");
+             return NULL;
+           }
+         }
+         spec->decllist = list;
+         if (!keepDeclaration(spec)) {
+           return NULL;
+         }
+         return new MR_decl(loc, spec);
+       }
+
+  // inner class or enum with no instance defined
+  -> spec:DeclSpecifier ";"
+       { // if the type specifier doesn't start with 'class'
+         // or 'enum' then this is useless, and might be
+         // ambiguous with superclass member publication, so
+         // cancel it [cppstd 9.2 para 7]
+         if (spec->spec->isTS_elaborated() ||
+             spec->spec->isTS_classSpec() ||
+             spec->spec->isTS_enumSpec()) {
+           // ok
+           return new MR_decl(loc, spec);
+         }
+         else {
+           TRACE("cancel", loc << ": bare DeclSpecifier not starting with type keyword");
+           return NULL;
+         }
+       }
+
+  // publishing a superclass member; ambiguous with inner class
+  // declaration (above) and ctor declaration (below), hence the
+  // need for cancellation in both of those two
+  //
+  // equivalent to "using n ;" so parse it as such
+  -> n:PQualifiedId ";"
+       { return new MR_usingDecl(loc, new ND_usingDecl(n)); }
+
+  // the general form
+  -> "using" /*typename?*/ n:IdExpression ";"
+       { return new MR_usingDecl(loc, new ND_usingDecl(n)); }
+
+  // inline function definition; includes c/dtor definitions
+  -> f:FunctionDefinition
+       { return new MR_func(loc, f); }
+
+  // declaration (with no definition) of a c/dtor or conversion
+  // operator function
+  -> d:CDtorProtoDecl
+       {
+         if (lang.allowImplicitInt) {
+           // in/c/k0004.c: ambiguity between constructor and implicit-int
+           TRACE("cancel", loc << ": constructor decl in implicit-int language");
+           return NULL;
+         }
+         return new MR_decl(loc, d);
+       }
+
+  // note above that "explicit" and "virtual" can't be mixed because the former
+  // is for ctors only and the latter can't be used with ctors (so a later stage
+  // of processing will filter it out)
+
+  // member template
+  -> d:TemplateDeclaration
+       { return new MR_template(loc, d); }
+}
+
+// declaration (with no definition) of a c/dtor or conversion
+// operator function
+nonterm(Declaration*) CDtorProtoDecl {
+  fun keep(m) { return m!=NULL; }
+
+  // Q: what about pure virtual?
+  // A: it's part of the MemberDeclarator
+  -> flags:CDtorModifierSeq d:MemberDeclarator ";"
+       { // 'd' is a Declarator
+         return new Declaration(
+           flags,
+           new TS_simple(loc, loc, ST_CDTOR),
+           FakeList<Declarator>::makeList(d)
+         );
+       }
+  -> /*no modifier*/ d:MemberDeclarator ";"
+       {
+         // does the declarator construct a function type?
+         // if not, this might be ambiguous (superclass
+         // member publication), so cancel the entire reduction
+         if (!d->decl->skipGroups()->isD_func()) {
+           TRACE("cancel", loc << ": non-function c/dtor");
+           return NULL;
+         }
+
+         return new Declaration(
+           DF_NONE,
+           new TS_simple(loc, loc, ST_CDTOR),
+           FakeList<Declarator>::makeList(d)
+         );
+       }
+}
+
+nonterm(FakeList<Declarator>*) MemberDeclaratorList {
+  -> d:MemberDeclarator
+       { return FakeList<Declarator>::makeList(d); }
+  -> d:MemberDeclarator "," list:MemberDeclaratorList
+       { d->setNext(list->first());
+         return FakeList<Declarator>::makeList(d); }
+}
+
+// this returns a full Declarator, instead of an IDeclarator, because
+// the grammar doesn't nest MemberDeclarators, and because that way I
+// have a place to return the "=0" of a pure virtual function, and also
+// a place to put member initializers
+nonterm(Declarator*) MemberDeclarator {
+  -> d:Declarator
+       { return new Declarator(d, NULL /*init*/); }
+
+  // here I merge two cases (PureSpecifier and ConstantInitializer) that
+  // the std splits; given that the parser doesn't track at this level
+  // whether 'd' is a function type or not, and it can't tell the
+  // difference between PureSpecifier and ConstantInitializer just by
+  // looking at their syntax, we'd be disambiguating this later anyway
+  -> d:Declarator "=" e:ConstantExpression       // pure, and member inits
+       { return new Declarator(d, new IN_expr(loc, loc, e)); }
+
+  -> n:IdentifierOpt ":" e:ConstantExpression    // bitfield
+       { return new Declarator(new D_bitfield(loc, n? new PQ_name(loc, n) : NULL, e),
+                               NULL /*init*/); }
+}
+
+nonterm(StringRef) IdentifierOpt {
+  -> empty         { return NULL; }
+  -> n:Identifier  { return n; }
+}
+
+
+// modifier flags allowed in front of constructors ("explicit"),
+// destructors ("virtual") and conversion functions (none); plus,
+// "inline" is allowed with any of them..
+//
+// NOTE: to avoid a syntactic ambiguity with the ctor syntax "Foo(x)",
+// the set of flags here must not include "static" or "typedef"; see
+// the action function associated with MemberDeclaration's first production
+nonterm(DeclFlags) CDtorModifier {
+  -> "explicit"    { return DF_EXPLICIT; }
+  -> "virtual"     { return DF_VIRTUAL; }
+  -> "inline"      { return DF_INLINE; }
+  
+  // (in/t0527.cc) this is to allow befriending another class's constructor
+  -> "friend"      { return DF_FRIEND; }
+}
+
+nonterm(DeclFlags) CDtorModifierSeq {
+  -> m:CDtorModifier                       { return m; }
+  -> s:CDtorModifierSeq m:CDtorModifier    { return s|m; }
+}
+
+// I substituted this into everywhere it occurred
+//  nonterm(DeclFlags) CDtorModifierSeqOpt {
+//    -> empty                         { return DF_NONE; }
+//    -> m:CDtorModifierSeq            { return m; }
+//  }
+
+
+// ------ A.9 Derived classes ------
+nonterm(FakeList<BaseClassSpec>*) BaseClauseOpt {
+  -> empty                      { return FakeList<BaseClassSpec>::emptyList(); }
+  -> ":" b:BaseSpecifierList    { return b; }
+}
+
+nonterm(FakeList<BaseClassSpec>*) BaseSpecifierList {
+  -> b:BaseSpecifier
+       { return FakeList<BaseClassSpec>::makeList(b); }
+  -> b:BaseSpecifier "," list:BaseSpecifierList
+       { return list->prepend(b); }
+}
+
+
+// TODO: spec allows leading "::" on the PQClassName
+nonterm(BaseClassSpec*) BaseSpecifier {
+  -> n:PQClassName
+       { return new BaseClassSpec(false /*virtual*/, AK_UNSPECIFIED, n); }
+  -> "virtual" a:AccessSpecifierOpt n:PQClassName
+       { return new BaseClassSpec(true /*virtual*/, a, n); }
+  -> a:AccessSpecifier v:VirtualOpt n:PQClassName
+       { return new BaseClassSpec(v, a, n); }
+}
+
+nonterm(bool) VirtualOpt {
+  -> empty      { return false; }
+  -> "virtual"  { return true; }
+}
+
+// if the access specifier is missing, then it defaults to private
+// when inherited by a class, and public when inherited by a struct;
+// typechecking will replace AK_UNSPECIFIED with the right thing later
+nonterm(AccessKeyword) AccessSpecifierOpt {
+  -> empty              { return AK_UNSPECIFIED; }
+  -> k:AccessSpecifier  { return k; }
+}
+
+nonterm(PQName*) PQClassName {
+  fun merge(L,R) { return L->mergeAmbiguous(R); }
+
+  -> n:PQTypeName                 { return n; }
+}
+
+
+// ------ A.10 Special member functions ------
+nonterm(OperatorName*) ConversionFunctionId {
+  -> "operator" t:ConversionTypeId  { return new ON_conversion(t); }
+}
+
+nonterm(ASTTypeId*) ConversionTypeId {
+  -> s:TypeSpecifier d:ConversionDeclaratorOpt
+       { return new ASTTypeId(s, new Declarator(d, NULL /*init*/)); }
+}
+
+// collects the stars that might follow a type specifier in a
+// conversion function (for converting to pointer type)
+nonterm(IDeclarator*) ConversionDeclaratorOpt {
+  // this rule is given low precedence so that if there are
+  // stars (etc.) following, they will be considered to be part
+  // of the conversion operator's name (cppstd 12.3.2 para 4);
+  // there is still an S/R conflict for "::" and I'm not sure how
+  // to resolve that one...
+  -> empty                             precedence(TOK_PREFER_SHIFT)
+       { return new D_name(loc, NULL /*name*/); }
+
+  -> "*" cv:CVQualifierSeqOpt d:ConversionDeclaratorOpt
+       { return new D_pointer(loc, cv, d); }
+  -> "&" d:ConversionDeclaratorOpt
+       { return new D_reference(loc, d); }
+  -> n:PtrToMemberName "*" cv:CVQualifierSeqOpt d:ConversionDeclaratorOpt
+       { return new D_ptrToMember(loc, n, cv, d); }
+}
+
+
+nonterm(FakeList<MemberInit>*) MemInitializerList {
+  -> i:MemInitializer
+       { return FakeList<MemberInit>::makeList(i); }
+  -> i:MemInitializer "," list:MemInitializerList
+       { return list->prepend(i); }
+}
+
+nonterm(MemberInit*) MemInitializer {
+  -> n:MemInitializerId "(" e:ExpressionListOpt ")"
+       { return new MemberInit(n, e); }
+}
+
+// the std splits cases on whether we're calling a base class ctor
+// or initializing a field; I'll simply call both a PQName, and
+// then in typechecking make sure that the latter case does not
+// have any qualifiers (because in most cases the parser can't make
+// the distinction so it would fall through to typechecking anyway)
+nonterm(PQName*) MemInitializerId {
+  // PQTypeName includes the 'identifier' case, and is otherwise
+  // exactly right for the 'base class' case, so just use it
+  -> n:PQTypeName { return n; }
+}
+
+
+// ------ A.11 Overloading ------
+nonterm(OperatorName*) OperatorFunctionId {
+  -> "operator" od:Operator  { return od; }
+}
+
+// this nonterm is only used in the OperatorFunctionId context,
+// so go ahead and have it return a full OperatorName
+nonterm(OperatorName*) Operator {
+  // ambiguity:
+  //   void operator delete [] () ;
+  // could be operator "delete[]", or
+  // it could be an array of operator "delete"
+  //
+  // to resolve this I'll specify that the parser should always
+  // prefer to shift when it has seen "new" or "delete" and the
+  // lookahead token is "["
+
+  -> "new"                    precedence(TOK_PREFER_SHIFT)
+       { return new ON_newDel(true /*isNew*/, false /*isArray*/); }
+  -> "delete"                 precedence(TOK_PREFER_SHIFT)
+       { return new ON_newDel(false, false); }
+  -> "new" "[" "]"
+       { return new ON_newDel(true, true); }
+  -> "delete" "[" "]"
+       { return new ON_newDel(false, true); }
+
+  -> "!"     { return new ON_operator(OP_NOT); }
+  -> "~"     { return new ON_operator(OP_BITNOT); }
+
+  -> "++"    { return new ON_operator(OP_PLUSPLUS); }
+  -> "--"    { return new ON_operator(OP_MINUSMINUS); }
+
+  -> "+"     { return new ON_operator(OP_PLUS); }
+  -> "-"     { return new ON_operator(OP_MINUS); }
+  -> "*"     { return new ON_operator(OP_STAR); }
+
+  -> "/"     { return new ON_operator(OP_DIV); }
+  -> "%"     { return new ON_operator(OP_MOD); }
+  -> "<<"    { return new ON_operator(OP_LSHIFT); }
+  -> ">>"    { return new ON_operator(OP_RSHIFT); }
+  -> "&"     { return new ON_operator(OP_AMPERSAND); }
+  -> "^"     { return new ON_operator(OP_BITXOR); }
+  -> "|"     { return new ON_operator(OP_BITOR); }
+
+  -> "="     { return new ON_operator(OP_ASSIGN); }
+  -> "+="    { return new ON_operator(OP_PLUSEQ); }
+  -> "-="    { return new ON_operator(OP_MINUSEQ); }
+  -> "*="    { return new ON_operator(OP_MULTEQ); }
+  -> "/="    { return new ON_operator(OP_DIVEQ); }
+  -> "%="    { return new ON_operator(OP_MODEQ); }
+  -> "<<="   { return new ON_operator(OP_LSHIFTEQ); }
+  -> ">>="   { return new ON_operator(OP_RSHIFTEQ); }
+  -> "&="    { return new ON_operator(OP_BITANDEQ); }
+  -> "^="    { return new ON_operator(OP_BITXOREQ); }
+  -> "|="    { return new ON_operator(OP_BITOREQ); }
+
+  -> "=="    { return new ON_operator(OP_EQUAL); }
+  -> "!="    { return new ON_operator(OP_NOTEQUAL); }
+  -> "<"     { return new ON_operator(OP_LESS); }
+  -> ">"     { return new ON_operator(OP_GREATER); }
+  -> "<="    { return new ON_operator(OP_LESSEQ); }
+  -> ">="    { return new ON_operator(OP_GREATEREQ); }
+
+  -> "&&"    { return new ON_operator(OP_AND); }
+  -> "||"    { return new ON_operator(OP_OR); }
+
+  -> "->"    { return new ON_operator(OP_ARROW); }
+  -> "->*"   { return new ON_operator(OP_ARROW_STAR); }
+
+  -> "[" "]" { return new ON_operator(OP_BRACKETS); }
+  -> "(" ")" { return new ON_operator(OP_PARENS); }
+  -> ","     { return new ON_operator(OP_COMMA); }
+}
+
+
+// ------ A.12 Templates ------
+// I recognize this syntax, but ignore it
+// 8/15/04: it is now folded inline where it occurs
+//nonterm ExportOpt {
+//  -> empty;
+//  -> "export";
+//}
+
+nonterm(TemplateDeclaration*) TemplateDeclaration {
+  fun keep(d) { return d!=NULL; }
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  // these are the std's rules for template declarations and specializations:
+  //   -> ExportOpt "template" "<" TemplateParameterList ">" Declaration;
+  //   -> "template" "<" ">" Declaration;
+  // I've unified them by making the parameter list and 'export' optional
+  // in both cases.
+
+  // I have expanded 'Declaration' as appropriate, which cuts down on
+  // the filtering work and also makes the semantic values available
+  // in a more convenient context.  In particular, I dug down several
+  // levels to get 'ClassSpecifier' for template classes, which
+  // dramatically cuts down on the vestigial stuff the std's grammar
+  // would have potentially included.
+
+  // template function definition
+  -> plist:TemplatePreamble def:FunctionDefinition
+       { 
+         if (anyHaveDefaultArgs(plist)) {
+           // Function templates and definitions of members of class
+           // templates cannot have default arguments (14.1p9).
+           // Reject here because failure to do so can lead to an
+           // unhandled ambiguity (t0463.cc).
+           TRACE("cancel", loc << ": template function defn with default args");
+           return NULL;
+         }
+         return new TD_func(plist, def); 
+       }
+
+  // template function definition, or template class or data member decl/defn
+  -> plist:TemplatePreamble d:SimpleDeclaration
+       { return new TD_decl(plist, d); }
+
+  // definition of a template member
+  -> plist:TemplatePreamble td:TemplateDeclaration
+       { return new TD_tmember(plist, td); }
+
+  // as a toplevel form, this is a specialization of a template class
+  // constructor; as a class member, it is a declaration of a
+  // templatized constructor
+  -> plist:TemplatePreamble d:CDtorProtoDecl
+       { return new TD_decl(plist, d); }
+}
+
+// the "template <...>" stuff
+nonterm(/*fakelist*/TemplateParameter*) TemplatePreamble {
+  // 8/15/04: substituted 'ExportOpt' inline since it gives rise to
+  // easily-removed S/R conflicts (continuing to ignore it though)
+
+  // template declaration
+  -> "template" "<" plist:TemplateParameterList ">"
+       { return plist; }
+  -> "export" "template" "<" plist:TemplateParameterList ">"
+       { return plist; }
+
+  // explicit specialization
+  -> "template" "<" ">"
+       { return NULL; }
+  -> "export" "template" "<" ">"
+       { return NULL; }
+}
+
+nonterm(/*fakelist*/TemplateParameter*) TemplateParameterList {
+  fun keep(x) { return x!=NULL; }
+  
+  // unfortunately, while we can record an ambiguous template parameter
+  // list, we do not currently disambiguate it properly; see in/t0465.cc
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  -> ClassOrTypename i:IdentifierOpt t:DefaultTypeOpt
+     { return new TP_type(loc, i, t, NULL /*next*/); }
+
+  -> ClassOrTypename i:IdentifierOpt t:DefaultTypeOpt "," next:TemplateParameterList
+     { return new TP_type(loc, i, t, next); }
+
+  -> p:ParameterDeclaration
+     {
+       // if the specifier is a TS_elaborated, then it could be a type
+       // parameter; cppstd 14.1 para 3 seems to say that in that case it
+       // always *is* a type parameter
+       if (p->spec->canBeTypeParam()) {
+         TRACE("cancel", loc << ": template parameter can be type param");
+         return NULL;   // don't keep this, it's really a TP_type
+       }
+       else {
+         return new TP_nontype(loc, p, NULL /*next*/);
+       }
+     }
+
+  -> p:ParameterDeclaration "," next:TemplateParameterList
+     {
+       if (p->spec->canBeTypeParam()) {
+         TRACE("cancel", loc << ": template parameter can be type param");
+         return NULL;
+       }
+       else {
+         return new TP_nontype(loc, p, next);
+       }
+     }
+}
+
+nonterm ClassOrTypename {
+  -> "class";
+  -> "typename";
+
+  // bhackett: watch for version with '...' for variable number of arguments.
+  // we ignore these in the resulting syntax.
+  -> "class" "...";
+  -> "typename" "...";
+
+  // bhackett: another one we're ignoring. the inner template args are discarded.
+  -> "template" "<" list:TemplateArgumentListOpt ">" "class";
+  -> "template" "<" list:TemplateArgumentListOpt ">" "typename";
+}
+
+nonterm(ASTTypeId*) DefaultTypeOpt {
+  -> empty                    { return NULL; }
+  -> "=" t:TypeId             { return t; }
+}
+
+
+nonterm(/*fakelist*/TemplateArgument*) TemplateArgumentListOpt {
+  -> empty                       { return NULL; }
+  -> list:TemplateArgumentList   { return list; }
+}
+
+nonterm(PQ_template*) TemplateId {
+  -> n:Identifier "<" list:TemplateArgumentListOpt ">"
+       { return new PQ_template(loc, n, list); }
+
+  // 9/21/04: Added this possibility (e.g. d0103.cc).
+  -> on:OperatorFunctionId "<" list:TemplateArgumentListOpt ">"
+       // Note: This leaks 'on', and isn't quite as operator-like
+       // as PQ_operator, so I'm not convinced it behaves perfectly...
+       { return new PQ_template(loc, str(on->getOperatorName()), list); }
+
+  // I suspect this one is needed too, but the problem is that
+  // 'getOperatorName' loses information for conversion operators
+  // (they all map to the same string).  So, I'll leave it commented-out.
+  // One solution would be to make a PQ_operatorTemplate with an
+  // OperatorName first argument...
+  //-> on:ConversionFunctionId "<" list:TemplateArgumentListOpt ">"
+  //     { return new PQ_template(loc, str(on->getOperatorName()), list); }
+
+
+  // version with the word "template" in front
+  //
+  // arg.. this causes some extra ambiguities, see t0255.cc.  since I
+  // don't have a testcase that requires this yet, I'll just remove it
+  //-> "template" n:Identifier "<" list:TemplateArgumentListOpt ">"
+  //     { return new PQ_template(loc, n, templateUsed(list)); }
+}
+
+nonterm(/*fakelist*/TemplateArgument*) TemplateArgumentList {
+  // the list-ness is embedded in TemplateArgument
+  -> a:TemplateArgument
+       { return a; }
+}
+
+nonterm(TemplateArgument*) TemplateArgumentListTailOpt {
+  -> empty                      { return NULL; }
+  -> "..."                      { return NULL; }  // bhackett: varargs templates
+  -> "," a:TemplateArgument     { return a; }
+}
+
+nonterm(TemplateArgument*) TemplateArgument {
+  // ambiguous due to type/variable name ambiguity, and also
+  // due to angle brackets vs. less-than
+  fun merge(L,R) { L->addAmbiguity(R); return L; }
+
+  fun keep(n) { return n!=NULL; }
+
+  -> type:TypeId tail:TemplateArgumentListTailOpt
+     { return new TA_type(type, tail); }
+
+  -> e:AssignmentExpression tail:TemplateArgumentListTailOpt
+     {
+       if (Expression::hasUnparenthesizedGT(e)) {
+         // this is the wrong interpretation because template argument
+         // expressions aren't allowed to have unparenthesized
+         // greater-than operators [cppstd 14.1 para 15]
+         //
+         // this helps eliminate a nasty ambiguity in function
+         // declarators, as otherwise
+         //   template <class T>
+         //   Foo<T> & Foo<T>::get() {}
+         // could be interpreted as a constructor (we don't realize
+         // that 'get' != 'Foo') of a template class with template
+         // argument "T > &Foo < T"
+         TRACE("cancel", loc
+           << ": template argument has unparenthesized greater-than operator");
+         return NULL;
+       }
+       else {
+         return new TA_nontype(e, tail);
+       }
+     }
+
+  // is this for template args that are templates, or what?
+  //-> IdExpression;
+}
+
+nonterm(TopForm*) ExplicitInstantiation {
+  -> "template" d:BlockDeclaration           
+       { return new TF_explicitInst(loc, DF_NONE, d); }
+}
+
+// ------ A.13 Exception handling ------
+nonterm(S_try*) TryBlock {
+  -> "try" s:CompoundStatement h:HandlerSeq  { return new S_try(loc, loc, s, h); }
+}
+
+nonterm(FakeList<Handler>*) HandlerSeq {
+  -> h:Handler                 { return FakeList<Handler>::makeList(h); }
+  -> h:Handler seq:HandlerSeq  { return seq->prepend(h); }
+}
+
+nonterm(Handler*) Handler {
+  -> "catch" "(" d:HandlerParameter ")" s:CompoundStatement
+       { return new Handler(d, s); }
+
+  -> "catch" "(" "..." ")" s:CompoundStatement
+       { return new Handler(
+           new ASTTypeId(new TS_simple(loc, loc, ST_ELLIPSIS),
+                         new Declarator(new D_name(loc, NULL /*name*/),
+                                        NULL /*init*/)),
+           s); }
+}
+
+nonterm(ASTTypeId*) HandlerParameter {
+  -> s:TypeSpecifier d:UnqualifiedDeclarator
+       { return new ASTTypeId(s, new Declarator(d, NULL /*init*/)); }
+  -> s:TypeSpecifier d:AbstractDeclaratorOpt
+       { return new ASTTypeId(s, new Declarator(d, NULL /*init*/)); }
+}
+
+
+// this nonterminal helps with the TYPENAME ::NAME ambiguity, and also
+// partially enforces 8.3.5p8, which says that a parameter name must
+// be an identifier (only), if present
+nonterm(IDeclarator*) UnqualifiedDeclarator {
+  fun keep(d) {
+    PQName const *n = d->getDeclaratorIdC();
+    if (n->hasQualifiers()) {    // 'n' is never NULL
+      TRACE("cancel", d->loc << ": qualified UnqualifiedDeclarator");
+      return false;
+    }
+    return true;
+  }
+
+  -> d:Declarator              { return d; }
+}
+
+// note: There is no such thing as an UnqualifiedAbstractDeclaratorOpt
+// because abstract declarators do not contain an id-expression.
+
+
+nonterm(E_throw*) ThrowExpression {
+  -> "throw"                         { return new E_throw(NULL); }
+  -> "throw" e:AssignmentExpression  { return new E_throw(e); }
+}
+
+
+nonterm(ExceptionSpec*) ExceptionSpecificationOpt {
+  -> empty                            
+       { return NULL; }
+  -> "throw" "(" ")"                  
+       { return new ExceptionSpec(FakeList<ASTTypeId>::emptyList()); }
+  -> "throw" "(" list:TypeIdList ")"
+       { return new ExceptionSpec(list); }
+}
+
+nonterm(FakeList<ASTTypeId>*) TypeIdList {
+  -> t:TypeId                      
+       { return FakeList<ASTTypeId>::makeList(t); }
+  -> t:TypeId "," list:TypeIdList  
+       { t->setNext(list->first());
+         return FakeList<ASTTypeId>::makeList(t); }
+}
+
+
+// ------------------------ namespaces -----------------------
+nonterm(TF_namespaceDefn*) NamespaceDefinition {
+  -> "namespace" n:IdentifierOpt "{" unit:TranslationUnit "}"
+       {
+         TF_namespaceDefn *ret = new TF_namespaceDefn(loc, n, NULL /*forms*/);
+         ret->forms.concat(unit->topForms);     // steal list contents
+         delete unit;
+         return ret;
+       }
+}
+
+nonterm(NamespaceDecl*) NamespaceDecl {
+  -> "namespace" alias:Identifier "=" orig:IdExpression ";"
+       { return new ND_alias(alias, orig); }
+       
+  // cppstd allows "typename" after "using", but doesn't specify what
+  // it means; I assume they mean to use its semantics as described
+  // elsewhere, but I don't feel like tracking that down now
+  -> "using" /*typename?*/ n:IdExpression ";"
+       { return new ND_usingDecl(n); }
+       
+  -> "using" "namespace" n:IdExpression ";"
+       { return new ND_usingDir(n); }
+}
+
+
+
+impl_verbatim {
+  bool isGlobalScopeQualified(PQName const *pq)
+  {
+    return pq->isPQ_qualifier() &&
+           pq->asPQ_qualifierC()->qualifier == NULL;
+  }
+
+  bool endsWithIdentifier(TypeSpecifier const *ts)
+  {
+    return ts->isTS_name() ||
+           ts->isTS_elaborated();
+  }
+
+  // Filter out declarations of the form "TYPENAME ::NAME", since
+  // other front-ends would regard the TYPENAME as a qualifier.
+  //
+  // The performance could be improved by doing static disambiguation,
+  // however that is a little tricky because the productions involved
+  // conflict with several rules, and I need to resolve conflicts with
+  // just certain pairs of rules.  So, until I implement a more
+  // precise form of static disambiguation in Elkhound, I will just
+  // resort to runtime filtering.
+  bool keepDeclaration(Declaration const *d)
+  {
+    if (endsWithIdentifier(d->spec) &&
+        d->decllist->isNotEmpty()) {
+      IDeclarator const *id = d->decllist->firstC()->decl;
+      while (!id->isD_name()) {
+        // skip past type constructors that come *after* the name;
+        // if they come before, then they separate the :: from the
+        // TYPENAME, and hence :: could be the global scope qualifier
+        if (id->isD_func()) {
+          id = id->asD_funcC()->base;
+        }
+        else if (id->isD_array()) {
+          id = id->asD_arrayC()->base;
+        }
+        else {
+          return true;      // something precedes ::, so is ok
+        }
+      }
+      if (isGlobalScopeQualified(id->asD_nameC()->name)) {
+        TRACE("cancel", id->loc << ": TYPENAME ::NAME");
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
+
+// EOF

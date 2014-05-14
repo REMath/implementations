@@ -1,0 +1,53 @@
+===================
+System Requirements
+===================
+The system requires: binutils-v2.20, python-2.7, perl5 installed in the system.
+In addition a python module "bitarray v0.8.1" module is also needed.
+
+
+=======
+Install
+=======
+Please following the steps below to install the system:
+
+STEP1: sudo cp -R ${PROJECT_HOME}/bip /home 
+	(and change ownership to your user name e.g: chown -R mingwei.mingwei
+	/home/bip probably, you could delete all the .svn files in that 
+	directory using: find /home/bip -name ".svn" -exec rm -rf {} \;   )
+
+STEP2:  cp ${PROJECT_HOME}/rtld_code/ld-2.13-segv-quiet-bip-trans.so /home/bip/installdir/lib
+	sudo ln -sf /home/bip/installdir/lib/ld-2.13-segv-quiet-bip-trans.so /lib/linux-ld.so.4
+
+STEP3: you need to copy all essential libraries that a binary may be linked with
+	into /home/bip/installdir/lib, since that is the library path your 
+	linker will search. Instead of copying the whole file, you can, for 
+	instance: 
+		cp -s /lib/i386-gnu-linux/*  /home/bip/installdir/lib
+
+STEP4: Now you have all libraries needed. You still need two things:
+	1) ibc.so.6: used to intercept signal registrations
+	2) glookup code: used for GTT lookup (inter-moduel control flow)
+
+	ibc.so.6 is compiled in intercept_glibc. make a symbolic link in /lib
+	to this file.
+		sudo ln -sf ${PROJECT_HOME}/intercept_glibc/ibc.so.6 /lib
+
+	glookup code is compiled in glookup_policy. Also make a symbolic link
+
+		sudo ln -sf ${PROJECT_HOME}/glookup_policy/code_no_far_jmp \
+			/lib/glookup_no_far_jmp
+
+STEP5: Now you could translate libraries in /home/bip/installdir/lib
+
+STEP6: You need to setup katana, which is used to manipulate DWARF metadat in
+ELF binaries.
+
+	1) extract katana.tar.gz to a directory
+	2) open ${PROJECT_HOME}/bip/python_rw/config and change the option of
+katana to the path of you katana executable
+
+STEP7: transform your executables & libraries
+
+
+
+Hope that would work on your systems. Please let me know issues. -mingwei

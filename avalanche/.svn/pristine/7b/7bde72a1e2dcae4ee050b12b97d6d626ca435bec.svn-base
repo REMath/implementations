@@ -1,0 +1,13 @@
+Source: avalanche
+Section: devel
+Priority: extra
+Maintainer: Denis Sidorov <sidorov.denis@gmail.com>
+Build-Depends: debhelper (>= 7), autotools-dev, bison, flex, perl
+Standards-Version: 3.8.3
+Homepage: http://code.google.com/p/avalanche
+
+Package: avalanche
+Architecture: i386 amd64 armel
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Valgrind-based dynamic analysis tool
+ Avalanche is a dynamic defect detection tool that generates "inputs of death" - input data reproducing critical bugs and vulnerabilities in the analysed program.

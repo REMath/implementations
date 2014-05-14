@@ -1,0 +1,514 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>Elsa Tutorial</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+  <style type="text/css">
+    H1 { font-size: 150% }
+    H2 { font-size: 125% }
+    H3 { font-size: 100% }
+    P.title { font-size: 175% }
+  </style>
+</HEAD>
+
+<body>
+
+<center>
+<p class="title"><b>Elsa Tutorial</b></p>
+</center>
+
+<h1>1. Introduction</h1>
+
+<p>
+This tutorial is intended to help get a new Elsa user learn about
+the Elsa and develop a basic familiarity with the core components.
+After doing this tutorial, you will know how to do the following
+tasks:
+<ul>
+<li>Build Elsa
+<li>Parse and pretty-print a C++ file
+<li>Write a simple tree traversal analysis with ASTVisitor.
+<li>Write a simple language extension, including extensions to
+    the lexer, parser, AST, type checker, and pretty printer.
+</ul>
+
+<p>
+If you run into difficulties you cannot resolve, you can email me at
+<pre>
+  smcpeak cs berkeley edu
+         @  .        .
+</pre>
+though I might not respond right away.
+
+<p>
+At the end of this tutorial I will give pointers for more exploration.
+
+
+
+<h1>2. Building Elsa</h1>
+
+<p>
+If you have not already, download and 
+<span style="border-bottom: thin dashed blue"
+      title="To unpack, say 'tar xvfz elsa-XXXX.XX.XX.tar.gz'.">unpack</span>
+the Elsa distribution tarball, available from the
+<a href="http://www.cs.berkeley.edu/~smcpeak/elkhound/">Elkhound page</a>.
+Inside the Elsa distribution you will find a directory structure like this:
+<pre>
+  elsa-XXXX.XX.XX
+    |
+    +- smbase               utility library
+    |
+    +- ast                  AST generator
+    |
+    +- elkhound             parser generator
+    |
+    +- elsa                 C++ parser/frontend/etc.
+       |
+       +- in                  C/C++ input files for regression testing
+       |
+       +- include             Elsa's compiler-specific headers
+</pre>
+          
+<h2>2.1 Configure</h2>
+
+<p>
+At the top <tt>elsa-XXXX.XX.XX</tt> directory, just run <tt>configure</tt>:
+<pre>
+  elsa-XXXX.XX.XX$ ./configure
+</pre>
+The above command just runs <tt>configure</tt> scripts in each of the four
+subdirectories.  If you want to pass specific options to a configure script
+inside a specific directory, just go into the directory and run its
+particular script.
+
+<p>
+In particular, if you want to be able to use the
+<a href="../../smbase/trace.html">tracing flags</a>, which I recommend,
+then pass the <tt>-debug</tt> option to <tt>elsa/configure</tt>:
+<pre>
+  elsa-XXXX.XX.XX$ cd elsa
+  elsa$ ./configure -debug
+  elsa$ cd ..
+</pre>
+
+<h2>2.2 Make</h2>
+
+<p>
+At the top, run <tt>make</tt>:
+<pre>
+  elsa-XXXX.XX.XX$ make
+</pre>
+This just runs <tt>make</tt> in each of the four directories.
+
+<p>
+Hopefully, everything will build without problems.  If not, it's
+possible you will have to change one or more of the source files
+to get them to compile.  In that case, please send me the changes
+that you found necessary.
+
+<h2>2.3 Make check</h2>
+
+<p>
+At the top, run <tt>make check</tt>:
+<pre>
+  elsa-XXXX.XX.XX$ make check
+</pre>
+Again, this just runs <tt>make check</tt> in each of the four directories.
+While this step is in principle optional, if something fails during the
+<tt>make check</tt> then it's likely there is a serious problem.
+
+<h1>3. Run ccparse</h1>
+
+<p>
+Among the executables produced by <tt>make</tt> is <tt>elsa/ccparse</tt>,
+a program that runs the C++ parser and optionally does a number of
+post-processing activities.  While developing Elsa, <tt>ccparse</tt>
+is the program that I run most often.
+
+<h2>3.1 Parsing alone</h2>
+
+<p>
+<tt>ccparse</tt> takes the name of file to parse on the command line:
+<pre>
+  elsa-XXXX.XX.XX$ cd elsa
+  elsa$ ./ccparse in/t0001.cc
+  %%% progress: 0ms: done parsing (1 ms, 0_234564 cycles)
+  ambiguous nodes: 0
+  %%% progress: 5ms: done type checking (4 ms)
+  typechecking results:
+    errors:   0
+    warnings: 0
+  %%% progress: 6ms: done elaborating (0 ms)
+</pre>
+The output includes "<tt>%%% progress</tt>" lines that report on stages
+of processing and timing information, the number of ambiguous nodes in
+the AST, and the number of warnings and errors emitted by the type
+checker.  Since everything worked, the output isn't all that interesting.
+
+<h2>3.2 Pretty printing</h2>
+
+<p>
+We can ask <tt>ccparse</tt> to print out the source code it has just
+parsed in, by using the <tt>-tr prettyPrint</tt> command-line argument:
+<pre>
+  elsa$ ./ccparse -tr prettyPrint in/t0001.cc
+  %%% progress: 0ms: done parsing (0 ms, 0_235561 cycles)
+  ambiguous nodes: 0
+  %%% progress: 5ms: done type checking (3 ms)
+  typechecking results:
+    errors:   0
+    warnings: 0
+  %%% progress: 7ms: done elaborating (0 ms)
+  %%% progress: 7ms: dsw pretty print...
+  ---- START ----
+  // -*-c++-*-
+  int x;
+  ---- STOP ----
+  %%% progress: 9ms: dsw pretty print... done
+</pre>
+Buried in amongst all that noise is the pretty-printed input file:
+<pre>
+  // -*-c++-*-
+  int x;
+</pre>
+
+<p>
+Obviously, <tt>in/t0001.cc</tt> is a fairly trivial input file.  
+You're free to experiment with other files in the <tt>in/</tt>
+directory, or even with your own input files.  <b>Note:</b> You
+must preprocess with the input files with <tt>cpp</tt> first!  
+Elsa does not include a preprocessor.
+
+<h2>3.3 Printing the Abstract Syntax Tree</h2>
+
+<h3>3.3.1 <tt>in/t0001.cc</tt></h3>
+
+<p>
+<tt>ccparse</tt> can print the Abstract Syntax Tree (AST) produced
+by the parser, by passing <tt>-tr printAST</tt>:
+<pre>
+  elsa$ ./ccparse -tr printAST in/t0001.cc
+  %%% progress: 0ms: done parsing (1 ms, 0_235436 cycles)
+  tree = TranslationUnit:
+    topForms:
+      topForms[0] = TF_decl:
+        loc = in/t0001.cc:3:1
+        decl = Declaration:
+          dflags =
+          spec = TS_simple:
+            cv =
+            loc = in/t0001.cc:3:1
+            id = int
+          decllist:
+            decllist[0] = Declarator:
+              context = DC_UNKNOWN
+              decl = D_name:
+                loc = in/t0001.cc:3:5
+                name = PQ_name:
+                  loc = in/t0001.cc:3:5
+                  name = x
+              init is null
+              ctorStatement is null
+              dtorStatement is null
+  ambiguous nodes: 0
+  %%% progress: 9ms: done type checking (3 ms)
+  typechecking results:
+    errors:   0
+    warnings: 0
+  %%% progress: 11ms: done elaborating (0 ms)
+</pre>
+From this printout we can see that the entire input is a
+<tt>TranslationUnit</tt>, whose first <tt>topForm</tt> is a <tt>Declaration</tt>.
+The declaration has a type specifier, <tt>TS_simple</tt>, denoting <tt>int</tt>.
+It also has a single </tt>Declarator</tt>, with a <tt>D_name</tt> containing
+<tt>x</tt>.
+
+<p>
+Besides the structural information, the printout includes source locations,
+such as "<tt>in/t0001.cc:3:1</tt>".  This means line 3, column 1 of the 
+file <tt>in/t0001.cc</tt>.
+
+<h3>3.3.1 <tt>in/t0008.cc</tt> (ambiguous)</h3>
+
+<p>
+The AST above is <em>unambiguous</em>; the parser was able to completely
+determine the syntactic interpretation of the input file, without any
+help from the type checker.  This isn't always possible with C++, and
+since the Elsa type checker runs only <em>after</em> the parser, the
+parser sometimes produces an ambiguous AST.  A simple example is in
+<tt>in/t0008.cc</tt>:
+<pre>
+  elsa$ ./ccparse -tr printAST in/t0008.cc
+  %%% progress: 0ms: done parsing (3 ms, 3_369729 cycles)
+  tree = TranslationUnit:
+    topForms:
+      topForms[0] = TF_func:
+        loc = in/t0008.cc:4:1
+        f = Function:
+          receiver: NULL
+          retVal: NULL
+          dflags = 
+          retspec = TS_simple:
+            cv = 
+            loc = in/t0008.cc:4:1
+            id = int
+          nameAndParams = Declarator:
+            context = DC_UNKNOWN
+            decl = D_func:
+              loc = in/t0008.cc:4:5
+              base = D_name:
+                loc = in/t0008.cc:4:5
+                name = PQ_name:
+                  loc = in/t0008.cc:4:5
+                  name = main
+              params:
+              cv = 
+              exnSpec is null
+            init is null
+            ctorStatement is null
+            dtorStatement is null
+          inits:
+          body = S_compound:
+            succ={ }
+            loc = in/t0008.cc:5:1
+            stmts:
+              stmts[0] = S_decl:
+                succ={ }
+                loc = in/t0008.cc:6:3
+                decl = Declaration:
+                  dflags = 
+                  spec = TS_simple:
+                    cv = 
+                    loc = in/t0008.cc:6:3
+                    id = int
+                  decllist:
+                    decllist[0] = Declarator:
+                      context = DC_UNKNOWN
+                      decl = D_name:
+                        loc = in/t0008.cc:6:7
+                        name = PQ_name:
+                          loc = in/t0008.cc:6:7
+                          name = a
+                      init is null
+                      ctorStatement is null
+                      dtorStatement is null
+              stmts[1] = S_decl:
+                succ={ }
+                loc = in/t0008.cc:7:3
+                decl = Declaration:
+                  dflags = 
+                  spec = TS_simple:
+                    cv = 
+                    loc = in/t0008.cc:7:3
+                    id = int
+                  decllist:
+                    decllist[0] = Declarator:
+                      context = DC_UNKNOWN
+                      decl = D_name:
+                        loc = in/t0008.cc:7:7
+                        name = PQ_name:
+                          loc = in/t0008.cc:7:7
+                          name = b
+                      init is null
+                      ctorStatement is null
+                      dtorStatement is null
+              stmts[2] = S_expr:
+                succ={ }
+                loc = in/t0008.cc:9:3
+                expr = FullExpression:
+                  --------- ambiguous Expression: 2 alternatives ---------
+                    tree = E_binary:
+                      e1 = E_grouping:
+                        expr = E_variable:
+                          var: NULL
+                          name = PQ_name:
+                            loc = in/t0008.cc:9:4
+                            name = a
+                      op = &
+                      e2 = E_grouping:
+                        expr = E_variable:
+                          var: NULL
+                          name = PQ_name:
+                            loc = in/t0008.cc:9:10
+                            name = b
+                  ---- or ----
+                    tree = E_cast:
+                      ctype = ASTTypeId:
+                        spec = TS_name:
+                          cv = 
+                          loc = in/t0008.cc:9:4
+                          name = PQ_name:
+                            loc = in/t0008.cc:9:4
+                            name = a
+                          typenameUsed = false
+                        decl = Declarator:
+                          context = DC_UNKNOWN
+                          decl = D_name:
+                            loc = in/t0008.cc:9:5
+                            name is null
+                          init is null
+                          ctorStatement is null
+                          dtorStatement is null
+                      expr = E_addrOf:
+                        expr = E_grouping:
+                          expr = E_variable:
+                            var: NULL
+                            name = PQ_name:
+                              loc = in/t0008.cc:9:10
+                              name = b
+                  --------- end of ambiguous Expression ---------
+          handlers:
+          dtorStatement is null
+          implicitlyDefined = false
+  ambiguous nodes: 1
+  %%% progress: 5ms: done type checking (4 ms)
+  typechecking results:
+    errors:   0
+    warnings: 0
+  %%% progress: 6ms: done elaborating (0 ms)
+</pre>
+
+<h3>3.3.1 <tt>in/t0008.cc</tt> (unambiguous)</h3>
+
+<p>
+The ambiguity can be resolved (in favor of <tt>E_binary</tt>) by
+considering that the name <tt>x</tt> refers to a variable, not a
+type.  The type checker does just this, and produces an
+unambiguous AST.  The <tt>-tr printTypedAST</tt> command line
+option will print the AST as it exists after the type checker
+runs:
+<pre>
+  elsa$ ./ccparse -tr printTypedAST in/t0008.cc
+  %%% progress: 0ms: done parsing (0 ms, 0_541155 cycles)
+  ambiguous nodes: 1
+  %%% progress: 5ms: done type checking (5 ms)
+  tree = TranslationUnit:
+    topForms:
+      topForms[0] = TF_func:
+        loc = in/t0008.cc:4:1
+        f = Function:
+          funcType: int ()()
+          receiver: NULL
+          retVal: NULL
+          dflags = 
+          retspec = TS_simple:
+            cv = 
+            loc = in/t0008.cc:4:1
+            id = int
+          nameAndParams = Declarator:
+            var: <global> <definition> int main()
+            context = DC_FUNCTION
+            decl = D_func:
+              loc = in/t0008.cc:4:5
+              base = D_name:
+                loc = in/t0008.cc:4:5
+                name = PQ_name:
+                  loc = in/t0008.cc:4:5
+                  name = main
+              params:
+              cv = 
+              exnSpec is null
+            init is null
+            ctorStatement is null
+            dtorStatement is null
+          inits:
+          body = S_compound:
+            succ={ 6:3 }
+            loc = in/t0008.cc:5:1
+            stmts:
+              stmts[0] = S_decl:
+                succ={ 7:3 }
+                loc = in/t0008.cc:6:3
+                decl = Declaration:
+                  dflags = 
+                  spec = TS_simple:
+                    cv = 
+                    loc = in/t0008.cc:6:3
+                    id = int
+                  decllist:
+                    decllist[0] = Declarator:
+                      var: <definition> int a
+                      context = DC_S_DECL
+                      decl = D_name:
+                        loc = in/t0008.cc:6:7
+                        name = PQ_name:
+                          loc = in/t0008.cc:6:7
+                          name = a
+                      init is null
+                      ctorStatement is null
+                      dtorStatement is null
+              stmts[1] = S_decl:
+                succ={ 9:3 }
+                loc = in/t0008.cc:7:3
+                decl = Declaration:
+                  dflags = 
+                  spec = TS_simple:
+                    cv = 
+                    loc = in/t0008.cc:7:3
+                    id = int
+                  decllist:
+                    decllist[0] = Declarator:
+                      var: <definition> int b
+                      context = DC_S_DECL
+                      decl = D_name:
+                        loc = in/t0008.cc:7:7
+                        name = PQ_name:
+                          loc = in/t0008.cc:7:7
+                          name = b
+                      init is null
+                      ctorStatement is null
+                      dtorStatement is null
+              stmts[2] = S_expr:
+                succ={ }
+                loc = in/t0008.cc:9:3
+                expr = FullExpression:
+                  expr = E_binary:
+                    type: int
+                    e1 = E_grouping:
+                      type: int &
+                      expr = E_variable:
+                        type: int &
+                        var: int a, at in/t0008.cc:6:7 (0x08271940)
+                        name = PQ_name:
+                          loc = in/t0008.cc:9:4
+                          name = a
+                    op = &
+                    e2 = E_grouping:
+                      type: int &
+                      expr = E_variable:
+                        type: int &
+                        var: int b, at in/t0008.cc:7:7 (0x082719F8)
+                        name = PQ_name:
+                          loc = in/t0008.cc:9:10
+                          name = b
+          handlers:
+          dtorStatement is null
+          implicitlyDefined = false
+  typechecking results:
+    errors:   0
+    warnings: 0
+  %%% progress: 6ms: done elaborating (0 ms)
+</pre>
+
+<p>
+If you look carefully at the output, you will see that in addition
+to being unambiguous, the post-tcheck AST also has been annotated
+with information about the types of expressions, and the variables
+to which names refer.  This information is very useful to analyses
+that come after the type checker.
+                 
+<p>
+If you want, take some time to experiment with <tt>ccparse</tt> and
+the trees it can print.  Find some nasty C++ and see what Elsa
+thinks of it!  Try to crash Elsa!  When you've had your fill of
+segfaults (send me bug reports please?), you're ready to go on
+to the next part of the tutorial.
+
+<h1>Go to <a href="tutorial_part2.html">Part 2: Modifying Elsa</a></h1>
+
+
+</body>
+</html>

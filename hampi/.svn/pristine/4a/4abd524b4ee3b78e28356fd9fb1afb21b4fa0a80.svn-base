@@ -1,0 +1,4 @@
+ PalindAB : "a" "a" ;
+          : "b" "b" ;
+          : "b" PalindAB "b" ;
+          : "a" PalindAB "a";

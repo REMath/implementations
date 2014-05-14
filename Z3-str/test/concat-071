@@ -1,0 +1,10 @@
+(declare-variable x1 String)
+(declare-variable x2 String)
+(declare-variable y1 String)
+(declare-variable y2 String)
+
+(assert (= (Concat x1 (Concat "abc" x2 ) ) (Concat y1 (Concat "ef" y2) ) ) )
+;(assert (= (Length X) 0 ) )
+
+(check-sat)
+(get-model)

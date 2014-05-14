@@ -1,0 +1,28 @@
+-= CVE-2006-6876 =-
+
+Vulnerable versions: OpenSER <= 1.2.0
+File(s):  openser-1.1.0-tls/modules/sms/libsms_getsms.c
+Download from:
+    http://www.openser.org/pub/openser/1.1.0/src/openser-1.1.0-tls_src.tar.gz
+
+Domain: SIP (Session Initiation Protocol)
+
+_ Vulnerable Functions and Buffers _
+
+A buffer, pdu[], is passed to fetchsms(). fetchsms() writes into pdu[]
+from another buffer, answer[], which it gets from the
+modem. fetchsms() does some heavyweight string parsing of answer[],
+and copies part of answer[] into pdu[]. Unfortunately, pdu[] is too
+small to hold this substring of answer[].
+
+_ Decomposed Programs _
+
+constants.h
+
+fetchsms/
+  loops_bad.c
+  istrstr_bad.c
+  istrstr_loops_bad.c
+  istrstr2_loops_bad.c
+  full_bad.c
+  

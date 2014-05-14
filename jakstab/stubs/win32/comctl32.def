@@ -1,0 +1,104 @@
+; 
+;   comctl32.def
+;
+;   Exports for COMCTL32 DLL
+;
+;   Copyright (C) 1998 Free Software Foundation, Inc.
+;   Created by J.J. van der Heijden <J.J.vanderHeijden@student.utwente.nl>
+;   
+;   This file is part of the Windows32 API Library.
+;   Based on the November 1997 Platform SDK
+;
+;   This library is free software; you can redistribute it and/or
+;   modify it under the terms of the GNU Library General Public
+;   License as published by the Free Software Foundation; either
+;   version 2 of the License, or (at your option) any later version.
+;   
+;   This library is distributed in the hope that it will be useful,
+;   but WITHOUT ANY WARRANTY; without even the implied warranty of
+;   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;   Library General Public License for more details.
+;
+;   You should have received a copy of the GNU Library General Public
+;   License along with this library; see the file COPYING.LIB.
+;   If not, write to the Free Software Foundation, 
+;   59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+;
+LIBRARY COMCTL32
+EXPORTS
+CreateMappedBitmap@20
+CreatePropertySheetPage@4
+CreatePropertySheetPageA@4
+CreatePropertySheetPageW@4
+CreateStatusWindow@16
+CreateStatusWindowA@16
+CreateStatusWindowW@16
+CreateToolbar@32
+CreateToolbarEx@52
+CreateUpDownControl@48
+DestroyPropertySheetPage@4
+DrawInsert@12
+DrawStatusText@16
+DrawStatusTextA@16
+DrawStatusTextW@16
+FlatSB_EnableScrollBar@12
+FlatSB_GetScrollInfo@12
+FlatSB_GetScrollPos@8
+FlatSB_GetScrollProp@12
+FlatSB_GetScrollRange@16
+FlatSB_SetScrollInfo@16
+FlatSB_SetScrollPos@16
+FlatSB_SetScrollProp@16
+FlatSB_SetScrollRange@20
+FlatSB_ShowScrollBar@12
+GetEffectiveClientRect@12
+ImageList_Add@12
+ImageList_AddIcon@8
+ImageList_AddMasked@12
+ImageList_BeginDrag@16
+ImageList_Copy@20
+ImageList_Create@20
+ImageList_Destroy@4
+ImageList_DragEnter@12
+ImageList_DragLeave@4
+ImageList_DragMove@8
+ImageList_DragShowNolock@4
+ImageList_Draw@24
+ImageList_DrawEx@40
+ImageList_DrawIndirect@4
+ImageList_Duplicate@4
+ImageList_EndDrag@0
+ImageList_GetBkColor@4
+ImageList_GetDragImage@8
+ImageList_GetIcon@12
+ImageList_GetIconSize@12
+ImageList_GetImageCount@4
+ImageList_GetImageInfo@12
+ImageList_GetImageRect@12
+ImageList_LoadImage@28
+ImageList_LoadImageA@28
+ImageList_LoadImageW@28
+ImageList_Merge@24
+ImageList_Read@4
+ImageList_Remove@8
+ImageList_Replace@16
+ImageList_ReplaceIcon@12
+ImageList_SetBkColor@8
+ImageList_SetDragCursorImage@16
+ImageList_SetFilter@12
+ImageList_SetIconSize@12
+ImageList_SetImageCount@8
+ImageList_SetOverlayImage@12
+ImageList_Write@8
+InitCommonControls@0
+InitCommonControlsEx@4
+InitializeFlatSB@4
+LBItemFromPt@16
+MakeDragList@4
+MenuHelp@28
+PropertySheet@4
+PropertySheetA@4
+PropertySheetW@4
+ShowHideMenuCtl@12
+UninitializeFlatSB@4
+_TrackMouseEvent@4

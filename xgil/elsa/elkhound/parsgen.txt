@@ -1,0 +1,43 @@
+
+tracing strings for gramanl and GLR parser:
+
+  parse:         details of the parsing actions
+  parse-tree:    the parse tree itself
+  parse-graph:   when set, print the parse graph to a .g file
+  grammar:       echoing the grammar
+  terminals:     list of terminals
+  nonterminals:	 list of nonterminals
+  derivable:     mechanics of the derivability relation computation
+  pred-table:    predictive parsing table
+  item-sets:     the LR parsing table (item sets)
+  progress:      poor-man's profiler (prints at each major phase)
+  profiling:     slightly more detailed profiling info
+  conflict:      SLR conflict printout
+  debug:         general temporary-printf kinds of things, meant to be removed shortly
+  conditions:    results of processing %condition directives
+  follow-sym:    computing Follow of symbol-of-interest
+  rewrite:       details of rewriteSingleNTAsTerminals
+  ambiguities:   print ambiguities in present parse
+  lexer1:        results of L1 analysis
+  lexer2:        results of L2 analysis
+  ast:           print AST of grammar file
+  lex:           print each token of grammar file
+  sem-fns:       print names of semantic functions as they're called
+  tree-merge:    print when we don't merge trees because of attr mismatch
+  disamb:        disambiguation mechanisms
+  compounds:     print declarations of compounds
+  typeCheck:     print something just before typechecking each toplevel form
+  refct:         environment reference count ops
+  cil-tree:      print the Cil tree
+  eh:            print when exceptions are thrown
+  alloc-stats:   print stats about allocated nodes, total mem usage
+  cil-bb:        print the Cil basic blocks
+  print-tree-before:   parse tree print before type checking
+  type-ids:      print the type ids when types are printed
+  initializer:   print details of declaration initializer processing  
+  closure:       details of item-set closure algorithm
+  lrtable:       print the LR item sets
+  nonkernel:     print nonkernel items when printing LR item sets
+
+
+

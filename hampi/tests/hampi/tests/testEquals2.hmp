@@ -1,0 +1,8 @@
+var v:6;
+val vSub1 := v[0:3]; //substring of v (offset 2, length 3)
+val vSub2 := v[3:3];
+val c     := "deg";
+assert vSub1 contains "de";
+assert vSub2 contains "ef";
+assert vSub1 equals c;
+

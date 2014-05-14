@@ -1,0 +1,3 @@
+var v:6;
+reg r := concat("foo", "bar");
+assert v in r;

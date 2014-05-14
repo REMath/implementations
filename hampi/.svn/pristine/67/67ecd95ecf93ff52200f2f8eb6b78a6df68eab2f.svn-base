@@ -1,0 +1,7 @@
+//created from CFGAnalyzer file 04_02_041.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg stmt :=  assignment_stmt | proc_call_stmt ;
+cfg proc_call_stmt :=  "i" "(" "c" ")" ;
+cfg assignment_stmt :=  "i" "a" "e" ;
+reg limit := fix(stmt, 7);
+assert hampiStringVar in limit;

@@ -1,0 +1,40 @@
+/*CFG Analyzer, version 03/12/2007
+
+The intersection of L(G1) ... L(G2) is empty when restricted  to words of length k with 5 <= k <= 5.
+*/
+var hampiStringVar : 5;
+cfg S0 :=  P0 Q0 ;
+cfg P0 :=  "a" | R0 O0 T0 ;
+cfg R0 :=  M0 P0 ;
+cfg O0 :=  "a" "b" | "a" ;
+cfg T0 :=  "b" "b" | "b" ;
+cfg M0 :=  "a" ;
+cfg Q0 :=  C0 "e" D0 ;
+cfg C0 :=  "a" "b" | "a" ;
+cfg D0 :=  "e" "d" | "d" ;
+reg limit0 := fix(S0, 5);
+assert hampiStringVar in limit0;
+cfg SimpleTypeName1 :=  "i" ;
+cfg ClassBodyDeclaration1 :=  ClassMemberDeclaration1 | ConstructorDeclaration1 ;
+cfg ClassMemberDeclaration1 :=  FieldDeclaration1 | MethodDeclaration1 ;
+cfg FieldDeclaration1 :=  FieldModifiersOpt1 "y" VariableDeclarators1 ";" ;
+cfg VariableDeclarators1 :=  VariableDeclarator1 | VariableDeclarators1 "," VariableDeclarator1 ;
+cfg VariableDeclarator1 :=  VariableDeclaratorId1 | VariableDeclaratorId1 "=" "v" ;
+cfg VariableDeclaratorId1 :=  "i" ;
+cfg FieldModifiersOpt1 :=  | FieldModifiers1 ;
+cfg FieldModifiers1 :=  FieldModifier1 | FieldModifiers1 FieldModifier1 ;
+cfg FieldModifier1 :=  "c" | "d" | "e" | "f" | "s" | "t" | "x" ;
+cfg MethodDeclaration1 :=  MethodHeader1 "m" ;
+cfg MethodHeader1 :=  MethodModifiersOpt1 ResultType1 MethodDeclarator1 "h" ;
+cfg ResultType1 :=  "y" | "w" ;
+cfg MethodDeclarator1 :=  "i" "(" "p" ")" ;
+cfg MethodModifiersOpt1 :=  | MethodModifiers1 ;
+cfg MethodModifiers1 :=  MethodModifier1 | MethodModifiers1 MethodModifier1 ;
+cfg MethodModifier1 :=  "c" | "d" | "e" | "a" | "s" | "f" | "z" | "n" ;
+cfg ConstructorDeclaration1 :=  ConstructorModifiersOpt1 ConstructorDeclarator1 "h" "b" ;
+cfg ConstructorDeclarator1 :=  SimpleTypeName1 "(" "p" ")" ;
+cfg ConstructorModifiersOpt1 :=  | ConstructorModifiers1 ;
+cfg ConstructorModifiers1 :=  ConstructorModifier1 | ConstructorModifiers1 ConstructorModifier1 ;
+cfg ConstructorModifier1 :=  "c" | "d" | "e" ;
+reg limit1 := fix(SimpleTypeName1, 5);
+assert hampiStringVar in limit1;

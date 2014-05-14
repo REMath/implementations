@@ -1,0 +1,10 @@
+/* UNAMBIGUOUS */
+
+S : U ;
+: M ;
+
+M : "a" ;
+: "i" "c" "t" M "e" M ;
+
+U : "i" "c" "t" M "e" U ;
+: "i" "c" "t" S ;

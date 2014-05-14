@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="StringSolver">
+    <property environment="env"/>
+    <property name="junit.output.dir" value="junit"/>
+    <property name="lib.path" value="lib"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
+    <path id="StringSolver.classpath">
+        <pathelement location="bin"/>
+        <pathelement location="lib/jpaul.jar"/>
+        <pathelement location="lib/STPJNI.jar"/>
+        <pathelement location="lib/antlr-3.1b1.jar"/>
+        <pathelement location="lib/antlr-2.7.7.jar"/>
+        <pathelement location="lib/stringtemplate-3.1.jar"/>
+        <pathelement location="lib/junit.jar"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+<!--        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src" excludes="**/*.launch, **/*.java"/>
+        </copy>-->
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    	<exec executable="/usr/bin/make" dir="lib/cfganalyzer-2007-12-03">
+    		<arg value="clean"/>
+    	</exec>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-project, build-libs" name="build"/>
+    <target name="build-libs">
+    	<exec failonerror="true" executable="/usr/bin/make" dir="lib/cfganalyzer-2007-12-03">
+    		<arg value="all"/>
+    	</exec>
+    </target>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="StringSolver.classpath"/>
+        </javac>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+            <src path="tests"/>
+            <classpath refid="StringSolver.classpath"/>
+        </javac>
+    </target>
+    <target name="AllTests">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="true" haltonerror="true" haltonfailure="true" printsummary="on" showoutput="false" maxmemory="1000M" newenvironment="true">
+        	<jvmarg value="-Djava.library.path=${lib.path}"/>
+            <formatter type="plain" usefile="false"/>
+            <test name="AllTests" todir="${junit.output.dir}"/>
+            <classpath refid="StringSolver.classpath"/>
+        </junit>
+    </target>
+    <target name="ExperimentCFGAnalysis">
+        <java classname="hampi.tests.ExperimentCFGAnalysis" failonerror="true" fork="yes">
+            <jvmarg line="-Xmx700M"/>
+            <classpath refid="StringSolver.classpath"/>
+        </java>
+    </target>
+    <target name="Hampi">
+        <java classname="hampi.Hampi" failonerror="true" fork="yes">
+            <classpath refid="StringSolver.classpath"/>
+        </java>
+    </target>
+    <target name="junitreport">
+        <junitreport todir="${junit.output.dir}">
+            <fileset dir="${junit.output.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.output.dir}"/>
+        </junitreport>
+    </target>
+</project>

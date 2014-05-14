@@ -1,0 +1,110 @@
+#!/usr/bin/perl
+
+# Sixgill: Static assertion checker for C/C++ programs.
+# Copyright (C) 2009-2010  Stanford University
+# Author: Brian Hackett
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# identify clusters in report traits.
+
+my @pos_patterns;
+my @neg_patterns;
+
+while (my $pattern = shift) {
+    if ($pattern =~ /^\-(.*)/) {
+        push(@neg_patterns, $1);
+    }
+    else {
+        push(@pos_patterns, $pattern);
+    }
+}
+
+my $report = "";
+
+my %traitmap;
+my %traitcount;
+
+my @trait_list;
+
+# traits we don't cluster on.
+my @exclude_traits = ("Kind", "BlockCount", "BoundType", "Unsatisfiable", "HeapPropagate");
+
+while (my $line = <>) {
+    chomp $line;
+
+    if ($line =~ /^REPORT ([^ ]*) (\'[^\']*\')/) {
+        if ($report ne "") {
+            my $match = 1;
+            for my $pattern (@pos_patterns) {
+                my $seen = grep(/$pattern/, @trait_list);
+                $match = 0 if ($seen == 0);
+            }
+            for my $pattern (@neg_patterns) {
+                my $seen = grep(/$pattern/, @trait_list);
+                $match = 0 if ($seen != 0);
+            }
+
+            if ($match) {
+                for my $trait (@trait_list) {
+                    # don't cluster based on the excluded traits.
+                    my $exclude = 0;
+                    for my $entry (@exclude_traits) {
+                        $exclude = 1 if ($trait =~ /$entry/);
+                    }
+                    next if ($exclude == 1);
+
+                    $traitmap{$trait}{$report} = 1;
+                    $traitcount{$trait}++;
+                }
+            }
+        }
+
+        @trait_list = ("Kind:$1");
+        $report = $2;
+    }
+
+    if ($line =~ /^TRAIT: ([^ ]*) (.*)/) {
+        push(@trait_list, "$1:$2");
+    } elsif ($line =~ /^TRAIT: ([^ ]*)/) {
+        push(@trait_list, $1);
+    }
+}
+
+my @sorted = sort { $traitcount{$b} <=> $traitcount{$a} } (keys %traitcount);
+
+my %filtermap;
+my %filtercount;
+my %reported;
+
+for my $key (@sorted) {
+    for my $report (keys %{$traitmap{$key}}) {
+        next if ($reported{$report} == 1);
+        $reported{$report} = 1;
+        $filtercount{$key}++;
+        $filtermap{$key}{$report} = 1;
+    }
+}
+
+my @sorted = sort { $filtercount{$b} <=> $filtercount{$a} } (keys %filtercount);
+
+for my $key (@sorted) {
+    my $count = $filtercount{$key};
+    print "CLUSTER [$count]: $key\n";
+
+    for my $report (keys %{$filtermap{$key}}) {
+        print "$report\n";
+    }
+    print "\n";
+}

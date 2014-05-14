@@ -1,0 +1,6 @@
+(declare-variable i Int)
+
+(assert (= i (Indexof "abc" "b") ) )
+
+(check-sat)
+(get-model)

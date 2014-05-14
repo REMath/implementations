@@ -1,0 +1,111 @@
+// example.ast            see license.txt for copyright and terms of use
+// demonstrate a few features; I use this a testbed for features
+
+verbatim {
+  // first verbatim in example.ast
+}
+
+// I want a visitor, with the interface called ExampleVisitor
+option visitor ExampleVisitor;
+option mvisitor ExampleMVisitor;
+option dvisitor ExampleDVisitor;
+
+// add a field to the visitor
+custom ExampleVisitor {
+public:
+  int someVisitorField;
+}
+
+// initialize it...
+custom ExampleVisitor_ctor { someVisitorField = 0; }
+
+// emit the xmlPrint stuff too
+option xmlPrint;
+
+// and gdb
+option gdb;
+
+class Node (
+  int x,
+  int y
+) {
+  public Node *next;
+  ctor next=NULL;
+  
+  public(field) int w = 3;
+  public FakeList<Node> *listptr = NULL;
+
+  custom traverse { next->traverse(vis); }
+  custom mtraverse { mtraverse(obj->next); }
+}
+
+class NodeList (
+  FakeList<Node> *list
+);
+
+
+class AnotherList (
+  ASTList<Node> list2,
+  LocString str
+);
+
+
+class Super (int x) {
+  protected(virtual) int foo();
+
+  public(owner) int *p = NULL;
+
+  public(virtual) int onlyInSubclasses() = 0;
+  public(virtual) int everywhere();
+
+  -> Sub1(int y);
+  -> Sub2(int z);
+  -> SubWithDefault(int q = 5);
+  -> Sub3(Super s1, Sub2 s2);
+}
+
+// 2005-03-25: Changed this from two enumerators to three, because
+// gcc-3.4.0 emits an unusual warning in the toString method if
+// the enumerator only has two elements.  This warning is not
+// emitted by gcc-3.4.3...
+enum AnEnum { AE_ONE, AE_TWO, AE_THREE };
+
+// eliminated explicit enumerator values...
+enum AnotherEnum {
+  anotherone,
+  anothertwo,
+  anotherthree
+};
+
+class UsesEnum {
+  -> UE_a(AnEnum x);
+  -> UE_b(int y);
+}
+
+verbatim {
+  class Base1 {};
+  class Base2 {};
+  class Base3 {};
+}
+
+class InheritsSomething : public Base1 {
+  -> IS_a(int z) : public Base2 ;
+  -> IS_b(int q) : public Base3 {
+       public float f;
+     }
+  -> IS_c(int ret);       // testing ctor arg with name 'ret'
+  -> IS_d(UsesEnum ret);  // another
+}
+
+class HasLastArgs(int x)(int w) {
+  -> Hla1(int y);
+  -> Hla2(int y, int z);
+}
+
+class SomethingElse(int x, int y) {
+  custom substituteClone 
+    { return new SomethingElse(x,y); /*my own clone() code*/ }
+}
+
+
+// EOF

@@ -1,0 +1,250 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+
+<HEAD>
+  <TITLE>cc.ast</TITLE>
+  <meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+</HEAD>
+
+<body>
+
+<center><h2>
+cc.ast: The Abstract Syntax Tree description
+</h2></center>
+
+<p>
+This page documents <a href="../cc.ast">cc.ast</a>, the most
+important file in <a href="../index.html">Elsa</a>.  Mainly
+I document here the big ideas or the tricky points; cc.ast itself
+should be consulted for the details, and you should probably be
+looking at that file as you read this page (classes are documented
+in the same order as they appear in cc.ast).
+
+<p>
+Note that some of the AST classes, but not all, have source location
+information (SourceLoc; <a href="../../smbase/srcloc.h">smbase/srcloc.h</a>).
+Generally I've just put location info wherever I've happened to need it;
+there's no clear strategy.  Now that SourceLoc is just one word (it
+used to be three), I might put it everywhere.
+
+<h3>ASTVisitor</h3>
+
+<p>
+One way to walk over the AST is to write a set of mutually-recursive
+functions that manually traverse the AST edges.  This works well for
+analyses that are sensitive to context, and/or use results from
+subtrees in nontrivial ways.  The type checker
+(<a href="../cc_tcheck.ast">cc_tcheck.ast</a>,
+<a href="../cc_tcheck.cc">cc_tcheck.cc</a>) is such an analysis.
+
+<p>
+An alternative, which is less work if the analysis is mostly
+insensitive to context and/or does not need to inspect all of the
+nodes in the AST, is to use ASTVisitor.  One simply implements the
+ASTVisitor interface (defined in cc.ast.gen.h once that file has been
+generated), and invokes the <tt>traverse</tt> method on the root of
+the AST subtree of interest.  For example, this code would print all
+of the function names (without qualifiers) in the AST:
+
+<pre>
+  class FuncPrinter : public ASTVisitor {
+  public:
+    virtual bool visitFunction(Function *f) {
+      cout &lt;&lt; f-&gt;nameAndParams-&gt;getDeclaratorId()-&gt;getName() &lt;&lt; "\n";
+    }
+  };
+
+  void printFuncNames(TranslationUnit *unit)
+  {
+    FuncPrinter fp;
+    unit-&gt;traverse(fp);
+  }
+</pre>
+
+<h3>TranslationUnit, TopForm</h3>
+
+<p>
+The entire AST is a list of TopForms, collected into a TranslationUnit.
+A TopForm is something that appears at toplevel, or at toplevel in a 
+namespace.
+
+<h3>Function, MemberInit</h3>
+
+<p>
+All function definitions, whether at toplevel or inside class bodies,
+get a Function AST node.  The function's name and parameters are
+encoded in the <tt>nameAndParams</tt> Declarator.  Also included
+are constructor member initializers, and constructor exception
+handlers, if any.
+
+<h3>Declaration</h3>
+
+<p>
+A Declaration is a TypeSpecifier and then some Declarators, plus
+some optional keywords (DeclFlags) like <tt>static</tt> or
+<tt>extern</tt>.
+
+<h3>ASTTypeId</h3>
+
+<p>
+An ASTTypeId is like a Declaration, but there's only one Declarator
+and no DeclFlags.  It's used for function parameters and for
+the types that appear in the cast syntax.
+
+<h3>PQName</h3>
+
+<p>
+A PQName, a possibly-qualified name, is usually just a string
+(actually a StringRef, a pointer into the StringTable; see
+<a href="../../ast/strtable.h">ast/strtable.h</a>).  However, it
+might also have qualifiers, those names that can appear before
+the "<tt>::</tt>" symbol.  To complicate matters further, sometimes
+the names have template arguments, and sometimes the names refer
+to <tt>operator</tt>s.
+
+<h3>TypeSpecifier, BaseClassSpec, Enumerator</h3>
+
+<p>
+TypeSpecifiers are the first part of Declarations.  They mainly
+correspond to AtomicTypes in the terminology of
+<a href="cc_type.html">cc_type</a>: built-in types, enums, structs,
+classes, and unions.  However, via typedefs (TS_name), they can
+actually refer to constructed types (like pointers) also.
+
+<h3>MemberList, Member</h3>
+
+<p>
+Members are elements in a class definition.  Typical members
+are data members or method prototypes (MR_decl), or inline
+definitions of methods (MR_func).  MR_publish is obscure,
+corresponding to an "access declaration" [cppstd Section 11.3].
+
+<a name="declarator">
+<h3>Declarator, IDeclarator, ExceptionSpec</h3>
+</a>
+
+<p>
+The C/C++ syntax for declarators is probably the strangest part
+of the language to someone new to parsing it.  Declarators are
+the things that come after TypeSpecifiers in Declarations:
+<pre>
+  int                  *       x      ,    *     *     y     ;
+   |
+  TypeSpecifier     &lt;-- Declarator -&gt;    &lt;-- Declarator --&gt;
+
+  &lt;---------------------- Declaration -----------------------&gt;
+</pre>
+
+But they also have a recursive structure, represented in my
+AST as IDeclarators:
+<pre>
+  int       *          *                 y       ;
+                                         |
+                                      D_name
+                       &lt;---- D_pointer ----&gt;
+            &lt;--------- D_pointer ----------&gt;
+
+
+  int    * *      (    *           func    ) (int, int)  ;
+                                     |
+                                  D_name
+                       &lt;-- D_pointer --&gt;
+                  &lt;----- D_grouping -------&gt;
+                  &lt;-------------- D_func -------------&gt;
+           &lt;------------- D_pointer ------------------&gt;
+         &lt;------------- D_pointer --------------------&gt;
+</pre>
+
+<p>
+Now, what really makes them screwy is that they're inside out!  Taking
+the last example above, <tt>func</tt> is being declared to be a
+pointer to a function which returns a pointer to pointer to an
+integer--you read it from right to left.  The type checker
+(<a href="../cc_tcheck.cc">cc_tcheck.cc</a>) sorts the types out into
+a more usable representation
+(<a href="cc_type.html">cc_type</a>), but they start as above.
+
+<p>
+(By the way: declarators are inside-out not because Kernighan
+and Ritchie are evil or stupid, but because they wanted the syntax of
+declarations to mirror the syntax of expressions, to try to make the
+language easier to learn.  When I first learned C, I thought it
+made perfect sense.  Only now as a PhD student in computer science
+do I find it confusing.  <tt>:)</tt>&nbsp;  )
+
+<h3>OperatorName</h3>
+
+<p>
+OperatorName just stores the various <tt>operator</tt>-induced
+names.  The getOperatorName then flattens them down to a string
+anyway.  The tricky one is ON_conversion, which can't be
+canonically flattened, so this has to be special-cased in code
+that consumes OperatorNames.
+
+<h3>Statement, Condition, Handler</h3>
+
+<p>
+Statement represents statements; it's pretty straightforward.
+Condition is the thing between the parentheses in conditionals.
+Handler is what comes after <tt>try</tt>.
+
+<h3>Expression, ExpressionListOpt</h3>
+
+<p>
+Expression represents expressions.  Again, straightforward.
+
+<p>
+Notice that E_stringLit may contain a continuation.  That's
+how string literal concatenation is implemented: in the parser.
+This is done because the lexer does no interpretation of any
+kind of literal, but concatenation semantics would require that it
+do so (e.g. "\xA" "B" is equivalent to "\x0AB", two characters,
+not "\xAB", one character).
+
+<p>
+One possibly surprising choice is not to fold E_this into E_variable.
+The reason E_this is split off is that "this" is a pointer to the
+receiver object (called "__receiver"), which already is represented by
+a Variable in the parameter list.  If "this" were parsed as an
+E_variable then its 'var' field would have to point at some
+<em>other</em> Variable (so the type makes sense), but then we'd have
+two Variables for the same concept (receiver), which would be extra
+disconnect for analyses to overcome.  Therefore E_this lets us treat
+"this" the same as "&amp;__receiver".
+
+<h3>Initializer</h3>
+
+<p>
+Initializers are what come after IDeclarators in Declarations;
+they're the "3" in "int x = 3;".  They can be nested, as
+IN_compound.
+
+<p>
+GNU/C99 designated initializers are implemented in the GNU
+extension, <a href="../gnu.ast">gnu.ast</a>.  The build process
+that comes with Elsa will include the GNU extension if you
+pass "<tt>-gnu</tt>" to <tt>./configure</tt>.
+
+<h3>TemplateDeclaration, TemplateParameter, TemplateArgument</h3>
+
+<p>
+Representation of templates in the AST is straightforward.
+Elsa does not (yet?) expand or instantiate templates, however.
+
+<p>
+2005-03-02: The above is no longer true.  See
+<a href="design.html">design.html</a> for more info.
+
+<p>
+  <a href="http://validator.w3.org/check/referer"><img border="0"
+      src="http://www.w3.org/Icons/valid-html401"
+      alt="Valid HTML 4.01!" height="31" width="88"></a>
+</p>
+
+</body>
+
+</HTML>
+
+
+

@@ -1,0 +1,35 @@
+var v : 13;
+
+cfg SQL :=  SelectStmt | UpdateStmt | DeleteStmt ;
+cfg DeleteStmt :=  Delete From Id WhereCondOpt ;
+cfg UpdateStmt :=  Update Id Set AssignmentList WhereCondOpt ;
+cfg SelectStmt :=  Select ColumnSet From IdList WhereCondOpt OrderByOpt; 
+cfg AssignmentList :=  Assignment | Assignment Comma AssignmentList; 
+cfg Assignment :=  Id Eq Val ;
+cfg ColumnSet :=  Star | IdList ;
+cfg IdList :=  Id | Id Comma IdList ;
+cfg OrderByOpt :=  OrderBy | ;
+cfg OrderBy :=  Order By Id; 
+cfg WhereCondOpt :=  WhereCond | ;
+cfg WhereCond :=  Where Cond ;
+cfg Cond :=  Val Eq Val | Cond Or Cond | Cond And Cond ;
+cfg Val :=  Id | Num | Quote Id Quote | Quote Quote | Quote Num Quote ;
+cfg Or :=  "O" ;
+cfg And :=  "A" ;
+cfg Select :=  "S" ;
+cfg Star :=  "R" ;
+cfg From :=  "F" ;
+cfg Id :=  "i" ;
+cfg Num :=  "n" ;
+cfg Eq :=  "Q" ;
+cfg Where :=  "W" ;
+cfg Comma :=  "C" ;
+cfg Quote :=  "T" ;
+cfg Update :=  "U" ;
+cfg Set :=  "E" ;
+cfg Delete :=  "D" ;
+cfg Order :=  "X" ;
+cfg By :=  "B" ;
+val q := concat("UiEiQTnTCiQTnTCiQTnTCiQTnTCiQTnTCiQnCiQTnTWiQT", v, "T");
+assert q contains "OTnTQTnT";
+assert q in SQL;//size bound will be inferred

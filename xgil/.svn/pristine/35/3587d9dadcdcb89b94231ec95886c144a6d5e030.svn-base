@@ -1,0 +1,54 @@
+// arith.gr
+// parser for a very simple language of arithmetic expressions
+// testing example for OCaml backend
+
+
+context_class arith {
+public:
+};
+
+
+terminals {
+  0 : TOK_EOF;
+  1 : TOK_NUMBER;              // no alias
+  2 : TOK_PLUS     "+";        // alias is "+" (including quotes)
+  3 : TOK_MINUS    "-";
+  4 : TOK_TIMES    "*";
+  5 : TOK_DIVIDE   "/";
+  6 : TOK_LPAREN   "(";
+  7 : TOK_RPAREN   ")";
+
+  token(int) TOK_NUMBER;       // numbers have associated int-typed values
+
+  precedence {
+    // high precedence
+    left 20 "*" "/";
+    left 10 "+" "-";
+    // low precedence
+  }
+}
+
+
+impl_verbatim {
+  (* this is verbatim code that gets inserted into arith.ml *)
+}
+
+nonterm(int) Exp {
+  -> e1:Exp "+" e2:Exp        { e1 + e2 }
+
+  -> e1:Exp "-" e2:Exp        { e1 - e2 }
+  -> e1:Exp "*" e2:Exp        { e1 * e2 }
+  -> e1:Exp "/" e2:Exp        { e1 / e2 }
+  -> n:TOK_NUMBER             { n }
+  -> p:ParenthesizedExp       { p }
+}
+
+// I've separated this rule out into its own nonterminal just to
+// show an example of having more than one nonterminal in a grammar.
+nonterm(int) ParenthesizedExp {
+  // messing around with embedded fragments..
+  -> "(" e:Exp ")"            { e   (* [ *) }
+}
+
+
+// EOF

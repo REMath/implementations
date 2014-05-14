@@ -1,0 +1,25 @@
+/*CFG Analyzer, version 03/12/2007
+
+The intersection of L(G1) ... L(G2) is empty when restricted  to words of length k with 5 <= k <= 5.
+*/
+var hampiStringVar : 5;
+cfg expression0 :=  arithmetic_expression0 | boolean_expression0 | "d" ;
+cfg arithmetic_expression0 :=  simple_arithmetic_expression0 | "i" simple_arithmetic_expression0 "e" arithmetic_expression0 ;
+cfg simple_arithmetic_expression0 :=  term0 | "+" term0 | simple_arithmetic_expression0 "+" term0 ;
+cfg term0 :=  factor0 | term0 "*" factor0 ;
+cfg factor0 :=  primary0 | factor0 "^" primary0 ;
+cfg primary0 :=  "u" | "v" | "f" | "(" arithmetic_expression0 ")" ;
+cfg boolean_expression0 :=  simple_boolean0 | "i" simple_boolean0 "e" boolean_expression0 ;
+cfg simple_boolean0 :=  implication0 | simple_boolean0 "~" implication0 ;
+cfg implication0 :=  boolean_term0 | implication0 ">" boolean_term0 ;
+cfg boolean_term0 :=  boolean_factor0 | boolean_term0 ":" boolean_factor0 ;
+cfg boolean_factor0 :=  boolean_secondary0 | boolean_factor0 "&" boolean_secondary0 ;
+cfg boolean_secondary0 :=  boolean_primary0 | "!" boolean_primary0 ;
+cfg boolean_primary0 :=  "l" | "v" | "f" | "r" | "(" boolean_expression0 ")" ;
+reg limit0 := fix(expression0, 5);
+assert hampiStringVar in limit0;
+cfg S1 :=  B1 "d" | "a" D1 "d" | "a" B1 "c" ;
+cfg B1 :=  "b" ;
+cfg D1 :=  "b" ;
+reg limit1 := fix(S1, 5);
+assert hampiStringVar in limit1;

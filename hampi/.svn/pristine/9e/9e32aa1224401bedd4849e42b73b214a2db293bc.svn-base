@@ -1,0 +1,35 @@
+/* AMBIGUOUS
+
+Grammar '01-05-076' (HTML-like syntax, with optional end tag for paragraphs)
+taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+tokens = { 'p'=PARA 'P'=PARA_END 'b'=BOLD 'B'=BOLD_END 't'=TEXTBLOCK }
+*/
+
+
+text
+: ;
+: text textElement ;
+
+textElement
+: inlineElement ;
+: paragraph ;
+
+inlineElement
+: "t" ;
+: "b" inlineText "B" ;
+
+paragraph
+: "p" inlineText optParaEnd ;
+
+optParaEnd
+: ;
+: "P" ;
+
+inlineText
+: ;
+: inlineText inlineElement ;
+

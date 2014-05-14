@@ -1,0 +1,25 @@
+-= CVE-2002-0906 =-
+
+Vulnerable version: Sendmail up to 8.12.5
+File: sendmail/sm_resolve.c
+Download from: ftp://ftp.sendmail.org/pub/sendmail/past-releases/
+
+Domain: Server
+
+_ Vulnerable Functions and Buffers _
+
+Function parse_dns_reply allocates a buffer of a user-specified size, then copies a separately user-specified amount of user-data into that buffer. All data is passed into the function as an unsigned char array over which a sequence of different types of records is overlaid. The overflow only occurs if a record contains a specific "type" field value. The patched version only copies as much data as the buffer can hold.
+
+_ Decomposed Programs _
+
+parse_dns_reply/
+  parse_dns_reply_no_cast_{bad,ok}.c
+  parse_dns_reply_cast_{bad,ok}.c
+
+Variant cast casts an array of uchars to an int (size) using bitops. Variant no_cast assigns size non-deterministically.
+
+_ Notes _
+
+This is Zitser's sendmail/s7, simplified.
+
+This vulnerability does not depend on BASE_SZ.

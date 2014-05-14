@@ -1,0 +1,19 @@
+/* UNAMBIGUOUS
+
+Grammar 'g5' taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (J-version of LDTA'07 paper), p. 10.
+
+tokens = {'a','b','c'}
+*/
+
+S : A C ;
+: B C "b" ;
+
+A : "a" ;
+
+B : "a" ;
+
+C : "c" C "b" ;
+: "c" "b" ;

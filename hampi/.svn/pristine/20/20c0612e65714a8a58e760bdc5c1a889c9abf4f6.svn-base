@@ -1,0 +1,42 @@
+symb: "UPDATE config SET welcome = '" . VAR(new_welcome) . "'"
+conc: UPDATE config SET welcome = '1'
+
+symb: "INSERT INTO MembersMain (Name,Division,RankCorp,DateJoined,Comment) VALUES ('" . VAR(name) . "','" . VAR(division) . "','" . VAR(rankcorp) . "',Now(),'" . VAR(comment) . "');"
+conc: INSERT INTO MembersMain (Name,Division,RankCorp,DateJoined,Comment) VALUES ('1','1','1',Now(),'1');
+
+symb: "UPDATE MembersMain SET Name = '" . VAR(name) . "', Division = '" . VAR(division) . "', RankCorp = '" . VAR(rankcorp) . "', Vacation = '" . VAR(vacation) . "', Comment = '" . VAR(comment) . "', LastUpdate = Now(), Deleted = '" . VAR(deleted) . "' WHERE MemberID = '" . VAR(id) . "'"
+conc: UPDATE MembersMain SET Name = '1', Division = '1', RankCorp = '1', Vacation = '1', Comment = '1', LastUpdate = Now(), Deleted = '1' WHERE MemberID = '1'
+
+symb: "UPDATE MembersMain SET Name = '" . VAR(name) . "', Division = '" . VAR(division) . "', RankCorp = '" . VAR(rankcorp) . "', Vacation = '" . VAR(vacation) . "', Comment = '" . VAR(comment) . "', Deleted = '" . VAR(deleted) . "' WHERE MemberID = '" . VAR(id) . "'"
+conc: UPDATE MembersMain SET Name = '1', Division = '1', RankCorp = '1', Vacation = '1', Comment = '1', Deleted = '1' WHERE MemberID = '1'
+
+symb: "SELECT MemberID, Name, Division, DateJoined, RankCorp, Vacation, Comment, Deleted FROM MembersMain WHERE MemberID='" . VAR(id) . "'"
+conc: SELECT MemberID, Name, Division, DateJoined, RankCorp, Vacation, Comment, Deleted FROM MembersMain WHERE MemberID='1'
+
+symb: "UPDATE MembersMain SET Vacation = '" . VAR(vacedit) . "' WHERE Name = '" . VAR(HTTP_EVE_CHARNAME) . "'"
+conc: UPDATE MembersMain SET Vacation = '1' WHERE Name = '1'
+
+symb: "SELECT MemberID, Name, Division, RankCorp, Vacation FROM MembersMain WHERE Name = '" . VAR(HTTP_EVE_CHARNAME) . "'"
+conc: SELECT MemberID, Name, Division, RankCorp, Vacation FROM MembersMain WHERE Name = '1'
+
+symb: "UPDATE MembersMain SET LastUpdate = Now() WHERE Name = '" . VAR(HTTP_EVE_CHARNAME) . "'"
+conc: UPDATE MembersMain SET LastUpdate = Now() WHERE Name = '1'
+
+symb: "UPDATE MembersMain SET Name = '" . VAR(name) . "', Division = '" . VAR(division) . "', RankCorp = '" . VAR(rankcorp) . "', Vacation = '0', Comment = '" . VAR(comment) . "', LastUpdate = Now(), Deleted = '" . VAR(deleted) . "' WHERE MemberID = '" . VAR(id) . "'"
+conc: UPDATE MembersMain SET Name = '1', Division = '1', RankCorp = '1', Vacation = '0', Comment = '1', LastUpdate = Now(), Deleted = '1' WHERE MemberID = '1'
+
+symb: "UPDATE MembersMain SET Name = '" . VAR(name) . "', Division = '" . VAR(division) . "', RankCorp = '" . VAR(rankcorp) . "', Vacation = '0', Comment = '" . VAR(comment) . "', Deleted = '" . VAR(deleted) . "' WHERE MemberID = '" . VAR(id) . "'"
+conc: UPDATE MembersMain SET Name = '1', Division = '1', RankCorp = '1', Vacation = '0', Comment = '1', Deleted = '1' WHERE MemberID = '1'
+
+symb: "UPDATE MembersMain SET Name = '" . VAR(name) . "', Division = '" . VAR(division) . "', RankCorp = '" . VAR(rankcorp) . "', Vacation = '" . VAR(vacation) . "', Comment = '" . VAR(comment) . "', LastUpdate = Now(), Deleted = '0' WHERE MemberID = '" . VAR(id) . "'"
+conc: UPDATE MembersMain SET Name = '1', Division = '1', RankCorp = '1', Vacation = '1', Comment = '1', LastUpdate = Now(), Deleted = '0' WHERE MemberID = '1'
+
+symb: "UPDATE MembersMain SET Name = '" . VAR(name) . "', Division = '" . VAR(division) . "', RankCorp = '" . VAR(rankcorp) . "', Vacation = '" . VAR(vacation) . "', Comment = '" . VAR(comment) . "', Deleted = '0' WHERE MemberID = '" . VAR(id) . "'"
+conc: UPDATE MembersMain SET Name = '1', Division = '1', RankCorp = '1', Vacation = '1', Comment = '1', Deleted = '0' WHERE MemberID = '1'
+
+symb: "UPDATE MembersMain SET Name = '" . VAR(name) . "', Division = '" . VAR(division) . "', RankCorp = '" . VAR(rankcorp) . "', Vacation = '0', Comment = '" . VAR(comment) . "', LastUpdate = Now(), Deleted = '0' WHERE MemberID = '" . VAR(id) . "'"
+conc: UPDATE MembersMain SET Name = '1', Division = '1', RankCorp = '1', Vacation = '0', Comment = '1', LastUpdate = Now(), Deleted = '0' WHERE MemberID = '1'
+
+symb: "UPDATE MembersMain SET Name = '" . VAR(name) . "', Division = '" . VAR(division) . "', RankCorp = '" . VAR(rankcorp) . "', Vacation = '0', Comment = '" . VAR(comment) . "', Deleted = '0' WHERE MemberID = '" . VAR(id) . "'"
+conc: UPDATE MembersMain SET Name = '1', Division = '1', RankCorp = '1', Vacation = '0', Comment = '1', Deleted = '0' WHERE MemberID = '1'
+

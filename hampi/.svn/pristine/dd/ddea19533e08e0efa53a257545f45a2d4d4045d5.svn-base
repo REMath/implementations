@@ -1,0 +1,317 @@
+/* AMBIGUOUS
+
+Grammar 'sml' (Standard ML)
+taken from:
+
+"An Experimental Ambiguity Detection Tool"
+Sylvain Schmitz (2007)
+
+in turn taken from Appendix B:
+"The definition of standard ML"
+Milner et al. (1997), ISBN 0-262-63181-4.
+
+tokens = {
+ABSTYPE   "abstype"
+AND       "and"
+ANDALSO   "andalso"
+APPL      "->"
+AS        "as"
+CASE      "case"
+DATATYPE  "datatype"
+DIGIT
+DO        "do"
+ELSE      "else"
+END       "end"
+EXCEPTION "exception"
+FN        "fn"
+FUN       "fun"
+HANDLE    "handle"
+IF        "if"
+IN        "in"
+INFIX     "infix"
+INFIXR    "infixr"
+LAB
+LET       "let"
+LOCAL     "local"
+MATCH     "=>"
+NONFIX    "nonfix"
+OF        "of"
+OP        "op"
+OPEN      "open"
+ORELSE    "orelse"
+RAISE     "raise"
+REC       "rec"
+SCON
+STRID
+THEN      "then"
+TYCON
+TYPE      "type"
+TYVAR
+VAL       "val"
+VID
+WHILE     "while"
+WILDCARD  "..."
+WITH      "with"
+WITHTYPE  "withtype"
+}
+*/
+
+atexp
+:    SCON ;
+: op VID ;
+: "{" exprow "}" ;
+: "{" "}" ;
+: "#" LAB ;
+: "(" ")" ;
+: "(" expcn2 ")" ;
+: "[" expcn "]" ;
+: "[" "]" ;
+: "(" expsn2 ")" ;
+: LET dec IN expsn END ;
+: "(" exp ")" ;
+
+expcn
+:    exp ;
+: expcn "," exp ;
+
+expcn2
+:    exp "," exp ;
+: expcn2 "," exp ;
+
+expsn
+:    exp ;
+: expsn ";" exp ;
+
+expsn2
+:    exp ";" exp ;
+: expsn2 ";" exp ;
+
+exprow
+:    LAB "=" exp ;
+: exprow "," LAB "=" exp ;
+
+appexp
+:    atexp ;
+: appexp atexp ;
+
+infexp
+:    appexp ;
+: infexp VID infexp ;
+
+exp
+:    infexp ;
+: exp ":" ty ;
+: exp ANDALSO exp ;
+: exp ORELSE exp ;
+: exp HANDLE match ;
+: RAISE exp ;
+: IF exp THEN exp ELSE exp ;
+: WHILE exp DO exp ;
+: CASE exp OF match ;
+: FN match ;
+
+match
+:    mrule ;
+: match ":" mrule ;
+
+mrule
+:    pat MATCH exp ;
+
+dec
+:    VAL tyvarseq valbind ;
+: FUN fvalbind ;
+: TYPE typbind ;
+: DATATYPE datbind ;
+: DATATYPE datbind WITHTYPE typbind ;
+: DATATYPE TYCON "=" DATATYPE TYCON ;
+: ABSTYPE datbind WITH dec END ;
+: ABSTYPE datbind WITHTYPE typbind WITH dec END ;
+: EXCEPTION exbind ;
+: LOCAL dec IN dec END ;
+: OPEN stridn ;
+: ;
+: dec dec ;
+: dec ";" dec ;
+: INFIX vidn ;
+: INFIX DIGIT vidn ;
+: INFIXR vidn ;
+: INFIXR DIGIT vidn ;
+: NONFIX vidn ;
+
+stridn
+:    STRID ;
+: stridn STRID ;
+
+vidn
+:    VID ;
+: vidn VID ;
+
+valbind
+:    pat "=" exp ;
+: valbind AND pat "=" exp ;
+: REC valbind ;
+
+fvalbind
+:    mfvalbind ;
+: fvalbind AND mfvalbind ;
+
+mfvalbind
+:    sfvalbind ;
+: mfvalbind ":" sfvalbind ;
+
+sfvalbind
+:    op VID atpatn "=" tyop exp ;
+
+op
+: ;
+: OP ;
+
+tyop
+: ;
+: ":" ty ;
+
+atpatn
+:    atpat ;
+: atpatn atpat ;
+
+typbind
+:    tyvarseq TYCON "=" ty ;
+: typbind AND tyvarseq TYCON "=" ty ;
+
+tyvarseq
+:    TYVAR ;
+: "(" tyvarcn ")" ;
+: "(" ")" ;
+: ;
+
+tyvarcn
+:    TYVAR ;
+: tyvarcn "," TYVAR ;
+
+datbind
+:    tyvarseq TYCON "=" conbind ;
+: datbind AND tyvarseq TYCON "=" conbind ;
+
+conbind
+:    sconbind ;
+: conbind ":" sconbind ;
+
+sconbind
+:    op VID ;
+: op VID OF ty ;
+
+exbind
+:    sexbind ;
+: exbind AND sexbind ;
+
+sexbind
+:    op VID ;
+: op VID OF ty ;
+: op VID "=" op VID ;
+
+atpat
+:    "_" ;
+: SCON ;
+: op VID ;
+: "{" patrow "}" ;
+: "{" "}" ;
+: "(" ")" ;
+: "(" patcn2 ")" ;
+: "[" "]" ;
+: "[" patcn "]" ;
+: "(" pat ")" ;
+
+patcn
+:    pat ;
+: patcn "," pat ;
+
+patcn2
+:    pat "," pat ;
+: patcn2 "," pat ;
+
+patrow
+:    WILDCARD ;
+: spatrow ;
+: patrow "," spatrow ;
+
+spatrow
+:    LAB "=" pat ;
+: VID tyop ;
+: VID tyop AS pat ;
+
+pat
+:    atpat ;
+: op VID atpat ;
+: pat VID pat ;
+: pat ":" ty ;
+: op VID tyop AS pat ;
+
+ty
+:    TYVAR ;
+: "{" tyrow "}" ;
+: tyseq TYCON ;
+: tysn2 ;
+: ty APPL ty ;
+: "(" ty ")" ;
+
+tyseq
+:    ty ;
+: ;
+: "(" tycn ")" ;
+: "(" ")" ;
+
+tycn
+:    ty ;
+: tycn "," ty ;
+
+tysn2
+:    ty "*" ty ;
+: tysn2 "*" ty ;
+
+tyrow
+:    LAB ":" ty ;
+: tyrow "," LAB ":" ty ;
+
+
+ABSTYPE : "a" ;
+AND : "b" ;
+ANDALSO : "c" ;
+APPL : "d" ;
+AS : "e" ;
+CASE : "f" ;
+DATATYPE : "g" ;
+DIGIT : "h" ;
+DO : "i" ;
+ELSE : "j" ;
+END : "k" ;
+EXCEPTION : "l" ;
+FN : "m" ;
+FUN : "n" ;
+HANDLE : "o" ;
+IF : "p" ;
+IN : "q" ;
+INFIX : "r" ;
+INFIXR : "s" ;
+LAB : "t" ;
+LET : "u" ;
+LOCAL : "v" ;
+MATCH : "w" ;
+NONFIX : "x" ;
+OF : "y" ;
+OP : "z" ;
+OPEN : "A" ;
+ORELSE : "B" ;
+RAISE : "C" ;
+REC : "D" ;
+SCON : "E" ;
+STRID : "F" ;
+THEN : "G" ;
+TYCON : "H" ;
+TYPE : "I" ;
+TYVAR : "J" ;
+VAL : "K" ;
+VID : "L" ;
+WHILE : "M" ;
+WILDCARD : "N" ;
+WITH : "O" ;
+WITHTYPE : "P" ;

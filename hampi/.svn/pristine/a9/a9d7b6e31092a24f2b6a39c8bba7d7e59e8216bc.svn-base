@@ -1,0 +1,27 @@
+/* UNAMBIGUOUS
+
+Grammar 'rna7' taken from:
+
+"Effective Ambiguity Checking in Biosequence Analysis"
+J.Reeder, P.Steffen, R.Giegerich, BMC Bioinformatics 6 (2005) 153.
+
+tokens = {'.','(',')'}
+*/
+
+S : "(" P ")" ;
+: "." L ;
+: R "." ;
+: L S ;
+
+L : "(" P ")" ;
+: "." L ;
+
+R : R "." ;
+: ;
+
+P : "(" P ")" ;
+: "(" N ")" ;
+
+N : "." L ;
+: R "." ;
+: L S ;

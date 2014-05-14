@@ -1,0 +1,19 @@
+// ast_build.dot
+// information flow for building the Elsa AST
+
+digraph "Elsa AST Build Process" {
+
+  "cc.ast" -> "astgen";
+  "cc_tcheck.ast" -> "astgen";
+  "cc_print.ast" -> "astgen";
+  "cc_elaborate.ast" -> "astgen";
+  "gnu.ast" -> "astgen";
+  "cfg.ast" -> "astgen";
+
+  "astgen" [
+    shape = rectangle
+  ];
+
+  "astgen" -> "cc.ast.gen.h";
+  "astgen" -> "cc.ast.gen.cc";
+}

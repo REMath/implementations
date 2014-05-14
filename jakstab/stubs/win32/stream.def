@@ -1,0 +1,9 @@
+;
+; Stack height stubs for some functions from stream.sys
+; Author: Johannes Kinder
+;
+LIBRARY STREAM
+EXPORTS
+StreamClassStreamNotification
+StreamClassDeviceNotification
+StreamClassRegisterAdapter@12

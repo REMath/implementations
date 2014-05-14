@@ -1,0 +1,9 @@
+S : A ;
+  : B ;
+A : C "a" A ;
+  : C "a" C ;
+  : ;
+B : C "b" B ;
+  : C "b" C ;
+C : "a" C "b" C ;
+  : "b" C "a" C ;

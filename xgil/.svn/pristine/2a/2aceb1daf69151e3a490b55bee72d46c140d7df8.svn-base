@@ -1,0 +1,72 @@
+5: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+5: %%% progress: 2ms: parsing...
+5: %%% progress: 2ms: done parsing (0 ms) (160868 cycles)
+5: stack nodes: 3, max stack nodes: 14
+5: num parses: 5
+5: should be: 5
+5: tree nodes: 23
+10: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+10: %%% progress: 2ms: parsing...
+10: %%% progress: 3ms: done parsing (1 ms) (1814097 cycles)
+10: stack nodes: 3, max stack nodes: 30
+10: num parses: 349
+10: should be: 349
+10: tree nodes: 418
+15: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+15: %%% progress: 2ms: parsing...
+15: %%% progress: 15ms: done parsing (13 ms) (13146793 cycles)
+15: stack nodes: 3, max stack nodes: 45
+15: num parses: 38403
+15: should be: 38403
+15: tree nodes: 2838
+20: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+20: %%% progress: 2ms: parsing...
+20: %%% progress: 62ms: done parsing (60 ms) (60250843 cycles)
+20: stack nodes: 3, max stack nodes: 60
+20: num parses: 5.04752e+06
+20: should be: 5.04752e+06
+20: tree nodes: 10783
+25: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+25: %%% progress: 2ms: parsing...
+25: %%% progress: 195ms: done parsing (193 ms) (192032915 cycles)
+25: stack nodes: 3, max stack nodes: 75
+25: num parses: 7.29709e+08
+25: should be: 7.29709e+08
+25: tree nodes: 29628
+30: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+30: %%% progress: 3ms: parsing...
+30: %%% progress: 496ms: done parsing (493 ms) (492175813 cycles)
+30: stack nodes: 3, max stack nodes: 90
+30: num parses: 1.12065e+11
+30: should be: 1.12065e+11
+30: tree nodes: 66623
+35: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+35: %%% progress: 2ms: parsing...
+35: %%% progress: 1107ms: done parsing (1105 ms) (1104077540 cycles)
+35: stack nodes: 3, max stack nodes: 105
+35: num parses: 1.79451e+13
+35: should be: 1.79451e+13
+35: tree nodes: 130893
+40: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+40: %%% progress: 2ms: parsing...
+40: %%% progress: 2201ms: done parsing (2199 ms) (2195373463 cycles)
+40: stack nodes: 3, max stack nodes: 120
+40: num parses: 2.963e+15
+40: should be: 2.963e+15
+40: tree nodes: 233438
+45: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+45: %%% progress: 2ms: parsing...
+45: %%% progress: 3992ms: done parsing (3990 ms) (3983527430 cycles)
+45: stack nodes: 3, max stack nodes: 135
+45: num parses: 5.00836e+17
+45: should be: 5.00836e+17
+45: MISMATCH in number of parse trees
+45: tree nodes: 387133
+50: %%% progress: 0ms: reading binary grammar file SSSx.tree.bin
+50: %%% progress: 2ms: parsing...
+50: %%% progress: 6864ms: done parsing (6862 ms) (6851034380 cycles)
+50: stack nodes: 3, max stack nodes: 150
+50: num parses: 8.62369e+19
+50: should be: 8.62369e+19
+50: MISMATCH in number of parse trees
+50: tree nodes: 606728

@@ -1,0 +1,16 @@
+module DeclExpr
+
+exports
+  sorts Body Stmt Decl Declarator Expr
+  context-free syntax
+                       -> Body
+    Body Stmt          -> Body
+    Decl "S"           -> Stmt
+    Expr "S"           -> Stmt
+    Id Declarator      -> Decl
+    "A"                -> Id
+    "B"                -> Id
+    Id                 -> Declarator
+    "L" Declarator "R" -> Declarator
+    Id                 -> Expr
+    Expr "L" Expr "R"  -> Expr

@@ -1,0 +1,1 @@
+(PROGRAM (ASSERT (CONTAINS v "foo")) (ASSERT (IN v Bar)))

@@ -1,0 +1,7 @@
+var v:10;
+cfg S := "a" "a" | "b" "b" | "a" S "a" | "b" S "b";
+reg Sbound := fix(S, 10);
+
+assert v in Sbound;
+assert v contains "baba";
+assert v contains "abba";

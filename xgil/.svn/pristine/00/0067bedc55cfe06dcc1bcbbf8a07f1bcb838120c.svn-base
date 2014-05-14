@@ -1,0 +1,47 @@
+#!/bin/sh
+# make a tarball for distribution
+      
+# bail on error
+set -e
+
+# tarball dist name; e.g. elkhound-2002.08.12
+distname=elkhound-`date "+%Y.%m.%d"`
+echo $distname
+
+mkdir $distname || exit
+cd $distname || exit
+
+# main stuff
+cvs export -D now smbase || exit
+cvs export -D now ast || exit
+cvs export -D now parsgen || exit
+
+# toplevel files
+cp parsgen/toplevel/* .
+
+
+# package it up
+cd ..
+targz $distname || exit
+rm -rf $distname
+
+# test it
+untargz ${distname}.tar.gz
+cd ${distname}
+./configure
+make
+cd parsgen
+./regrtest
+
+# blow away the test directory
+if [ "$1" != "-keep" ]; then
+  cd ../..
+  rm -rf $distname
+fi
+
+
+
+
+
+
+

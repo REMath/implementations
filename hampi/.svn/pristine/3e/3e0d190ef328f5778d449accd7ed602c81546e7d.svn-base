@@ -1,0 +1,11 @@
+S : T X Y "b" Y ;
+T : "a" ;
+  : "b" ;
+Y : A Y ;
+  : A Y ;
+  : Y Y ;
+X : A X ;
+  : B X ;
+  : X X ;
+A : "a" ;
+B : "b" ;

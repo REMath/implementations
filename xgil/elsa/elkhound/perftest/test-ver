@@ -1,0 +1,169 @@
+#!/bin/sh
+# pull a version from CVS and test its performance
+
+if [ "$1" = "" ]; then
+  echo "usage: $0 cvs-date"
+  exit 0
+fi
+cvsDate="$1"
+directory=`echo "$cvsDate" | sed 's/ /_/g'`
+
+CCFLAGS="-O2 -DNDEBUG -D__LINUX__ -D__UNIX__"
+
+# stop on failure
+set -e
+
+# -------------- checkout --------------
+echo "will work in $directory"
+if [ -d "$directory" ]; then
+  echo "things already checked out, building.."
+  cd "$directory"
+else
+  echo "checking things out of CVS..."
+  mkdir "$directory"
+  cd "$directory"
+  touch RUNNING
+
+  echo "checking things out"
+  cvs export -D "$cvsDate" smbase >checkout.log
+  cvs export -D "$cvsDate" ast >>checkout.log
+  cvs export -D "$cvsDate" parsgen >>checkout.log
+fi
+
+# ------------- build smbase ------------
+echo "moving into smbase.."
+cd smbase
+
+if echo "$directory" | egrep '2002-03-28_06:29_-0700|2002-03-28_06:55_-0700|2002-03-28_08:11_-0700|2002-03-29_11:38_-0700|2002-03-29_11:42_-0700|2002-04-05_22:58_-0700' >/dev/null; then
+  echo "array.h needs to be up-to-date"
+  patch -R <<EOF
+--- array.h     Sat Apr 20 23:13:34 2002
++++ -   Sun Apr 21 02:19:51 2002
+@@ -143,14 +143,10 @@
+     {}
+   ~ArrayStack();
+
+-  void push(T const &val)
++  void push(T &val)
+     { setIndexDoubler(len++, val); }
+   T pop()
+     { return operator[](--len); }
+-  T const &top() const
+-    { return operator[](len-1); }
+-  T &top()
+-    { return operator[](len-1); }
+
+   int length() const
+     { return len; }
+@@ -158,9 +154,6 @@
+     { return len==0; }
+   bool isNotEmpty() const
+     { return !isEmpty(); }
+-
+-  void popMany(int ct)
+-    { len -= ct; xassert(len >= 0); }
+ };
+
+ template <class T>
+EOF
+fi
+
+if [ "$directory" = "2002-04-18_12:55_-0700" ]; then
+  echo "xassert.h needs to be up-to-date"
+  patch -R <<EOF
+--- xassert.h   Sat Apr 20 23:28:14 2002
++++ -   Sun Apr 21 02:21:38 2002
+@@ -19,9 +19,9 @@
+
+ // here's a version which will turn off with ordinary NDEBUG
+ #if !defined(NDEBUG)
+-  #define xassertdb(cond) xassert(cond)
++  #define xassert_debug(cond) xassert(cond)
+ #else
+-  #define xassertdb(cond) ((void)0)
++  #define xassert_debug(cond) ((void)0)
+ #endif
+
+ // call when state is known to be bad; will *not* return (ideal
+EOF
+# '  (fix for emacs syntax highlighting)
+fi
+
+echo "building smbase.."
+make ccflags="$CCFLAGS" >make.out 2>&1
+cd ..
+
+
+# ------------------- build ast ---------------------
+echo "building ast.."
+(cd ast; make SMBASE="../smbase" >make.out 2>&1)
+  
+
+# ------------------ build parsgen -----------------
+echo "building parsgen.."
+cd parsgen
+./configure --nocaml --setupMakefile
+
+if [ "$directory" = "2002-04-18_08:45_-0700" ]; then
+  echo "updating glr.cc to remove got-here message"
+  patch <<EOF
+--- -   Sun Apr 21 02:42:05 2002
++++ glr.cc      Sun Apr 21 00:30:29 2002
+@@ -1092,7 +1092,7 @@
+     // added link
+
+     // TODO: I think this code path is unusual; confirm by measurement
+-    cout << "got here\n";
++    //cout << "got here\n";
+
+     // for each 'finished' parser (i.e. those not still on
+     // the worklist)
+EOF
+fi
+
+make SMBASE="../smbase" AST="../ast" ccflags="$CCFLAGS" ccgr >make.out 2>&1
+
+
+# ---------------- performance testing --------------
+for n in 1 2 3 4 5; do
+  echo "running test $n.."
+  (time ./ccgr -tr trivialActions,stopAfterParse cc.bin ../../../c.in4d) 2>&1 \
+    | tee test.out
+    
+  parseStart=`grep 'parsing\.\.\.' test.out | awk '{ print $3 }' | sed 's/ms://'`
+  parseDone=`grep 'done parsing' test.out | awk '{ print $3 }' | sed 's/ms://'`
+  realTime=`grep '^real' test.out | awk '{ print $2 }' | sed 's/s//'`
+  
+  if [ x$parseDone == x ]; then
+    # use realTime as an estimate of parsing-done time
+    mins=`echo $realTime | sed 's/m.*//'`
+    msecsPart=`echo $realTime | sed 's/.*m//' | sed 's/\.//'`
+    msecs=$[ $msecsPart + $mins * 60000 - $parseStart]
+  else
+    # use parseDone
+    msecs=$[ $parseDone - $parseStart ]
+  fi
+
+  echo "msecs: $msecs"
+
+  # make a list
+  allTimes="$allTimes $msecs"
+
+  # if the time is really big, don't bother with the iterations
+  if [ $msecs -gt 20000 ]; then
+    echo "aborting tests because that's more than 20s"
+    echo "final time for $directory: $msecs"
+    exit 0
+  fi
+done
+
+# compute median of allTimes: sort, take 3rd one
+echo "allTimes: $allTimes"
+median=`echo $allTimes | fmt -1 | sort | head -3 | tail -1`
+echo "final time for $directory: $median"
+
+cd ..
+if [ -f RUNNING ]; then
+  rm RUNNING
+fi
+touch SUCCESS

@@ -1,0 +1,19 @@
+(declare-variable y2 String)
+(declare-variable t_str5 String)
+(declare-variable m2 String)
+(declare-variable t_str2 String)
+(declare-variable z String)
+
+
+
+(assert (= z (Concat "ef" y2) ) )
+(assert (= z (Concat t_str5 (Concat "ce" m2)) ) )
+(assert (= z (Concat t_str2 "abc@") ) )
+
+
+
+
+
+
+(check-sat)
+(get-model)

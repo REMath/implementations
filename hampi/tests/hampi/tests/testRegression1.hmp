@@ -1,0 +1,6 @@
+var v : 3;
+cfg S :=  "a" | T ;
+cfg T :=  T | "b" | A ;
+cfg A :=  "a" "a" "b" | "a" "b" ;
+reg limit := fix(S, 3);
+assert v in limit;

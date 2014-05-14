@@ -1,0 +1,13 @@
+//created from CFGAnalyzer file sml_fvalbind.cfg (see there for origin info)
+var hampiStringVar : 7;
+cfg dec :=  "f" fvalbind ;
+cfg fvalbind :=  sfvalbind | fvalbind ":" sfvalbind ;
+cfg sfvalbind :=  "v" atpats "=" exp ;
+cfg exp :=  "v" | "c" exp "o" match ;
+cfg match :=  mrule | match ":" mrule ;
+cfg mrule :=  pat "m" exp ;
+cfg atpats :=  atpat | atpats atpat ;
+cfg atpat :=  "v" ;
+cfg pat :=  "v" atpat ;
+reg limit := fix(dec, 7);
+assert hampiStringVar in limit;

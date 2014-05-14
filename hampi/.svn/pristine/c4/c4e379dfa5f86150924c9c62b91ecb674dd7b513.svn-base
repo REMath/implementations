@@ -1,0 +1,6 @@
+Same : "a" "b" ;
+     : "b" "a" ;
+     : "a" Same "b" Same ;
+     : "b" Same "a" Same ;
+     : "b" Same "a" ;
+     : "a" Same "b";

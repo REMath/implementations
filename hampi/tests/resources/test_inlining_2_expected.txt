@@ -1,0 +1,7 @@
+A = "a" "a" A_renamed "a" "a" "c" "a" "a" "c"  | "a" "b" "c" "a" "a" "c"  | "a" "c" "a" "a" "c"  | "b" "c"  | "c"  ;
+A_renamed = Sym0 "c"  ;
+B = "b"  | S "a"  ;
+S = "a" A_renamed "a"  ;
+Sym0 =  | B  ;
+
+

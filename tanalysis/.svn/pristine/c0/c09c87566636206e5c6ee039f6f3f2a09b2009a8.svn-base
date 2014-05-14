@@ -1,0 +1,52 @@
+-= CVE-1999-0368 =-
+
+Vulnerable versions: wu-ftpd < 2.4.2-beta18-vr10
+File(s): src/realpath.c
+Download from:
+  ftp://ftp.wu-ftpd.org/pub/wu-ftpd-attic/wu-ftpd-2.4.2-beta18-vr8.tar.gz
+
+Domain: FTP Server
+
+_ Vulnerable Functions and Buffers _
+
+The vulnerabilities are in the realpath() funtion. 
+
+First, no bounds checking is done on the input pathname, which is
+blindly strcpy()'d into curpath, a global variable.
+
+Second, a local buffer workpath can be filled with up to MAXPATHLEN
+bytes via a call to getcwd(); workpath is then strcpy()'d to
+namebuf. More bytes are then written to namebuf using
+strcat(). Several subsequent calls to strcpy() and strcat() can
+propagate this overflow. We only try to find the initial overflow.
+
+Third, a buffer linkpath is filled, potentially to capacity of
+MAXPATHLEN, using readlink(). More data is then appended to linkpath
+using strcat(), which can overflow it.
+
+NOTE: SatAbs was having a lot of problems with the namebuf example in
+the original version which used pointers as iterators (similar to the
+NetBSD glob() example). Since my experience with YASM indicates that
+using pointers as iterators shouldn't be much harder than using ints
+(explicit aliasing, model pointers as <OBJECT, OFFSET> pairs), I
+suspect this to be a technical limitation of SatAbs rather than an
+algorithmic one. I've therefore turned the iterators into ints in
+these examples.
+
+_ Decomposed Programs _
+
+wu-ftpd.h
+
+realpath-curpath/
+  simple.c
+
+realpath-namebuf/
+  strcpy_strcat_bad.c
+  iter_ints_simp_bad.c    
+  iter_ints_bad.c
+
+realpath-linkpath/
+  strcpy_strcat_bad.c
+  prefix_simp_bad.c
+  prefix_bad.c
+

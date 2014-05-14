@@ -1,0 +1,30 @@
+-= BID-6679 =-
+
+Vulnerable versions: SpamAssassin 2.40 to 2.43
+File(s): spamd/libspamc.c
+Download from:
+  http://www.cpan.org/modules/by-module/Mail/Mail-SpamAssassin-2.43.tar.gz
+
+Domain: Spam Filter
+
+_ Note _
+
+This vulnerability doesn't seem to have a CVE entry, so I'm using its
+Bugtraq ID. It also has a Secunia Advisory number, SA7951. I heard
+about it via the CRunner paper.
+
+_ Vulnerable Functions and Buffers _
+
+A buffer called buffer[] is allocated in message_write(). Writes to
+this buffer are protected by a limit check, but there's an off-by-one
+error in the check.
+
+I'm currently not including any of the calling context, but that can
+change if need be.
+
+_ Decomposed Programs _
+
+constants.h
+
+message_write/
+  loop.c
