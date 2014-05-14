@@ -1,9 +1,0 @@
-Parsing
-[preprocessing] running gcc -C -E -I.   parse_expression/guard_random_index_bad.c
-[preprocessing] running gcc -C -E -I.   stubs.c
-Cleaning unused parts
-Symbolic link
-Starting semantical analysis
-Analyzing results for function main
-[parse_expression/guard_random_index_bad.c:12] Vulnerability: Function constraint doesn't hold for function 'strncpy'
-[parse_expression/guard_random_index_bad.c:15] Vulnerability: Function constraint doesn't hold for function 'r_strcpy'

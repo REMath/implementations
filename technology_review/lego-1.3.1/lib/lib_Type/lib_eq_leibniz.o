@@ -1,7 +1,0 @@
-Module lib_eq_leibniz Import "lib_logic";
-[Eq : {T|Type}T->T->Prop
-  = [T|Type][x,y:T]{P:T->Prop}(P x)->P y];
-[Eq_refl : {T|Type}refl%%T (Eq%%T)
-  = [T|Type][t:T][P:T->Prop][h:P t]h];
-[Eq_subst : {T|Type}{x,y|T}(Eq%%T x y)->{P:T->Prop}(P x)->P y
-  = [T|Type][x,y|T][H:Eq%%T x y][P:T->Prop][H1:P x]H P H1];

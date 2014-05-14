@@ -1,7 +1,0 @@
-Module lib_empty Import "parameters";
-$[empty : Type(empty)];
-$[empty_elim : {C_empty:empty->TYPE}{z:empty}C_empty z];
-Label (!empty!) empty;Label (!empty elim!) empty_elim;[empty_rec : {t|Type}{z:empty}t
-  = [t|Type]empty_elim ([_:empty]t)];
-[empty_ind : {P:empty->Prop}{z:empty}P z
-  = [P:empty->Prop]empty_elim P];

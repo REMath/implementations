@@ -1,3 +1,0 @@
-symb: "SELECT * FROM Faq WHERE context = '" . VAR(helpContext) . "'"
-conc: SELECT * FROM Faq WHERE context = '1'
-

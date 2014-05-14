@@ -1,9 +1,0 @@
-(declare-variable some_condition Bool)
-(declare-variable t String)
-(declare-variable u String)
-
-(assert (ite some_condition (= t "a") (= t "b") ) )
-(assert (= u (Replace "ab" t "z") ) )
-
-(check-sat)
-(get-model)

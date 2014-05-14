@@ -1,4 +1,0 @@
-Module lib_AS_eq Import "lib_eq";
-$[Eq_elim' : {A|SET}{C:{a|A}(Eq%%A a a)->TYPE}({a:A}C%%a (Eq_refl%%A a))->{a|A}{p:Eq%%A a a}C%%a p];
-[Eq_unique : {A|SET}{a,b:A}{p,q:Eq%%A a b}Eq%%(Eq%%A a b) p q
-  = [A|SET][a,b:A][p:Eq%%A a b]Eq_elim%%A ([a'5,b'6|A][p'7:Eq%%A a'5 b'6]{q:Eq%%A a'5 b'6}Eq%%(Eq%%A a'5 b'6) p'7 q) ([x:A][q:Eq%%A x x]Eq_elim'%%A ([x'7|A][q'8:Eq%%A x'7 x'7]Eq%%(Eq|A x'7 x'7) (Eq_refl%%A x'7) q'8) ([a1:A]Eq_refl%%(Eq|A a1 a1) (Eq_refl%%A a1))%%x q) a b p];

@@ -1,4 +1,0 @@
-// cc.in3
-// pathological case testing precedence of "::"
-
-mytype ::foo () {}

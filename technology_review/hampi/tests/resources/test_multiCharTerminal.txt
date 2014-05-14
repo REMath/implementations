@@ -1,2 +1,0 @@
-program = "AB" | "AB" trailing_spaces ;
-trailing_spaces = "_" | "_" trailing_spaces ;

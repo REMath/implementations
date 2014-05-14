@@ -1,8 +1,0 @@
-(declare-variable i Int)
-(declare-variable x String)
-
-(assert (>= 3 ( Length x ) ) )
-
-
-(check-sat)
-(get-model)

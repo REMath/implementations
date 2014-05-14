@@ -1,5 +1,0 @@
-#!/bin/sh
-LEGOPATH=${LEGOPATH:-.:%LIBDIR%/lib_Type:%LIBDIR%}
-export LEGOPATH
-echo LEGOPATH=$LEGOPATH
-exec %OBJ%

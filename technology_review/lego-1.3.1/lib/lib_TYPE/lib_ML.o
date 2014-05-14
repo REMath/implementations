@@ -1,3 +1,0 @@
-Module lib_ML Import "lib_empty" "lib_unit" "lib_bool";
-[absurd_impl_empty : absurd->empty
-  = [H:absurd]Eq_subst%%bool%%false%%true (Eq_sym%%bool%%true%%false (H (Eq%%bool true false))) ([z:bool]bool_elim ([_:bool]SET) empty unit z) void];

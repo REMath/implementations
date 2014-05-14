@@ -1,2 +1,0 @@
-prog: leak-cases
-vgopts: -q --leak-check=full --leak-resolution=high

@@ -1,3 +1,0 @@
-var x:2;
-reg r := star("foo");
-assert x in r;

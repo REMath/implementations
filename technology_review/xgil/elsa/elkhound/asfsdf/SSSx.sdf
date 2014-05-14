@@ -1,8 +1,0 @@
-module SSSx
-
-exports
-  sorts S
-  context-free syntax
-    "X" -> S
-    S "X" -> S
-    S S S "X" -> S

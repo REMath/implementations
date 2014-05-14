@@ -1,3 +1,0 @@
-Parent : "(" ")" ;
-       : "(" Parent ")" ;
-       : Parent Parent;

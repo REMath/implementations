@@ -1,1 +1,0 @@
-char *gluErrorString(GLenum errorCode);

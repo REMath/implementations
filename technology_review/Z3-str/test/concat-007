@@ -1,8 +1,0 @@
-(declare-variable a String)
-(declare-variable b String)
-(declare-variable z String)
-
-(assert (= (Concat "test" a) "testhello"))
-
-(check-sat)
-(get-model)

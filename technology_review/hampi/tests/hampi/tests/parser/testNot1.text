@@ -1,3 +1,0 @@
-var x:1;
-reg r1 := or("a", "b");
-assert x in r1;

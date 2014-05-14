@@ -1,1 +1,0 @@
-../ppc64/twi_tdi.c

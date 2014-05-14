@@ -1,5 +1,0 @@
-// cexp.in1
-// simple test of cexp2.gr
-
-x=3; x + x * x + x
-

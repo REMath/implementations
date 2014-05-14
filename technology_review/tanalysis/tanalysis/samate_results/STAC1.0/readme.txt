@@ -1,1 +1,0 @@
-These results are obsolete. They have been obtained before the array tainting bug has been solved.

@@ -1,8 +1,0 @@
-Parsing
-[preprocessing] running gcc -C -E -I.   parse_dns_reply/parse_dns_reply_no_cast_bad.c
-[preprocessing] running gcc -C -E -I.   stubs.c
-Cleaning unused parts
-Symbolic link
-Starting semantical analysis
-Analyzing results for function main
-[parse_dns_reply/parse_dns_reply_no_cast_bad.c:21] Vulnerability: Function constraint doesn't hold for function 'strncpy'

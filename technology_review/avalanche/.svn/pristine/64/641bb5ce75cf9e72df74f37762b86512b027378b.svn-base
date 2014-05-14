@@ -1,9 +1,0 @@
-Syscall param (syscallno) contains uninitialised byte(s)
-   ...
-
-Syscall param write(fd) contains uninitialised byte(s)
-   ...
-
-Syscall param write(count) contains uninitialised byte(s)
-   ...
-

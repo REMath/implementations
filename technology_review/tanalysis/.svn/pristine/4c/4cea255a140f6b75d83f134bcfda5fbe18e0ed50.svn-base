@@ -1,7 +1,0 @@
-Parsing
-[preprocessing] running gcc -C -E -I.   fb_realpath/almost_simple_bad.c
-[preprocessing] running gcc -C -E -I.   stubs.c
-Cleaning unused parts
-Symbolic link
-Starting semantical analysis
-Analyzing results for function main

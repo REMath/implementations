@@ -1,9 +1,0 @@
-This directory contains basic material relating to the empty datatype "empty".
-Note that the variables SET and TYPE must be defined before these files can
-be loaded.
-
-The files in this directory are:
-
-lib_empty.l
------------
- o Definition and induction principles 

@@ -1,3 +1,0 @@
-var x:2;
-cfg A := "a" | x ;//x is not a nonterminal 
-assert x contains "foo";

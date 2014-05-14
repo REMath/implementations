@@ -1,3 +1,0 @@
-var x:2;
-reg r := "foo";
-assert x in r;

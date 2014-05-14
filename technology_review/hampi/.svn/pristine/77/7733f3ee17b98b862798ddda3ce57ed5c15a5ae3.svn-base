@@ -1,7 +1,0 @@
-S : K "b" ;
-K : A X K B ;
-X : "b" X ;
-  : "a" X ;
-  : ;
-A : "a" A ;
-B : "b" B ;

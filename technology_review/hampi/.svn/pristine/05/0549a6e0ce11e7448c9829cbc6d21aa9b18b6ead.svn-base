@@ -1,3 +1,0 @@
-//this is badly formed there nonterminal name is undefined
-var x:2;
-assert v contains "foo";//undefined name v

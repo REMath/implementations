@@ -1,7 +1,0 @@
-#!/usr/local/bin/bash
-
-for file in `cat broken` 
-do
-  sed 's/Immed/Try Immed/g' $file > $file.tmp
-  mv $file.tmp $file
-done

@@ -1,4 +1,0 @@
-var x:2;
-cfg A := "a" | "b" ; 
-cfg A := "foo" ;//A is redefined
-assert x contains "foo";

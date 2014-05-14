@@ -1,2 +1,0 @@
-
-void hello_world() {}

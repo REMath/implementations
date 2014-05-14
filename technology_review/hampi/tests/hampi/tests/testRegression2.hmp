@@ -1,4 +1,0 @@
-var v : 1;
-cfg S :=  "a" S | ; //this epsilon causes trouble
-reg limit := fix(S, 1);
-assert v in limit;

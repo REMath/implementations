@@ -1,4 +1,0 @@
-S = A B | B C ;
-A = B A | "a" ;
-B = C C | "b";
-C = A B | "a" ;

@@ -1,2 +1,0 @@
-S = ( MaybeF )+ "end" ;
-MaybeF = | "f" ;

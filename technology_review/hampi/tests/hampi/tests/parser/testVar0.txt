@@ -1,3 +1,0 @@
-//this is badly formed because does not define a variable
-reg r := "foo";
-reg r2 := fix(grammar, 6);

@@ -1,8 +1,0 @@
-/* AMBIGUOUS */
-
-A : "a" ;
-: B A ;
-: A "b" ;
-
-B : "b" ;
-: B A ;

@@ -1,6 +1,0 @@
-EXPORTS
-DsGetDcClose@4
-??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QAEAAV01@H@Z@8
-??6?$basic_ostream@DU?$char_traits@D@std@@@std@@QAEAAV01@P6AAAV01@AAV01@@Z@Z@8
-?endl@std@@YAAAV?$basic_ostream@DU?$char_traits@D@std@@@1@AAV21@@Z DATA
-?cout@std@@3V?$basic_ostream@DU?$char_traits@D@std@@@1@A DATA

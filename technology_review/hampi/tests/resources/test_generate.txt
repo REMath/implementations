@@ -1,3 +1,0 @@
-expr = "(" op sub sub ")";
-op = "+" | "-";
-sub = <digit> | expr ;

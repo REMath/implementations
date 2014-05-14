@@ -1,2 +1,0 @@
-valgrind: Bad option '--cmp-race-err-addrs=yes'; aborting.
-valgrind: Use --help for more information.

@@ -1,6 +1,0 @@
-/* UNAMBIGUOUS */
-
-S : "wbcbb" R "b" ;
-
-R : "s" R ;
-: "s" ;

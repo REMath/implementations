@@ -1,2 +1,0 @@
-S = "end"  | Sym0 "end"  ;
-Sym0 = "f"  | "g"  | "g" Sym0  ;

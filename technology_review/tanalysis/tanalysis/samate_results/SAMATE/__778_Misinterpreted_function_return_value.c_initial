@@ -1,7 +1,0 @@
-#include <stdio.h>
-
-main ()
-{
-if (malloc(sizeof(int) < 0 ))
-perror("Failure"); //should have checked if the call returned 0
-}
