@@ -96,7 +96,10 @@
 * Installation
 * Example
 * Publications
-* Version 
+http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf
+* Version 2014-03-18
+* Download Location
+http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf
 
 ## while_analyser
 * Description
