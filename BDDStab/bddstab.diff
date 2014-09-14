@@ -1,0 +1,4677 @@
+# HG changeset patch
+# User Sven Mattsen <sven@sven.cc>
+# Date 1394715439 -3600
+#      Thu Mar 13 13:57:19 2014 +0100
+# Node ID 6fb97ceafa150662e7c4678e0a134836a506216c
+# Parent  dde24eb1ac037b7c63eba34424a8a4c688e8de70
+bddstab
+
+diff --git a/.classpath b/.classpath
+--- a/.classpath
++++ b/.classpath
+@@ -15,5 +15,7 @@
+ 		</attributes>
+ 	</classpathentry>
+ 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
++	<classpathentry kind="lib" path="lib/bdd.jar"/>
++	<classpathentry kind="lib" path="scala-library.jar"/>
+ 	<classpathentry kind="output" path="bin"/>
+ </classpath>
+diff --git a/compile.sh b/compile.sh
+--- a/compile.sh
++++ b/compile.sh
+@@ -1,5 +1,5 @@
+ #!/bin/bash
+-JSCLASSPATH=lib/antlr.jar:lib/google-collect-1.0.jar:lib/javabdd-1.0b2.jar
++JSCLASSPATH=lib/antlr.jar:lib/google-collect-1.0.jar:lib/javabdd-1.0b2.jar:lib/scala-library.jar:lib/bdd.jar
+ case `uname` in
+     CYGWIN*)
+         JSCLASSPATH=`cygpath -p -d "$JSCLASSPATH"`
+diff --git a/jakstab b/jakstab
+--- a/jakstab
++++ b/jakstab
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ JS_HOME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+-JSCLASSPATH=${JS_HOME}/lib/antlr.jar:${JS_HOME}/lib/google-collect-1.0.jar:lib/javabdd-1.0b2.jar:${JS_HOME}/bin
++JSCLASSPATH=${JS_HOME}/lib/antlr.jar:${JS_HOME}/lib/google-collect-1.0.jar:lib/javabdd-1.0b2.jar:${JS_HOME}/lib/bdd.jar:${JS_HOME}/lib/scala-library.jar:${JS_HOME}/bin
+ case `uname` in
+     CYGWIN*)
+         JSCLASSPATH=`cygpath -p -w -m -s "$JSCLASSPATH"`
+diff --git a/src/org/jakstab/Main.java b/src/org/jakstab/Main.java
+--- a/src/org/jakstab/Main.java
++++ b/src/org/jakstab/Main.java
+@@ -131,6 +131,9 @@
+ 		if (Options.startAddress.getValue() > 0) {
+ 			logger.verbose("Setting start address to 0x" + Long.toHexString(Options.startAddress.getValue()));
+ 			program.setEntryAddress(new AbsoluteAddress(Options.startAddress.getValue()));
++		} else if(!Options.startSymbol.getValue().isEmpty()) {
++			String start = Options.startSymbol.getValue();
++			program.setEntrySymbol(start);
+ 		}
+ 
+ 		// Add surrounding "%DF := 1; call entrypoint; halt;" 
+@@ -140,7 +143,7 @@
+ 		if (slashIdx < 0) slashIdx = baseFileName.lastIndexOf('/');
+ 		if (slashIdx < 0) slashIdx = -1;
+ 		slashIdx++;
+-		stats.record(baseFileName.substring(slashIdx));
++		stats.record(Options.mainFilename);
+ 		stats.record(version);
+ 
+ 
+@@ -274,19 +277,23 @@
+ 			stats.record(stateCount);
+ 			stats.record(Math.round((overallEndTime - overallStartTime)/1000.0));
+ 			stats.record(cfr.getStatus());
+-			stats.record(Options.cpas.getValue());
++			stats.record(Options.cpas.getValue().replace(",", ""));
+ 			stats.record(BoundedAddressTracking.varThreshold.getValue());
+ 			stats.record(BoundedAddressTracking.heapThreshold.getValue());
+ 			stats.record(Options.basicBlocks.getValue() ? "y" : "n");
+ 			stats.record(Options.summarizeRep.getValue() ? "y" : "n" );
+ 			stats.record(BasedNumberValuation.ExplicitPrintfArgs);
+ 			stats.record(BasedNumberValuation.OverAppPrintfArgs);
+-			
++			stats.record(Options.startAddress.getValue());
++			stats.record(Options.startSymbol.getValue());
++			stats.record(cfr.isSound());
++			stats.record(Options.cpas.getValue());
++
+ 			stats.print();
+ 
+ 			ProgramGraphWriter graphWriter = new ProgramGraphWriter(program);
+ 			
+-			graphWriter.writeDisassembly(program, baseFileName + "_jak.asm");
++			graphWriter.writeDisassembly(program, baseFileName + "_jak_"+Options.cpas.getValue().replace(",", "")+ ".asm");
+ 
+ 			if (!(cfr.isCompleted() && Options.secondaryCPAs.getValue().length() > 0)) {
+ 				if (!Options.noGraphs.getValue()) {
+diff --git a/src/org/jakstab/Options.java b/src/org/jakstab/Options.java
+--- a/src/org/jakstab/Options.java
++++ b/src/org/jakstab/Options.java
+@@ -76,6 +76,7 @@
+ 
+ 	public static JOption<String> sslFilename = JOption.create("ssl", "file", jakstabHome + "/ssl/pentium.ssl", "Use <file> instead of pentium.ssl.");
+ 	public static JOption<Long> startAddress = JOption.create("a", "address", -1L, "Start analysis at given virtual address.");
++	public static JOption<String> startSymbol = JOption.create("sym", "symbol", "", "Start analysis at given symbol.");
+ 	public static JOption<Boolean> wdm = JOption.create("wdm", "WDM mode, export main function as DriverMain.");
+ 	public static JOption<Boolean> allEdges = JOption.create("all-edges", "Generate a true over-approximation and add edges to all possible addresses when over-approximating a jump (very slow!).");
+ 	public static JOption<Boolean> dumpStates = JOption.create("s", "Output all reached states after analysis.");	
+diff --git a/src/org/jakstab/Program.java b/src/org/jakstab/Program.java
+--- a/src/org/jakstab/Program.java
++++ b/src/org/jakstab/Program.java
+@@ -525,4 +525,14 @@
+ 		}
+ 		return res;
+ 	}
++
++	public AbsoluteAddress setEntrySymbol(String start) {
++		for(ExportedSymbol s : this.getSymbols()) {
++			if(s.getName().equalsIgnoreCase(start)) {
++				this.setEntryAddress(s.getAddress());
++				return s.getAddress();
++			}
++		}
++		return null;
++	}
+ }
+diff --git a/src/org/jakstab/ProgramGraphWriter.java b/src/org/jakstab/ProgramGraphWriter.java
+--- a/src/org/jakstab/ProgramGraphWriter.java
++++ b/src/org/jakstab/ProgramGraphWriter.java
+@@ -181,7 +181,10 @@
+ 						sb.append("unresolved");
+ 					} else {
+ 						boolean first = true;
+-						for (CFAEdge e : targets) {
++						List<CFAEdge> l  = new ArrayList<CFAEdge>();
++						l.addAll(targets);
++						Collections.sort(l);
++						for (CFAEdge e : l) {
+ 							if (first) first = false;
+ 							else sb.append(", ");
+ 							sb.append(e.getTarget().getAddress());
+@@ -194,7 +197,10 @@
+ 					Set<CFAEdge> referers = branchEdgesRev.get(pc);
+ 					sb.append("\t; from: ");
+ 					boolean first = true;
+-					for (CFAEdge e : referers) {
++					List<CFAEdge> l  = new ArrayList<CFAEdge>();
++					l.addAll(referers);
++					Collections.sort(l);
++					for (CFAEdge e : l) {
+ 						if (first) first = false;
+ 						else sb.append(", ");
+ 						sb.append(e.getSource().getAddress());
+diff --git a/src/org/jakstab/StatsTracker.java b/src/org/jakstab/StatsTracker.java
+--- a/src/org/jakstab/StatsTracker.java
++++ b/src/org/jakstab/StatsTracker.java
+@@ -42,7 +42,7 @@
+ 	
+ 	private StatsTracker() {
+ 		super();
+-		logger = Logger.getLogger(ExpressionSimplifier.class);
++		logger = Logger.getLogger(StatsTracker.class);
+ 		statsBuilder = new StringBuffer();
+ 		namedVals = new HashMap<String, String>();
+ 	}
+diff --git a/src/org/jakstab/analysis/CPAAlgorithm.java b/src/org/jakstab/analysis/CPAAlgorithm.java
+--- a/src/org/jakstab/analysis/CPAAlgorithm.java
++++ b/src/org/jakstab/analysis/CPAAlgorithm.java
+@@ -284,6 +284,9 @@
+ 					art.addChild(unadjustedState, e.getState());
+ 				throw e;
+ 			}
++			if(failFast && !isSound() && Options.errorTrace.getValue()) {
++				throw new ControlFlowException(a,"failed fast");
++			}
+ 		}
+ 		long endTime = System.currentTimeMillis();
+ 		if (endTime - startTime > 0) {
+diff --git a/src/org/jakstab/analysis/ControlFlowReconstruction.java b/src/org/jakstab/analysis/ControlFlowReconstruction.java
+--- a/src/org/jakstab/analysis/ControlFlowReconstruction.java
++++ b/src/org/jakstab/analysis/ControlFlowReconstruction.java
+@@ -80,6 +80,16 @@
+ 		public int size() {
+ 			return priorityList.size() + worklist.size();
+ 		}
++		
++		@Override
++		public String toString() {
++			StringBuffer buf = new StringBuffer("Worklist(wl: ");
++			buf.append(worklist.toString());
++			buf.append(", pr: ");
++			buf.append(priorityList.toString());
++			buf.append(")");
++			return buf.toString();
++		}
+ 
+ 	}
+ 	
+@@ -140,6 +150,7 @@
+ 		for (int i=0; i<Options.cpas.getValue().length(); i++) {
+ 			
+ 			char shortHand = Options.cpas.getValue().charAt(i);
++			if(shortHand == ',') continue;
+ 			
+ 			// Special handling for trace replay analysis that really creates multiple CPAs
+ 			if (shortHand == 't') {
+@@ -355,7 +366,11 @@
+ 		} catch (RuntimeException e) {
+ 			// For other runtime exceptions (bugs in Jakstab), set the status to the name of the exception 
+ 			status = e.toString();
++			e.printStackTrace();
+ 			throw e;
++		} catch (AssertionError e) {
++			status = e.toString();
++			e.printStackTrace();
+ 		} finally {
+ 			program.setCFA(transformerFactory.getCFA());
+ 			program.setUnresolvedBranches(transformerFactory.getUnresolvedBranches());
+diff --git a/src/org/jakstab/analysis/VariableValuation.java b/src/org/jakstab/analysis/VariableValuation.java
+--- a/src/org/jakstab/analysis/VariableValuation.java
++++ b/src/org/jakstab/analysis/VariableValuation.java
+@@ -95,7 +95,7 @@
+ 		}
+ 	}
+ 	
+-	private void clearCovered(RTLVariable var) {
++	protected void clearCovered(RTLVariable var) {
+ 		for (RTLVariable covered : ExpressionFactory.coveredRegisters(var)) {
+ 			aVarVal.remove(covered);
+ 			//clearCovered(covered);
+@@ -88,7 +88,7 @@
+ 		}
+ 	}
+ 	
+-	private void clearCovering(RTLVariable var) {
++	protected void clearCovering(RTLVariable var) {
+ 		for (RTLVariable covering : ExpressionFactory.coveringRegisters(var)) {
+ 			aVarVal.remove(covering);
+ 			//clearCovering(covering);
+diff --git a/src/org/jakstab/analysis/explicit/BasedNumberValuation.java b/src/org/jakstab/analysis/explicit/BasedNumberValuation.java
+--- a/src/org/jakstab/analysis/explicit/BasedNumberValuation.java
++++ b/src/org/jakstab/analysis/explicit/BasedNumberValuation.java
+@@ -381,40 +381,47 @@
+ 					BasedNumberElement stringAddress = getMemoryValue(firstArg, 32);
+ 					if (!stringAddress.getRegion().equals(MemoryRegion.TOP) && !stringAddress.isNumberTop()) {
+ 						String formatString = getCString(stringAddress.getRegion(), stringAddress.getNumber().longValue());
+-						logger.debug("printf called with format string " + formatString.trim());
+-						StringBuilder sb = new StringBuilder();
+-						int varArgCount = 0;
+-						int lastMatch = 0;
+-						for (int i = formatString.indexOf('%'); i >= 0; i = formatString.indexOf('%', i + 1)) {
+-							sb.append(formatString.substring(lastMatch, i));
+-							lastMatch = i + 2; // skip %i (works only for simple %i, %s...)
+-							varArgCount++;
+-							BasedNumberElement curVarArg = getMemoryValue(
+-									new BasedNumberElement(firstArg.getRegion(), 
+-											ExpressionFactory.createNumber(firstArg.getNumber().intValue() + varArgCount * 4, 32)), 
+-											32);
+-							
+-							// Very basic support for printf
+-							switch (formatString.charAt(i + 1)) {
+-							case 'i':
+-								logger.debug("  Integer argument: " + curVarArg);
+-								if (curVarArg.hasUniqueConcretization()) {
+-									sb.append(curVarArg.getNumber().intValue());
+-									ExplicitPrintfArgs++;
+-								} else {
+-									sb.append(curVarArg);
+-									OverAppPrintfArgs++;
++						if(formatString!= null) {
++							try{
++							logger.debug("printf called with format string " + formatString.trim());
++							StringBuilder sb = new StringBuilder();
++							int varArgCount = 0;
++							int lastMatch = 0;
++							for (int i = formatString.indexOf('%'); i >= 0; i = formatString.indexOf('%', i + 1)) {
++								sb.append(formatString.substring(lastMatch, i));
++								lastMatch = i + 2; // skip %i (works only for simple %i, %s...)
++								varArgCount++;
++								BasedNumberElement curVarArg = getMemoryValue(
++										new BasedNumberElement(firstArg.getRegion(), 
++												ExpressionFactory.createNumber(firstArg.getNumber().intValue() + varArgCount * 4, 32)), 
++												32);
++
++								// Very basic support for printf
++								switch (formatString.charAt(i + 1)) {
++								case 'i':
++									logger.debug("  Integer argument: " + curVarArg);
++									if (curVarArg.hasUniqueConcretization()) {
++										sb.append(curVarArg.getNumber().intValue());
++										ExplicitPrintfArgs++;
++									} else {
++										sb.append(curVarArg);
++										OverAppPrintfArgs++;
++									}
++									break;
++								case 's':
++									BasedNumberElement argStrAddr = getMemoryValue(curVarArg, 32);
++									if(!argStrAddr.isTop() && ! argStrAddr.isNumberTop()) {
++										logger.debug("  String argument: " + argStrAddr);
++										sb.append(getCString(argStrAddr.getRegion(), argStrAddr.getNumber().longValue()));
++									}
+ 								}
+-								break;
+-							case 's':
+-								BasedNumberElement argStrAddr = getMemoryValue(curVarArg, 32);
+-								logger.debug("  String argument: " + argStrAddr);
+-								sb.append(getCString(argStrAddr.getRegion(), argStrAddr.getNumber().longValue()));
++							}
++							sb.append(formatString.substring(lastMatch));
++							return new BasedNumberElement(firstArg.getNumber());
++							} catch (Exception f) {
++								logger.error("Exception while evaluating printf: " + f);
+ 							}
+ 						}
+-						sb.append(formatString.substring(lastMatch));
+-						logger.info("DEBUG: printf output: " + sb.toString());
+-						return new BasedNumberElement(firstArg.getNumber());
+ 					}
+ 				}
+ 				
+@@ -430,7 +437,7 @@
+ 		
+ 		BasedNumberElement result = e.accept(visitor);
+ 		
+-		assert result.getBitWidth() == e.getBitWidth() : "Bitwidth changed during evaluation of " + e + " to " + result;
++		assert result.getBitWidth() == e.getBitWidth() : "Bitwidth changed from "+e.getBitWidth()+" to "+result.getBitWidth()+" during evaluation of " + e + " to " + result;
+ 		
+ 		return result;
+ 	}
+diff --git a/src/org/jakstab/analysis/predabs/PredicateAbstractionState.java b/src/org/jakstab/analysis/predabs/PredicateAbstractionState.java
+--- a/src/org/jakstab/analysis/predabs/PredicateAbstractionState.java
++++ b/src/org/jakstab/analysis/predabs/PredicateAbstractionState.java
+@@ -94,9 +94,10 @@
+ 		for (byte[] assignment : allsat) {
+ 			RTLExpression clause = null;
+ 			for (int i=0; i < assignment.length; i++) {
++
++				if (assignment[i] < 0) continue; 
+ 				RTLExpression p = PredicateMap.getPredicate(i);
+ 				
+-				if (assignment[i] < 0) continue; 
+ 				if (assignment[i] == 0) p = ExpressionFactory.createNot(p); 
+ 				
+ 				if (clause == null) clause = p;
+diff --git a/src/org/jakstab/analysis/substitution/ExpressionSubstitutionAnalysis.java b/src/org/jakstab/analysis/substitution/ExpressionSubstitutionAnalysis.java
+--- a/src/org/jakstab/analysis/substitution/ExpressionSubstitutionAnalysis.java
++++ b/src/org/jakstab/analysis/substitution/ExpressionSubstitutionAnalysis.java
+@@ -22,6 +22,7 @@
+ import java.util.Set;
+ 
+ import org.jakstab.AnalysisProperties;
++import org.jakstab.JOption;
+ import org.jakstab.analysis.*;
+ import org.jakstab.cfa.CFAEdge;
+ import org.jakstab.cfa.Location;
+@@ -41,6 +42,9 @@
+ 		p.setExplicit(true);
+ 	}
+ 
++	public static JOption<Boolean> unevaledFlags =
++			JOption.create("unevaled-flags", "Tracks non-evaluated flags");
++	
+ 	@SuppressWarnings("unused")
+ 	private final static Logger logger = Logger.getLogger(ExpressionSubstitutionAnalysis.class);
+ 	
+diff --git a/src/org/jakstab/analysis/substitution/SubstitutionState.java b/src/org/jakstab/analysis/substitution/SubstitutionState.java
+--- a/src/org/jakstab/analysis/substitution/SubstitutionState.java
++++ b/src/org/jakstab/analysis/substitution/SubstitutionState.java
+@@ -25,6 +25,7 @@
+ import org.jakstab.rtl.*;
+ import org.jakstab.rtl.expressions.*;
+ import org.jakstab.rtl.statements.*;
++import org.jakstab.ssl.Architecture;
+ import org.jakstab.util.*;
+ 
+ /**
+@@ -210,7 +211,14 @@
+ 				post.aVarVal.remove(lhs);
+ 				// If RHS is a pure variable, assign RHS to LHS as substitution
+ 				if (!containsNondet(rhs)) {
+-					post.setValue(lhs, new SubstitutionElement(rhs));
++					if(ExpressionSubstitutionAnalysis.unevaledFlags.getValue() 
++							&& (Architecture.getStatusFlags().contains(lhs)
++							|| Architecture.getTemporaryVariables().contains(lhs))
++							&& !Architecture.returnAddressVariable().equals(lhs)) {
++						post.setValue(lhs, new SubstitutionElement(stmt.getRightHandSide()));
++					} else {
++						post.setValue(lhs, new SubstitutionElement(rhs));
++					}
+ 				}
+ 
+ 				// If any expression in the map uses the LHS variable, it is now invalid, so remove it
+@@ -434,7 +442,7 @@
+ 	public String toString() {
+ 		if (isTop()) return Characters.TOP;
+ 		else if (isBot()) return Characters.BOT;
+-		else return stateId + ": " + aVarVal.toString();
++		else return "Subst: " + stateId + ": " + aVarVal.toString();
+ 	}
+ 
+ 	@Override
+diff --git a/src/org/jakstab/cfa/AlternatingStateTransformerFactory.java b/src/org/jakstab/cfa/AlternatingStateTransformerFactory.java
+--- a/src/org/jakstab/cfa/AlternatingStateTransformerFactory.java
++++ b/src/org/jakstab/cfa/AlternatingStateTransformerFactory.java
+@@ -152,6 +152,8 @@
+ 					// Target address sanity check
+ 					if (nextLabel.getAddress().getValue() < 10L) {
+ 						logger.warn("Control flow from " + stmt.getLabel() + " reaches address " + nextLabel.getAddress() + "!");
++						if (Options.debug.getValue())
++							throw new ControlFlowException(a, "Unresolvable control flow from " + stmt.getLabel());
+ 					}
+ 
+ 					results.add(new CFAEdge(assume.getLabel(), assume.getNextLabel(), assume, Kind.MAY));
+diff --git a/src/org/jakstab/cfa/PessimisticBasicBlockFactory.java b/src/org/jakstab/cfa/PessimisticBasicBlockFactory.java
+--- a/src/org/jakstab/cfa/PessimisticBasicBlockFactory.java
++++ b/src/org/jakstab/cfa/PessimisticBasicBlockFactory.java
+@@ -131,6 +131,8 @@
+ 			// Target address sanity check
+ 			if (nextLabel.getAddress().getValue() < 10L) {
+ 				logger.warn("Control flow from " + a.getLocation() + " reaches address " + nextLabel.getAddress() + "!");
++				if (Options.debug.getValue())
++					throw new ControlFlowException(a, "Unresolvable control flow from " + stmt.getLabel());
+ 			}
+ 
+ 			results.add(assume);
+diff --git a/src/org/jakstab/cfa/PessimisticStateTransformerFactory.java b/src/org/jakstab/cfa/PessimisticStateTransformerFactory.java
+--- a/src/org/jakstab/cfa/PessimisticStateTransformerFactory.java
++++ b/src/org/jakstab/cfa/PessimisticStateTransformerFactory.java
+@@ -116,6 +116,8 @@
+ 			// Target address sanity check
+ 			if (nextLabel.getAddress().getValue() < 10L) {
+ 				logger.warn("Control flow from " + a.getLocation() + " reaches address " + nextLabel.getAddress() + "!");
++				if (Options.debug.getValue())
++					throw new ControlFlowException(a, "Unresolvable control flow from " + stmt.getLabel());
+ 			}
+ 
+ 			results.add(new CFAEdge(assume.getLabel(), assume.getNextLabel(), assume));
+diff --git a/src/org/jakstab/disasm/x86/X86Disassembler.java b/src/org/jakstab/disasm/x86/X86Disassembler.java
+--- a/src/org/jakstab/disasm/x86/X86Disassembler.java
++++ b/src/org/jakstab/disasm/x86/X86Disassembler.java
+@@ -527,7 +527,7 @@
+ 		null,
+ 		null,
+ 		null,
+-		null,
++		new InstructionDecoder("nop",ADDR_G,v_mode),
+ 		/* 20 */
+ 		/* these are all backward in appendix A of the intel book */
+ 		new MoveDecoder("movl", ADDR_RMR, d_mode, ADDR_C, d_mode),
+diff --git a/src/org/jakstab/loader/elf/ELFModule.java b/src/org/jakstab/loader/elf/ELFModule.java
+--- a/src/org/jakstab/loader/elf/ELFModule.java
++++ b/src/org/jakstab/loader/elf/ELFModule.java
+@@ -111,6 +111,7 @@
+ 					pltRelocs = section.loadSectionData();
+ 			}
+ 		}
++try {
+ 		assert (pltRelocs != null);
+ 		
+ 		int pltIdx = (int)(pltSection.sh_offset);
+@@ -133,6 +134,7 @@
+ 				pltIdx++;
+ 			} else {
+ 				instr = disasm.decodeInstruction(pltIdx);
++				assert instr != null;
+ 				pltIdx += instr.getSize();
+ 				if (!instr.getName().equals("nop")) break;
+ 			}
+@@ -192,6 +194,11 @@
+ 				break;
+ 			}
+ 		}
++} catch (Exception e) {
++    logger.error("XXX Ignored Exception while parsing ELF: " + e);
++} catch (AssertionError e) {
++	logger.error("XXX Ignored Assertion while parsing ELF: " + e);
++}
+ 		
+ 	}
+ 	
+diff --git a/src/org/jakstab/rtl/expressions/RTLOperation.java b/src/org/jakstab/rtl/expressions/RTLOperation.java
+--- a/src/org/jakstab/rtl/expressions/RTLOperation.java
++++ b/src/org/jakstab/rtl/expressions/RTLOperation.java
+@@ -447,6 +447,9 @@
+ 				case XOR:
+ 					result = op1 ^ op2;
+ 					break;
++				case ROL:
++					result = (op1<<op2) | (op1 >> (this.getBitWidth() - op2));
++					break;
+ 				default:
+ 					logger.info("Missing operand handler for \"" + this.operator + 
+ 					"\"! Cannot determine numeric result in evaluation.");
+diff --git a/src/org/jakstab/ssl/Architecture.java b/src/org/jakstab/ssl/Architecture.java
+--- a/src/org/jakstab/ssl/Architecture.java
++++ b/src/org/jakstab/ssl/Architecture.java
+@@ -89,18 +89,24 @@
+ 				ExpressionFactory.createVariable("%SF", 1),
+ 				ExpressionFactory.createVariable("%ZF", 1)
+ 		}));
++		stackPointer = ExpressionFactory.createVariable("%esp", 32);
++		framePointer = ExpressionFactory.createVariable("%ebp", 32);
++		retAddrVar = ExpressionFactory.createVariable("retaddr", 32);
++		loopCounter = ExpressionFactory.createVariable("%ecx", 32);
++		stringSource = ExpressionFactory.createVariable("%esi", 32);
++		stringTarget = ExpressionFactory.createVariable("%edi", 32);
+ 	}
+ 
+ 	
+ 	private File specFile;
+ 	private Map<String, SSLInstruction> instructions;
+ 	private Map<String, List<SSLInstruction>> instrGroups;
+-	private final RTLVariable stackPointer;
+-	private final RTLVariable framePointer;
+-	private final RTLVariable loopCounter;
+-	private final RTLVariable stringSource;
+-	private final RTLVariable stringTarget;
+-	private final RTLVariable retAddrVar;
++	private final static RTLVariable stackPointer;
++	private final static RTLVariable framePointer;
++	private final static RTLVariable loopCounter;
++	private final static RTLVariable stringSource;
++	private final static RTLVariable stringTarget;
++	private final static RTLVariable retAddrVar;
+ 	private final MagicInstructions magicInstructions;
+ 
+ 	private SetOfVariables registers;
+@@ -122,12 +122,7 @@
+ 		parseSSL(fileName);
+ 		magicInstructions = new MagicInstructions();
+ 		
+-		stackPointer = ExpressionFactory.createVariable("%esp", 32);
+-		framePointer = ExpressionFactory.createVariable("%ebp", 32);
+-		retAddrVar = ExpressionFactory.createVariable("retaddr", 32);
+-		loopCounter = ExpressionFactory.createVariable("%ecx", 32);
+-		stringSource = ExpressionFactory.createVariable("%esi", 32);
+-		stringTarget = ExpressionFactory.createVariable("%edi", 32);
++
+ 	}
+ 	
+ 	public static RTLVariable stackPointer() {
+@@ -124,39 +130,39 @@
+ 		stringTarget = ExpressionFactory.createVariable("%edi", 32);
+ 	}
+ 	
+-	public RTLVariable stackPointer() {
++	public static RTLVariable stackPointer() {
+ 		return stackPointer;
+ 	}
+ 	
+-	public RTLVariable returnAddressVariable() {
++	public static RTLVariable returnAddressVariable() {
+ 		return retAddrVar;
+ 	}
+ 	
+-	public RTLVariable framePointer() {
++	public static RTLVariable framePointer() {
+ 		return framePointer;
+ 	}
+ 	
+-	public RTLVariable programCounter() {
++	public static RTLVariable programCounter() {
+ 		return ExpressionFactory.pc;
+ 	}
+ 	
+-	public RTLVariable loopCounter() {
++	public static RTLVariable loopCounter() {
+ 		return loopCounter;
+ 	}
+ 
+-	public RTLVariable stringSource() {
++	public static RTLVariable stringSource() {
+ 		return stringSource;
+ 	}
+ 
+-	public RTLVariable stringTarget() {
++	public static RTLVariable stringTarget() {
+ 		return stringTarget;
+ 	}
+ 
+-	public SetOfVariables getTemporaryVariables() {
++	public static SetOfVariables getTemporaryVariables() {
+ 		return temporaryVariables;
+ 	}
+ 
+-	public SetOfVariables getStatusFlags() {
++	public static SetOfVariables getStatusFlags() {
+ 		return statusFlags;
+ 	}
+ 	
+diff --git a/src/org/jakstab/util/FastSet.java b/src/org/jakstab/util/FastSet.java
+--- a/src/org/jakstab/util/FastSet.java
++++ b/src/org/jakstab/util/FastSet.java
+@@ -211,4 +211,18 @@
+ 		i.remove();
+ 		return element;
+ 	}
++	
++	@Override
++	public String toString() {
++		StringBuffer buf = new StringBuffer("FastSet(");
++		Iterator<E> iter = this.iterator();
++		if(iter.hasNext())
++			buf.append(iter.next().toString());
++		while(iter.hasNext()) {
++			buf.append(", ");
++			buf.append(iter.next().toString());
++		}
++		buf.append(")");
++		return buf.toString();
++	}
+ }
+diff --git a/src/org/jakstab/analysis/explicit/BDDPrecision.java b/src/org/jakstab/analysis/explicit/BDDPrecision.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/analysis/explicit/BDDPrecision.java
+@@ -0,0 +1,26 @@
++package org.jakstab.analysis.explicit;
++
++import org.jakstab.analysis.Precision;
++
++public class BDDPrecision implements Precision {
++	private int count;
++	public BDDPrecision() {
++		this.count = 0;
++	}
++	private BDDPrecision(int c) {
++		this.count = c;
++	}
++	public BDDPrecision copy() {
++		return new BDDPrecision(count);
++	}
++	public BDDPrecision inc() {
++		return new BDDPrecision(count + 1);
++	}
++	public int getCount() {
++		return count;
++	}
++	@Override
++	public String toString() {
++		return "Count: " + ((Integer) count).toString();
++	}
++}
+diff --git a/src/org/jakstab/analysis/explicit/BDDSet.java b/src/org/jakstab/analysis/explicit/BDDSet.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/analysis/explicit/BDDSet.java
+@@ -0,0 +1,265 @@
++package org.jakstab.analysis.explicit;
++
++import java.util.Collection;
++import java.util.Set;
++
++import org.jakstab.analysis.AbstractDomainElement;
++import org.jakstab.analysis.LatticeElement;
++import org.jakstab.analysis.PartitionedMemory;
++import org.jakstab.analysis.MemoryRegion;
++import org.jakstab.rtl.BitVectorType;
++import org.jakstab.rtl.expressions.ExpressionFactory;
++import org.jakstab.rtl.expressions.RTLNumber;
++import org.jakstab.rtl.expressions.LongBWToRTLNumberCaster;
++import org.jakstab.rtl.expressions.RTLNumberToLongBWCaster;
++import org.jakstab.rtl.expressions.RTLNumberIsDynBoundedBits;
++import org.jakstab.util.FastSet;
++import org.jakstab.util.Logger;
++
++import cc.sven.tlike.*;
++
++/*
++ * This is an abstract domain element consisting of a region and a set of RTLNumbers.
++ * It is similar to BasedNumberElement of the bounded address tracking domain.
++ */
++public class BDDSet implements AbstractDomainElement, BitVectorType {
++
++	private static final Logger logger = Logger.getLogger(BDDSet.class);
++	private IntLikeSet<Long, RTLNumber> set;
++	private MemoryRegion region;
++	
++	public MemoryRegion getRegion() {
++		return region;
++	}
++	public IntLikeSet<Long, RTLNumber> getSet() {
++		return set;
++	}
++	
++	public BDDSet(IntLikeSet<Long, RTLNumber> init) {
++		this.set = init;
++		this.region = MemoryRegion.GLOBAL;
++	}
++	public BDDSet(IntLikeSet<Long, RTLNumber> initset, MemoryRegion initregion) {
++		this.set = initset;
++		this.region = initregion;
++	}
++	public static BDDSet topBW(int bw) {
++		IntLikeSet<Long, RTLNumber> topSet = IntLikeSet$.MODULE$.applyJLong(bw, new RTLNumberIsDynBoundedBits(), new RTLNumberToLongBWCaster(), new LongBWToRTLNumberCaster()).invert();
++		return new BDDSet(topSet, MemoryRegion.TOP);
++	}
++	
++	public static final BDDSet TRUE = singleton(ExpressionFactory.TRUE);
++	public static final BDDSet FALSE = singleton(ExpressionFactory.FALSE);
++	
++	@Override
++	public String toString() {
++		if(getSet().isFull())
++			return "(" + region + " | " + getBitWidth() + " | ANYNUM)";
++		return "(" + region + " | " + getBitWidth() + " | " + getSet() + ")";
++	}
++	
++	@Override
++	public boolean equals(Object other) {
++		if(!(other instanceof BDDSet)) return false;
++		BDDSet otherBdd = (BDDSet) other;
++		return (getRegion() == otherBdd.getRegion()) && (getSet().equals(otherBdd.getSet()));
++	}
++	
++	@Override
++	public Set<RTLNumber> concretize() {
++		//return getSet().java() directly?
++		//TODO SCM : fix - what if set is full for e.g. boolean?
++		if(getSet().isFull())
++			return RTLNumber.ALL_NUMBERS;
++		if(getSet().sizeGreaterThan(10*BDDTracking.threshold.getValue())) {
++			logger.info("concretizing possibly large set: " + this);
++		}
++		return getSet().java();
++	}
++	
++	public boolean isSingleton() {
++		if(getSet().isEmpty()) return false;
++		return getSet().remove(getSet().randomElement()).isEmpty();
++	}
++	@Override
++	public boolean hasUniqueConcretization() {
++		return getRegion() == MemoryRegion.GLOBAL
++			&& isSingleton();
++	}
++
++
++	@Override
++	public boolean lessOrEqual(LatticeElement l) {
++		BDDSet that = (BDDSet) l;
++		if(isBot() || that.isTop()) return true;
++		if(isTop() && !that.isTop()) return false;
++		return (getRegion().lessOrEqual(that.getRegion()) || getRegion() == that.getRegion())
++				&& getBitWidth() == that.getBitWidth() 
++				&& getSet().subsetOf(that.getSet());
++		
++	}
++
++	@Override
++	public boolean isTop() {
++		return getRegion() == MemoryRegion.TOP; // && getSet().isFull();
++	}
++
++	@Override
++	public boolean isBot() {
++		//There does not seem to be a BOT region
++		return false;
++	}
++
++	@Override
++	public Collection<BDDSet> readStorePowerSet(
++			int bitWidth,
++			PartitionedMemory<? extends AbstractDomainElement> store) {
++		Set<BDDSet> result = new FastSet<BDDSet>();
++		//XXX limit to only n elements
++		logger.debug("limit needed for: " + getSet() + " with " + getSet().size() + " elements");
++		for(RTLNumber rtlnum : concretize()) {
++			BDDSet res = (BDDSet) store.get(getRegion(),rtlnum.longValue(), getSet().bits());
++			result.add(res);
++		}
++		return result;
++	}
++
++	@Override
++	public BDDSet readStore(int bitWidth,
++			PartitionedMemory<? extends AbstractDomainElement> store) {
++		BDDSet result = null;
++		//XXX limit to only n elements
++		logger.debug("limit needed for: " + getSet() + " with " + getSet().size() + " elements");
++		//XXX what if getSet() is empty -> result will be null
++		for (RTLNumber rtlnum : concretize()) {
++			BDDSet res = (BDDSet) store.get(getRegion(), rtlnum.longValue(), getSet().bits());
++			if(result == null) {
++				//First iteration - start of reduce (fold1)
++				result = res;
++			} else {
++				MemoryRegion nRegion = result.getRegion().join(res.getRegion());
++				if(nRegion == MemoryRegion.TOP || result.getBitWidth() != res.getBitWidth()) {
++					result = topBW(Math.max(result.getBitWidth(), res.getBitWidth()));
++				} else {
++					result = new BDDSet(result.getSet().union(res.getSet()), nRegion);
++				}
++			}
++		}
++		return result;
++	}
++
++	@Override
++	public <X extends AbstractDomainElement> void writeStore(int bitWidth,
++			PartitionedMemory<X> store, X value) {
++		if(getSet().isFull()) {
++			store.setTop();
++		} else {
++			//XXX what if set is empty? -> exception TODO: check!
++			RTLNumber rtlnum = getSet().randomElement();
++			   //is singleton?
++			if(getSet().remove(rtlnum).isEmpty()) {
++				//Strong update
++				rtlnum.writeStore(getSet().bits(), store, value);
++			} else {
++				//Weak update
++				for(RTLNumber rtlnums : concretize()) {
++						store.weakUpdate(getRegion(), rtlnums.longValue(), getBitWidth(), value);
++				}
++			}
++		}
++	}
++
++	@Override
++	public BDDSet plus(AbstractDomainElement op) {
++		assert op instanceof BDDSet;
++		final BDDSet that = (BDDSet) op;
++		MemoryRegion nRegion = getRegion().join(that.getRegion());
++		if(nRegion == MemoryRegion.TOP || getBitWidth() != that.getBitWidth()) {
++			//XXX we could also return TOP, set (region top, this.set + that.set).
++			return topBW(Math.max(getBitWidth(), that.getBitWidth()));
++		}
++		return new BDDSet(this.getSet().plus(that.getSet()), nRegion);
++	}
++
++	@Override
++	public BDDSet negate() {
++		return new BDDSet(getSet().negate(), getRegion());
++	}
++
++	@Override
++	public BDDSet multiply(AbstractDomainElement op) {
++		assert false : "Not implemented";
++		return null;
++	}
++
++	@Override
++	public BDDSet bitExtract(int first, int last) {
++		return new BDDSet(getSet().bitExtract(last, first), getRegion());
++	}
++
++	@Override
++	public BDDSet signExtend(int first, int last) {
++		return new BDDSet(getSet().signExtend(last, first), getRegion());
++	}
++
++	@Override
++	public BDDSet zeroFill(int first, int last) {
++		return new BDDSet(getSet().zeroFill(last, first), getRegion());
++	}
++
++	@Override
++	public BDDSet join(LatticeElement l) {
++		assert l instanceof BDDSet;
++		BDDSet that = (BDDSet) l;
++		MemoryRegion nRegion = getRegion().join(that.getRegion());
++		if(nRegion == MemoryRegion.TOP || getBitWidth() != that.getBitWidth()) {
++			//XXX we could also return TOP, set (region top, this.set + that.set).
++			return topBW(Math.max(getBitWidth(), that.getBitWidth()));
++		}
++		return new BDDSet(getSet().union(that.getSet()), nRegion);
++	}
++	
++	/*BUG: meet of (Top, Top) (Bot, Bot) should be (Bot, Bot) not (top, ...)*/
++	public BDDSet meet(LatticeElement l) {
++		assert l instanceof BDDSet;
++		BDDSet that = (BDDSet) l;
++		//XXX is GLOBAL correct? used in assertion; no BOT region
++		MemoryRegion nRegion = MemoryRegion.GLOBAL;
++		if(getRegion().isTop())
++			nRegion = that.getRegion();
++		else if(that.getRegion().isTop() || that.getRegion() == this.getRegion())
++			nRegion = getRegion();
++		if(nRegion == MemoryRegion.TOP || getBitWidth() != that.getBitWidth()) {
++			return topBW(Math.max(getBitWidth(), that.getBitWidth()));
++		}
++		return new BDDSet(getSet().intersect(that.getSet()), nRegion);
++	}
++
++	@Override
++	public int getBitWidth() {
++		return getSet().bits();
++	}
++	
++	public RTLNumber randomElement() {
++		return getSet().randomElement();
++	}
++	
++	public static BDDSet empty(int bw, MemoryRegion region) {
++		return new BDDSet(topBW(bw).getSet().invert(), region);
++	}
++	public static BDDSet empty(int bw) {
++		return empty(bw, MemoryRegion.GLOBAL);
++	}
++	public static BDDSet singleton(MemoryRegion region, RTLNumber rtlnum) {
++		return new BDDSet(empty(rtlnum.getBitWidth(), region).getSet().add(rtlnum), region);
++	}
++	public static BDDSet singleton(RTLNumber rtlnum) {
++		return singleton(MemoryRegion.GLOBAL, rtlnum);
++	}
++	public static BDDSet range(MemoryRegion region, RTLNumber lo, RTLNumber hi) {
++		return new BDDSet(IntLikeSet$.MODULE$.rangeJLong(lo, hi, new RTLNumberIsDynBoundedBits(), new RTLNumberToLongBWCaster(), new LongBWToRTLNumberCaster()));
++	}
++	public static BDDSet range(RTLNumber lo, RTLNumber hi) {
++		return BDDSet.range(MemoryRegion.GLOBAL, lo, hi);
++	}
++}
+diff --git a/src/org/jakstab/analysis/explicit/BDDSetFactory.java b/src/org/jakstab/analysis/explicit/BDDSetFactory.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/analysis/explicit/BDDSetFactory.java
+@@ -0,0 +1,44 @@
++package org.jakstab.analysis.explicit;
++
++import java.util.Collection;
++
++import org.jakstab.analysis.AbstractValueFactory;
++import org.jakstab.rtl.expressions.RTLNumber;
++
++public class BDDSetFactory implements AbstractValueFactory<BDDSet> {
++
++	@Override
++	public BDDSet createAbstractValue(RTLNumber n) {
++		return BDDSet.singleton(n);
++	}
++
++	@Override
++	public BDDSet createAbstractValue(Collection<RTLNumber> numbers) {
++		BDDSet res = null;
++		for(RTLNumber rtlnum : numbers) {
++			if(res == null)
++				res = BDDSet.singleton(rtlnum);
++			else {
++				BDDSet num = BDDSet.singleton(rtlnum);
++				res = res.join(num);
++			}
++		}
++		return res;
++	}
++
++	@Override
++	public BDDSet createTop(int bitWidth) {
++		return BDDSet.topBW(bitWidth);
++	}
++
++	@Override
++	public BDDSet createTrue() {
++		return BDDSet.TRUE;
++	}
++
++	@Override
++	public BDDSet createFalse() {
++		return BDDSet.FALSE;
++	}
++
++}
+diff --git a/src/org/jakstab/analysis/explicit/BDDState.java b/src/org/jakstab/analysis/explicit/BDDState.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/analysis/explicit/BDDState.java
+@@ -0,0 +1,1620 @@
++package org.jakstab.analysis.explicit;
++
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++
++import org.jakstab.Options;
++import org.jakstab.Program;
++import org.jakstab.analysis.AbstractDomainElement;
++import org.jakstab.analysis.AbstractState;
++import org.jakstab.analysis.LatticeElement;
++import org.jakstab.analysis.MemoryRegion;
++import org.jakstab.analysis.PartitionedMemory;
++import org.jakstab.analysis.Precision;
++import org.jakstab.analysis.UnknownPointerAccessException;
++import org.jakstab.analysis.ValuationState;
++import org.jakstab.analysis.VariableValuation;
++import org.jakstab.cfa.Location;
++import org.jakstab.rtl.expressions.ExpressionFactory;
++import org.jakstab.rtl.expressions.ExpressionVisitor;
++import org.jakstab.rtl.expressions.LongBWToRTLNumberCaster;
++import org.jakstab.rtl.expressions.Operator;
++import org.jakstab.rtl.expressions.RTLBitRange;
++import org.jakstab.rtl.expressions.RTLConditionalExpression;
++import org.jakstab.rtl.expressions.RTLExpression;
++import org.jakstab.rtl.expressions.RTLMemoryLocation;
++import org.jakstab.rtl.expressions.RTLNondet;
++import org.jakstab.rtl.expressions.RTLNumber;
++import org.jakstab.rtl.expressions.RTLNumberIsDynBounded;
++import org.jakstab.rtl.expressions.RTLNumberIsDynBoundedBits;
++import org.jakstab.rtl.expressions.RTLNumberIsOrdered;
++import org.jakstab.rtl.expressions.RTLNumberToLongBWCaster;
++import org.jakstab.rtl.expressions.RTLOperation;
++import org.jakstab.rtl.expressions.RTLSpecialExpression;
++import org.jakstab.rtl.expressions.RTLVariable;
++import org.jakstab.rtl.expressions.Writable;
++import org.jakstab.rtl.statements.DefaultStatementVisitor;
++import org.jakstab.rtl.statements.RTLAlloc;
++import org.jakstab.rtl.statements.RTLAssume;
++import org.jakstab.rtl.statements.RTLDealloc;
++import org.jakstab.rtl.statements.RTLHavoc;
++import org.jakstab.rtl.statements.RTLMemcpy;
++import org.jakstab.rtl.statements.RTLMemoryAssignment;
++import org.jakstab.rtl.statements.RTLMemset;
++import org.jakstab.rtl.statements.RTLStatement;
++import org.jakstab.rtl.statements.RTLUnknownProcedureCall;
++import org.jakstab.rtl.statements.RTLVariableAssignment;
++import org.jakstab.rtl.Context;
++import org.jakstab.util.Characters;
++import org.jakstab.util.FastSet;
++import org.jakstab.util.MapMap.EntryIterator;
++import org.jakstab.util.Sets;
++import org.jakstab.util.Tuple;
++import org.jakstab.util.Logger;
++import org.jakstab.util.Either;
++import org.jakstab.util.Pair;
++
++import java.util.Arrays;
++
++import cc.sven.constraint.*;
++import cc.sven.tlike.*;
++
++public class BDDState implements AbstractState {
++
++	private BDDState(BDDVariableValuation vartable, PartitionedMemory<BDDSet> memtable, AllocationCounter counter) {
++		this.abstractVarTable = vartable;
++		this.abstractMemoryTable = memtable;
++		this.allocationCounter = counter;
++	}
++
++	protected BDDState(BDDState proto) {
++		this(new BDDVariableValuation(proto.abstractVarTable),
++				new PartitionedMemory<BDDSet>(proto.abstractMemoryTable),
++				AllocationCounter.create());
++	}
++
++	public BDDState() {
++		this(new BDDVariableValuation(new BDDSetFactory()), new PartitionedMemory<BDDSet>(new BDDSetFactory()), AllocationCounter.create());
++	}
++
++	private final BDDVariableValuation abstractVarTable;
++	private final PartitionedMemory<BDDSet> abstractMemoryTable;
++	private final AllocationCounter allocationCounter;
++
++	private static final Logger logger = Logger.getLogger(BDDState.class);
++
++	/**
++	 * Counts allocs at allocation sites 
++	 */
++	private static final class AllocationCounter {
++
++		public static AllocationCounter create() {
++			return new AllocationCounter();
++		}
++
++		public static AllocationCounter create(AllocationCounter proto) {
++			return new AllocationCounter(proto.leaf);
++		}
++
++		private static final class AllocationTreeNode {
++			private final Location location;
++			private final AllocationTreeNode parent;
++			public AllocationTreeNode(Location location, AllocationTreeNode parent) {
++				this.location = location; this.parent = parent;
++			}
++		}
++
++		private AllocationTreeNode leaf;
++
++		private AllocationCounter(AllocationTreeNode leaf) {
++			this.leaf = leaf;
++		}
++
++		private AllocationCounter() {
++			this(null);
++		}
++
++		public int countAllocation(Location loc) {
++			int count = 0;
++			for (AllocationTreeNode iter = leaf; iter != null; iter = iter.parent)
++				if (iter.location.equals(loc))
++					count++;
++			leaf = new AllocationTreeNode(loc, leaf);
++			return count;
++		}
++
++		public AllocationCounter join(AllocationCounter other) {
++			// TODO: Implement some kind of joining
++			//throw new UnsupportedOperationException("Missing join implementation!");
++			// This is invoked only for based constant propagation... don't know if this quick fix is correct?
++			return this;
++		}
++
++	}
++
++	@Override
++	public String toString() {
++		if(isTop()) return Characters.TOP;
++		else if(isBot()) return Characters.BOT;
++		else return "Var = " + abstractVarTable.toString() + ", " + abstractMemoryTable.toString();
++	}
++
++	@Override
++	public boolean lessOrEqual(LatticeElement l) {
++		BDDState that = (BDDState) l;
++		if(this == that) return true;
++		if(that.isTop() || isBot()) return true;
++		if(isTop() || that.isBot()) return false;
++
++		return abstractVarTable.lessOrEqual(that.abstractVarTable)
++				&& abstractMemoryTable.lessOrEqual(that.abstractMemoryTable);
++	}
++
++	@Override
++	public boolean isTop() {
++		return abstractMemoryTable.isTop() && abstractVarTable.isTop();
++	}
++
++	@Override
++	public boolean isBot() {
++		return false;
++	}
++
++	@Override
++	public Set<Tuple<RTLNumber>> projectionFromConcretization(
++			RTLExpression... expressions) {
++		logger.debug("projection from concretization for " + expressions.length + " expressions");
++		Tuple<Set<RTLNumber>> cValues = new Tuple<Set<RTLNumber>>(expressions.length);
++		for (int i=0; i<expressions.length; i++) {
++			BDDSet aValue = abstractEval(expressions[i]);
++			//TODO SCM : fix - what if set is full for boolean?
++			logger.debug("expression: " + expressions[i] + " evalutated to: "+ aValue + " "+ aValue.isTop());
++			if(aValue.getSet().isFull()) {
++				//is Boolean expression?
++				if(expressions[i].getBitWidth() == 1)  {
++					FastSet<RTLNumber> tmp = new FastSet<RTLNumber>(2);
++					Collections.addAll(tmp, ExpressionFactory.TRUE, ExpressionFactory.FALSE);
++					cValues.set(i, tmp);
++				} else
++					cValues.set(i, RTLNumber.ALL_NUMBERS);
++			} else {
++				//XXX limit up to k
++				logger.debug("limit needed for: " + aValue + " with " + aValue.getSet().sizeBigInt() + " elements");
++				cValues.set(i, aValue.concretize());
++			}
++		}
++		//logger.debug(cValues);
++		return Sets.crossProduct(cValues);
++	}
++
++	@Override
++	public BDDState join(LatticeElement l) {
++		BDDState that = (BDDState) l;
++
++		if (isTop() || that.isBot()) return this;
++		if (isBot() || that.isTop()) return that;
++
++		BDDVariableValuation newVarVal = 
++				abstractVarTable.join(that.abstractVarTable); 
++		PartitionedMemory<BDDSet> newStore = 
++				abstractMemoryTable.join(that.abstractMemoryTable);
++		AllocationCounter newAllocCounters = 
++				allocationCounter.join(that.allocationCounter);
++
++		return new BDDState(newVarVal, newStore, newAllocCounters);
++	}
++
++	@Override
++	public Location getLocation() {
++		throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not contain location information.");
++	}
++
++	private Context getContext() {
++		Context context = new Context();
++		for(Map.Entry<RTLVariable, BDDSet> entry : abstractVarTable) {
++			RTLVariable var = entry.getKey();
++			BDDSet val = entry.getValue();
++			if(val.hasUniqueConcretization())
++				context.addAssignment(var, val.getSet().randomElement());
++		}
++		return context;
++	}
++
++	@Override
++	public String getIdentifier() {
++		//return Long.toString(stateId);
++		return Long.toString(hashCode());
++	}
++
++	@Override
++	public boolean equals(Object obj) {
++		if(!(obj instanceof BDDState)) return false;
++		BDDState that = (BDDState) obj;
++		if(this == that) return true;
++		return abstractVarTable.equals(that.abstractVarTable) && abstractMemoryTable.equals(that.abstractMemoryTable);
++	}
++	/*None Interface Methods - called in BDDAddressTracking
++	 * See BasedNumberValuation for similar structure.
++	 */
++
++	private void clearTemporaryVariables() {
++		for(RTLVariable var : Program.getProgram().getArchitecture().getTemporaryVariables())
++			abstractVarTable.setTop(var);
++	}
++	
++	private BDDSet getValue(RTLVariable var) {
++		return abstractVarTable.get(var);
++	}
++	
++	private void setValue(RTLVariable var, BDDSet value) {
++		abstractVarTable.set(var, value);
++	}
++	
++	/*private void setValue(RTLVariable var, BDDSet value, ExplicitPrecision eprec) {
++		BDDSet valueToSet;
++		switch(eprec.getTrackingLevel(var)) {
++		case NONE:
++			logger.debug("Precision prevents value " + value + " to be set for " + var);
++			valueToSet = BDDSet.topBW(var.getBitWidth());
++			break;
++		case REGION:
++			logger.debug("Precision created ANYNUM for " + var);
++			valueToSet = new BDDSet(BDDSet.topBW(var.getBitWidth()).getSet(), value.getRegion());
++			break;
++		case FULL:
++		default:
++			valueToSet = value;
++		}
++		abstractVarTable.set(var, valueToSet);
++	}*/
++	
++	/* TODO SCM check!
++	void setValue(RTLVariable var, BasedNumberElement value, ExplicitPrecision precision) {
++		BasedNumberElement valueToSet;
++		switch (precision.getTrackingLevel(var)) {
++		case NONE:
++			logger.debug("Precision prevents value " + value + " to be set for " + var);
++			valueToSet = BasedNumberElement.getTop(var.getBitWidth());
++			break;
++		case REGION:
++			valueToSet = new BasedNumberElement(value.getRegion(), 
++					NumberElement.getTop(var.getBitWidth()));
++			break;
++		default:
++			valueToSet = value;
++		}
++		aVarVal.set(var, valueToSet);
++	}
++	 */
++	
++	//XXX dummy
++	public BDDState widen(BDDState other) {
++		BDDState result = new BDDState(this);
++		for(Map.Entry<RTLVariable, BDDSet> entry : abstractVarTable) {
++			RTLVariable key = entry.getKey();
++			BDDSet value = entry.getValue();
++			BDDSet otherValue = other.abstractVarTable.get(key);
++			if(otherValue == null) continue;
++			if(!value.equals(otherValue)) {
++				logger.debug("widening variable " + key + " that had value " + value + " because of " + otherValue);
++				result.abstractVarTable.setTop(key);
++			}
++		}
++		
++		//XXX broken - does not select anything to widen
++		for(EntryIterator<MemoryRegion, Long, BDDSet> iter = abstractMemoryTable.entryIterator(); iter.hasEntry(); iter.next()) {
++			MemoryRegion region = iter.getLeftKey();
++			Long offset = iter.getRightKey();
++			BDDSet value = iter.getValue();
++			BDDSet otherValue = other.abstractMemoryTable.get(region, offset, value.getBitWidth());
++			if(otherValue == null) continue;
++			if(!value.equals(otherValue)) {
++				logger.debug("widening memory cell (" + region + " | " + value.getBitWidth() + " | " + offset + ") that had value " + value + " because of " + otherValue);
++				result.abstractMemoryTable.set(region, offset, value.getBitWidth(), BDDSet.topBW(value.getBitWidth()));
++			}
++		}
++		
++		return result;
++	}
++	
++	// Returns true if set was successful, false if memory was overapproximated or location was not a singleton
++	private boolean setMemoryValue(BDDSet pointer, int bitWidth, BDDSet value) {
++		if(pointer.isTop()) {
++			abstractMemoryTable.setTop();
++			return false;
++		} else if(pointer.getSet().isFull()) {
++			abstractMemoryTable.setTop(pointer.getRegion());
++			return false;
++		} else {
++			MemoryRegion region = pointer.getRegion();
++			if(pointer.getSet().sizeGreaterThan(100*BDDTracking.threshold.getValue())) {
++				logger.info("Overapproximating large setMemory access: " + pointer + " value: "+ value  );
++				abstractMemoryTable.setTop(pointer.getRegion());
++				return false;
++			}
++			for(RTLNumber rtlnum : pointer.concretize()) {
++				// XXX SCM why the bitWidth - is contained in rtlnum and in BDDSet.singleton... - CHECK!
++				abstractMemoryTable.set(region, rtlnum.longValue(), bitWidth, value);
++			}
++			return pointer.isSingleton();
++		}
++	}
++
++	private BDDSet getMemoryValue(BDDSet pointer, int bitWidth) {
++		//XXX like in the original - if pointer.getRegion() == MemoryRegion.TOP -> assert false...
++		logger.verbose("memory access for: " + pointer + " bw: " + bitWidth);
++		if(pointer.isTop() || pointer.getSet().isFull())
++			return BDDSet.topBW(bitWidth);
++		if(pointer.getRegion() == MemoryRegion.TOP)
++		{
++			logger.error("Pointer deref with TOP region (pointer: " + pointer +")");
++			return BDDSet.topBW(bitWidth);
++		}
++		if(pointer.getSet().sizeGreaterThan(100*BDDTracking.threshold.getValue())) {
++			logger.info("Overapproximating large getMemory access: " + pointer );
++			return BDDSet.topBW(bitWidth);
++		}
++		//the following is again essentially a fold1...
++		BDDSet result = null;
++		for(RTLNumber rtlnum : pointer.concretize()) {
++			//logger.debug("accessing at: " + pointer.getRegion() + ", " + rtlnum.intValue());
++			BDDSet values = abstractMemoryTable.get(pointer.getRegion(), rtlnum.intValue(), bitWidth);
++			if(result == null)
++				result = BDDSet.empty(values.getBitWidth(), values.getRegion());
++			assert values.getBitWidth() == result.getBitWidth() : "Try to union different bitwidths at pointer deref";
++			if(values.getRegion() != result.getRegion())
++				return BDDSet.topBW(result.getBitWidth());
++			result = new BDDSet(result.getSet().union(values.getSet()), result.getRegion());
++		}
++		logger.verbose("memory access result: " + result);
++		return result;
++	}
++
++	private BDDSet abstractEvalAddress(RTLMemoryLocation m) {
++		BDDSet abstractAddress = abstractEval(m.getAddress());
++		//Segment register is some special x86 magic
++		RTLExpression segmentReg = m.getSegmentRegister();
++		if(segmentReg != null) {
++			if(abstractAddress.getRegion() != MemoryRegion.GLOBAL)
++				return BDDSet.topBW(m.getBitWidth());
++			BDDSet segmentValue = abstractEval(segmentReg);
++			// segment register handling
++			//  - ok if segment is singleton of value 0
++			if (segmentValue.isSingleton() && segmentValue.randomElement().intValue() == 0) {
++				abstractAddress = new BDDSet(abstractAddress.getSet(), segmentValue.getRegion());
++			} else {
++				logger.warn("Segment " + segmentReg + " has been assigned a value!");
++				abstractAddress = BDDSet.topBW(abstractAddress.getBitWidth());
++			}
++		}
++		return abstractAddress;
++	}
++
++	BDDSet abstractEval(RTLExpression e) {
++		ExpressionVisitor<BDDSet> visitor = new ExpressionVisitor<BDDSet>() {
++
++			@Override
++			public BDDSet visit(RTLBitRange e) {
++				logger.debug("extracting bitrange: " + e);
++				BDDSet abstractFirst = e.getFirstBitIndex().accept(this);
++				BDDSet abstractLast = e.getLastBitIndex().accept(this);
++				BDDSet abstractOperand = e.getOperand().accept(this);
++
++				if(!(abstractFirst.hasUniqueConcretization() && abstractLast.hasUniqueConcretization()))
++					return BDDSet.topBW(e.getBitWidth());
++				RTLNumber loRTL = abstractFirst.randomElement();
++				RTLNumber hiRTL = abstractLast.randomElement();
++				long loLong = loRTL.longValue();
++				long hiLong = hiRTL.longValue();
++				int lo = loRTL.intValue();
++				int hi = hiRTL.intValue();
++				if(!((long) lo == loLong)
++				|| !((long) hi == hiLong)
++				|| !(lo >= 0)
++				|| !(hi >= 0))
++					return BDDSet.topBW(e.getBitWidth());
++				BDDSet ret = abstractOperand.bitExtract(lo, hi);
++				logger.debug("extracted: " + ret);
++				return ret;
++			}
++
++			@Override
++			public BDDSet visit(RTLConditionalExpression e) {
++				BDDSet abstractCondition = e.getCondition().accept(this);
++				logger.debug("abstr cond: " + abstractCondition);
++				BDDSet result = BDDSet.empty(e.getBitWidth());
++				if(BDDSet.TRUE.lessOrEqual(abstractCondition)) {
++					logger.debug("true branch");
++					BDDSet abstractTrue = e.getTrueExpression().accept(this);
++					result = result.join(abstractTrue);
++				}
++				if(BDDSet.FALSE.lessOrEqual(abstractCondition)) {
++					logger.debug("false branch");
++					BDDSet abstractFalse = e.getFalseExpression().accept(this);
++					result = result.join(abstractFalse);
++				}
++				return result;
++			}
++
++			@Override
++			public BDDSet visit(RTLMemoryLocation m) {
++				//XXX restrict to n values
++				return getMemoryValue(abstractEvalAddress(m), m.getBitWidth());
++			}
++
++			@Override
++			public BDDSet visit(RTLNondet e) {
++				return BDDSet.topBW(e.getBitWidth());
++			}
++
++			@Override
++			public BDDSet visit(RTLNumber e) {
++				return BDDSet.singleton(e);
++			}
++
++			//This should actually be a function returning a triple. But I feel funny today and... JAVA...
++			class CheckResult {
++				private int bits;
++				private MemoryRegion region;
++				private boolean ok = true;
++				public CheckResult(RTLOperation e, BDDSet[] abstractOperands) {
++					assert e.getOperandCount() > 0 : "Check failure for 0 operands";
++					this.region = abstractOperands[0].getRegion();
++					this.bits = abstractOperands[0].getBitWidth();
++					logger.debug("expression "+e+" # operands:" + e.getOperandCount());
++					logger.debug("operand: " + abstractOperands[0]);
++					for(int i = 1; i < e.getOperandCount(); i++) {
++						logger.debug("operand: " + abstractOperands[i]);
++						/*if(this.region == MemoryRegion.TOP
++								|| abstractOperands[i].getRegion() == MemoryRegion.TOP) {
++							this.region = MemoryRegion.TOP;
++							break;
++						}*/
++						if(this.region == MemoryRegion.GLOBAL)
++							this.region = abstractOperands[i].getRegion();
++						if(abstractOperands[i].getRegion() == MemoryRegion.TOP) {
++							this.ok = false;
++							this.region = MemoryRegion.TOP;
++							logger.debug("Check for Region == TOP for " + abstractOperands[i]);
++							break;
++						} else if((abstractOperands[i].getRegion() != MemoryRegion.GLOBAL
++								&& this.region != abstractOperands[i].getRegion())
++								|| this.bits != abstractOperands[i].getBitWidth()) {
++							logger.debug("Check for Region or BitWidth failed: this.region: " + this.region + ", that.region: " + abstractOperands[i].getRegion() + ", this.bits: " + this.bits + ", that.bits: " + abstractOperands[i].getBitWidth());
++							this.ok = false;
++							break;
++						}
++					}
++				}
++				public boolean getOk() { return ok; }
++				public boolean getTop() { return this.region == MemoryRegion.TOP; }
++				public MemoryRegion getRegion() {
++					assert getOk();
++					return region;
++				}
++				public int getBitWidth() {
++					assert getOk();
++					return bits;
++				}
++			}
++
++			@Override
++			public BDDSet visit(RTLOperation e) {
++				BDDSet[] abstractOperands = new BDDSet[e.getOperandCount()];
++
++				for(int i = 0; i < e.getOperandCount(); i++) {
++					abstractOperands[i] = e.getOperands()[i].accept(this);
++					if(abstractOperands[i].getSet().isEmpty()) {
++						logger.error("found EMPTY Set for op #"+i+" in operation: "+e);
++					}
++				}
++
++				BDDSet op0;
++				BDDSet op1;
++				BDDSet op2;
++				CheckResult check;
++				
++				try {
++					logger.debug("processing: " + e + " operator: " + e.getOperator());
++				switch(e.getOperator()) {
++				/* decided to go for code duplication for readability (more separate cases).
++				 * also, clone researchers need something meaningful to analyze...
++				 */
++				case EQUAL:
++					assert e.getOperandCount() == 2 : "EQUAL called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op0.getRegion() != MemoryRegion.GLOBAL
++							&& !op0.isTop()
++							&& op1.hasUniqueConcretization()
++							&& op1.getSet().contains(ExpressionFactory.createNumber(0, op1.getBitWidth())))
++						return BDDSet.FALSE;
++					if(op1.getRegion() != MemoryRegion.GLOBAL
++							&& !op1.isTop()
++							&& op0.hasUniqueConcretization()
++							&& op0.getSet().contains(ExpressionFactory.createNumber(0, op0.getBitWidth())))
++						return BDDSet.FALSE;
++					if(op0.isTop() || op1.isTop()) {
++						return BDDSet.topBW(e.getBitWidth());
++					} else {
++						if( op0.getBitWidth() == op1.getBitWidth()) {
++							if(op0.getRegion() == op1.getRegion()) {
++								BDDSet result = BDDSet.empty(1);
++								logger.debug("op0" + op0);
++								logger.debug("op1" + op1);
++								logger.debug(op0.getSet().intersect(op1.getSet()));
++								if(!op0.getSet().intersect(op1.getSet()).isEmpty())
++									result = result.join(BDDSet.TRUE);
++								if(!op0.getSet().invert().intersect(op1.getSet()).isEmpty())
++									result = result.join(BDDSet.FALSE);
++								// XXX arne: i think this way round needs also be checked...
++								if(!op0.getSet().intersect(op1.getSet().invert()).isEmpty())
++									result = result.join(BDDSet.FALSE);
++								assert !result.getSet().isEmpty() : "Equal"+e+" produced no result!?";
++								return result;
++							} else {
++								logger.debug("EQUAL with differing regions: (" + op0 + " " + e.getOperator() + " " + op1 + ")");
++								return BDDSet.topBW(e.getBitWidth());
++							}
++						}
++					}
++					assert false : "EQUAL called on something crazy: (" + op0 + " " + e.getOperator() + " " + op1 + ")";
++					break;
++				case UNSIGNED_LESS: // XXX [-SCM-] This SHOULD be a BUG . The order in UNSIGNED and signed operations are different!
++					
++				case LESS:
++					assert e.getOperandCount() == 2 : "LESS or UNSIGNED_LESS called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op0.isTop() || op1.isTop()) {
++						// TODO: handle: non-TOP operand could be max element which would result in constant false
++						return BDDSet.topBW(e.getBitWidth());
++					} else {
++						if(!op0.getSet().isEmpty()
++							&& !op1.getSet().isEmpty()
++							&& op0.getBitWidth() == op1.getBitWidth()) {
++							if(op0.getRegion() == op1.getRegion()) {
++								BDDSet result = BDDSet.empty(1);
++								if(op0.getSet().min().longValue() < op1.getSet().max().longValue())
++									result = result.join(BDDSet.TRUE);
++								if(op0.getSet().max().longValue() >= op1.getSet().min().longValue())
++									result = result.join(BDDSet.FALSE);
++								return result;
++							} else {
++								logger.debug("LESS with differing regions: (" + op0 + " " + e.getOperator() + " " + op1 + ")");
++								return BDDSet.topBW(e.getBitWidth());
++							}
++						}
++					}
++					assert false : "LESS called on something crazy: (" + op0 + " " + e.getOperator() + " " + op1 + ")";
++					break;
++				case UNSIGNED_LESS_OR_EQUAL: // XXX [-SCM-] This SHOULD be a BUG . The order in UNSIGNED and signed operations are different!
++				case LESS_OR_EQUAL:
++					assert e.getOperandCount() == 2 : "UNSIGNED_LESS_OR_EQUAL or LESS_OR_EQUAL called with " + e.getOperandCount() + " operands";
++					//== and <
++					RTLExpression eLess = ExpressionFactory.createLessThan(e.getOperands()[0], e.getOperands()[1]);
++					RTLExpression eEqual = ExpressionFactory.createEqual(e.getOperands()[0], e.getOperands()[1]);
++					BDDSet less = eLess.accept(this);
++					BDDSet equal = eEqual.accept(this);
++					return less.join(equal);
++				case NOT:
++					assert e.getOperandCount() == 1 : "NOT called with " + e.getOperandCount() + " operands";
++			//		logger.debug(abstractOperands[0]);
++					return new BDDSet(abstractOperands[0].getSet().bNot());
++				case NEG:
++					assert e.getOperandCount() == 1 : "NEG called with " + e.getOperandCount() + " operands";
++			//		logger.debug(abstractOperands[0]);
++					return new BDDSet(abstractOperands[0].getSet().negate());
++				case AND:
++					check = new CheckResult(e, abstractOperands);
++					if(check.getTop()) {
++						if(e.getOperandCount()==2 && abstractOperands[0].isTop() && abstractOperands[1].hasUniqueConcretization()) {
++							IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++							return new BDDSet(res.bAnd(abstractOperands[1].getSet()),MemoryRegion.GLOBAL);
++						}
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++						for(int i = 1; i < e.getOperandCount(); i++)
++							res = res.bAnd(abstractOperands[i].getSet());
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "AND called on something crazy";
++					break;
++				case OR:
++					check = new CheckResult(e, abstractOperands);
++					if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++				//		logger.debug("base operand: "+ res + (abstractOperands[0].getSet().isFull()?" [full]":"[]"));
++						for(int i = 1; i < e.getOperandCount(); i++) {
++						//	logger.debug("next operand: "+ abstractOperands[i] + (abstractOperands[i].getSet().isFull()?" [full]":"[]"));
++							//IntLikeSet<Long, RTLNumber> set = abstractOperands[i].getSet();
++							//res = res.bOr(abstractOperands[i].getSet());
++							res = abstractOperands[i].getSet().bOr(res);
++						}
++					//	logger.debug("evaluated OR");
++
++					//	logger.debug("evaluated to full set: "+ res.isFull());
++					//	logger.debug("evaluated to region: "+ check.getRegion());
++					//	logger.debug("evaluated set of size: "+ res.sizeBigInt());
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "OR called on something crazy";
++					break;
++				case XOR:
++					check = new CheckResult(e, abstractOperands);
++					if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++						for(int i = 1; i < e.getOperandCount(); i++)
++							res = res.bXOr(abstractOperands[i].getSet());
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "XOR called on something crazy";
++					break;
++				case PLUS:
++					check = new CheckResult(e, abstractOperands);
++					boolean allSame = true;
++					for(int i = 1; i < e.getOperandCount() && allSame; i++)
++						if(e.getOperands()[i] != e.getOperands()[0])
++							allSame = false;
++					if(allSame && (check.getTop() || check.getOk())
++					&& (e.getOperandCount() & (e.getOperandCount() - 1)) == 0) { //check power of two operand count - can be lifted as soon as mulSingleton is there - then use mulSingleton instead of shift
++						logger.debug("Special case for plus on same arguments, e.g. add %eax %eax.");
++						//special case, e.g. add %eax %eax == 2 * %eax
++						int toShift = 0;
++						for(int ops = e.getOperandCount(); (ops & 1) == 0; ops >>= 1)
++							toShift++;
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet().bShl(toShift);
++						if(check.getOk())
++							return new BDDSet(res, check.getRegion());
++						else {
++							//SCM this is Hacky - we do not know the region, really. But GLOBAL is as good a guess as any...
++							logger.warn("We guessed a region in special case for add");
++							return new BDDSet(res, MemoryRegion.GLOBAL);
++						}
++					} else if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++						for(int i = 1; i < e.getOperandCount(); i++)
++							res = res.plus(abstractOperands[i].getSet());
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "PLUS called on something crazy";
++					break;
++				case SIGN_EXTEND:
++					assert e.getOperandCount() == 3 : "SIGN_EXTEND called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					op2 = abstractOperands[2];
++					if(op0.hasUniqueConcretization()
++							&& op1.hasUniqueConcretization())
++						return op2.signExtend(op0.randomElement().intValue(), op1.randomElement().intValue());
++					assert false : "SIGN_EXTEND called on something crazy";
++					break;
++				case ZERO_FILL:
++					assert e.getOperandCount() == 3 : "ZERO_FILL called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					op2 = abstractOperands[2];
++					if(op0.hasUniqueConcretization()
++							&& op1.hasUniqueConcretization())
++						return op2.zeroFill(op0.randomElement().intValue(), op1.randomElement().intValue());
++					assert false : "ZERO_FILL called on something crazy";
++					break;
++				case SHR:
++					assert e.getOperandCount() == 2 : "SHR called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op1.hasUniqueConcretization())
++						// if op0 is top, use global as target region
++						return new BDDSet(op0.getSet().bShr(op1.randomElement().intValue()),
++								op0.isTop()?MemoryRegion.GLOBAL:op0.getRegion()); 
++					assert false : "SHR called on something crazy";
++					break;
++				case SHL:
++					assert e.getOperandCount() == 2 : "SHL called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op1.hasUniqueConcretization())
++						return new BDDSet(op0.getSet().bShl(op1.randomElement().intValue()), op0.getRegion());
++					assert false : "SHL called on something crazy";
++					break;
++				case ROL:
++					assert e.getOperandCount() == 2 : "ROL colled with " + e.getOperandCount() + "operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op1.hasUniqueConcretization())
++						return new BDDSet(op0.getSet().bRol(op1.randomElement().intValue()), op0.getRegion());
++				case ROR:
++					assert e.getOperandCount() == 2 : "ROR colled with " + e.getOperandCount() + "operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op1.hasUniqueConcretization())
++						return new BDDSet(op0.getSet().bRor(op1.randomElement().intValue()), op0.getRegion());
++				case SAR:
++					assert e.getOperandCount() == 2 : "SAR called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op1.hasUniqueConcretization())
++						return new BDDSet(op0.getSet().bSar(op1.randomElement().intValue()), op0.getRegion());
++					assert false : "SAR called on something crazy";
++					break;
++				case MUL:
++					check = new CheckResult(e, abstractOperands);
++					//TODO scm remove
++					final int prec = 5;
++					final int maxk = 2*prec*BDDTracking.threshold.getValue();
++					if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++						for(int i = 1; i < e.getOperandCount(); i++) {
++							//TODO SCM : in here, i must adjust bitwidth of res.
++							IntLikeSet<Long, RTLNumber> op = abstractOperands[i].getSet();
++							//XXX SCM the then branch should not have to exist - mul for up to maxk now does the same.
++							/*if(!res.sizeGreaterThan(maxk) && !op.sizeGreaterThan(maxk)) {
++								IntLikeSet<Long, RTLNumber> tmp = BDDSet.empty(check.getBitWidth() * 2, check.getRegion()).getSet();
++								for(RTLNumber n1 : res.java())
++									for(RTLNumber n2 : op.java()) {
++										RTLExpression n1muln2 = ExpressionFactory.createMultiply(n1, n2).evaluate(new Context());
++										assert n1muln2 instanceof RTLNumber : "No RTLNumber for result to multiplication!";
++										//logger.info("adding a number... brace yourself! bitwidth of set : " + tmp.bits() + ", number: " + n1muln2.getBitWidth());
++										tmp = tmp.add((RTLNumber) n1muln2);
++									}
++								res = tmp;
++							} else {*/
++								res = res.mul(maxk, prec, op);
++							//}
++						}
++						logger.debug("MUL: " + res);
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "MUL called on something crazy";
++					break;
++				}
++     			} catch (AssertionError f) {
++     				logger.error("assertion failed while handling operation: " + e + " message: " + f.getMessage());
++     				if(Options.failFast.getValue()) throw f;
++     				return BDDSet.topBW(e.getBitWidth());
++     			}
++     
++				logger.warn("XXX operator "+ e.getOperator() + " not handled in " + e);
++				if(Options.debug.getValue()) assert false : "XXX operator "+ e.getOperator() + " not handled in " + e;
++				return BDDSet.topBW(e.getBitWidth());
++					/*
++				case ROL:
++				{
++					BDDSet ret = BDDSet.topBW(e.getBitWidth());
++					logger.debug("ROL not handled, returning: " + ret);
++					return ret;
++				}
++				case ROR:
++					assert false : "ROR not handled";
++				break;
++				case FSIZE:
++				{
++					BDDSet ret = BDDSet.topBW(e.getBitWidth());
++					logger.debug("FSIZE not handled, returning: " + ret);
++					return ret;
++				}
++				case FMUL:
++					assert false : "FMUL not handled";
++				break;
++				case FDIV:
++				{
++					BDDSet ret = BDDSet.topBW(e.getBitWidth());
++					logger.debug("FDIV not handled, returning: " + ret);
++					return ret;
++				}
++				case DIV:
++					assert false : "DIV not handled";
++				break;
++				case MOD:
++					assert false : "MOD not handled";
++				break;
++				case POWER_OF:
++					assert false : "POWER_OF not handled";
++				break;
++				case ROLC:
++					assert false : "ROLC not handled";
++				break;
++				case RORC:
++					assert false : "RORC not handled";
++				break;
++				case UNKNOWN:
++					assert false : "UNKNOWN not handled";
++				break;
++				case CAST:
++					assert false : "CAST not handled";
++				break;
++				default:
++					assert false : "Operator not handled";
++				break;
++				}
++				System.exit(1);
++				//To make eclipse happy... Here you are, stupid.
++				return null;*/
++			}
++
++			@Override
++			public BDDSet visit(RTLSpecialExpression e) {
++				//XXX todo [SCM] debug printf and possibly getprocaddress... - have a look at RTL definitions
++				return BDDSet.topBW(e.getBitWidth());
++			}
++
++			@Override
++			public BDDSet visit(RTLVariable e) {
++				return abstractVarTable.get(e);
++			}
++
++		};
++
++		BDDSet result = e.accept(visitor);
++
++		logger.debug("abstractEval returned: " + result + " for: " + e);
++
++		if(result.getSet().isEmpty()) {
++			logger.error("found EMPTY Set as result for operation: "+e + " in state: "+ BDDState.this);
++		}
++		
++		assert result.getBitWidth() == e.getBitWidth() : "Bitwidth changed from "+e.getBitWidth()+" to "+result.getBitWidth()+" during evaluation of " + e + " to " + result;
++		return result;
++	}
++
++
++	public Set<AbstractState> abstractPost(final RTLStatement statement, final Precision precision) {
++		logger.verbose("start processing abstractPost(" + statement + ") " + statement.getLabel());
++		//final ExplicitPrecision eprec = (ExplicitPrecision)precision;
++		Set<AbstractState> res = statement.accept(new DefaultStatementVisitor<Set<AbstractState>>() {
++			private final Set<AbstractState> thisState() {
++				if(statement.getLabel() == null) logger.warn("No label: " + statement);
++				if(!statement.getLabel().getAddress().equals(statement.getNextLabel().getAddress())) {
++					BDDState post = new BDDState(BDDState.this);
++					post.clearTemporaryVariables();
++					return Collections.singleton((AbstractState) post);
++				} else {
++					return Collections.singleton((AbstractState) BDDState.this);
++				}
++			}
++
++			private final BDDState copyThisState() {
++				BDDState post = new BDDState(BDDState.this);
++				if(statement.getNextLabel() == null
++						|| !statement.getAddress().equals(statement.getNextLabel().getAddress())) {
++					// New instruction
++					post.clearTemporaryVariables();
++				}
++				return post;
++			}
++
++			@Override
++			public Set<AbstractState> visit(RTLVariableAssignment stmt) {
++				BDDState post = copyThisState();
++
++				RTLVariable lhs = stmt.getLeftHandSide();
++				RTLExpression rhs = stmt.getRightHandSide();
++				BDDSet evaledRhs = abstractEval(rhs);
++
++
++				assert!evaledRhs.getSet().isEmpty();
++				logger.debug("assigning "+ lhs + " to " + rhs);
++				// Check for stackpointer alignment assignments (workaround for gcc compiled files)
++				RTLVariable sp = Program.getProgram().getArchitecture().stackPointer();
++				if (lhs.equals(sp) && rhs instanceof RTLOperation) {
++					RTLOperation op = (RTLOperation)rhs;
++					if (op.getOperator().equals(Operator.AND) && 
++							op.getOperands()[0].equals(sp) &&
++							op.getOperands()[1] instanceof RTLNumber) {
++						evaledRhs = getValue(sp);
++						logger.warn("Ignoring stackpointer alignment at " + stmt.getAddress());
++					}
++				}				
++				logger.debug("assigning TOP: "+ evaledRhs.isTop());
++				logger.debug("assigning full set: "+ evaledRhs.getSet().isFull());
++				logger.debug("assigning EMPTY set: "+ evaledRhs.getSet().isEmpty());
++				assert!evaledRhs.getSet().isEmpty();
++				logger.debug("assigning region: "+ evaledRhs.getRegion());
++				post.setValue(lhs, evaledRhs);
++				logger.debug("completed assigning "+ lhs + " to " + evaledRhs);
++				return Collections.singleton((AbstractState) post);
++			}
++
++			@Override
++			public Set<AbstractState> visit(RTLMemoryAssignment stmt) {
++				BDDState post = copyThisState();
++				BDDSet evaledRhs = abstractEval(stmt.getRightHandSide());
++
++				RTLMemoryLocation m = stmt.getLeftHandSide();
++				BDDSet abstractAddress = abstractEvalAddress(m);
++
++				if(!post.setMemoryValue(abstractAddress, m.getBitWidth(), evaledRhs)) {
++					logger.verbose(stmt.getLabel() + ": Cannot precisely resolve memory write to " + m + ".");
++					logger.debug("State: " + BDDState.this);
++				}
++
++				return Collections.singleton((AbstractState) post);
++			}
++			
++			class TranslationState {
++				private HashMap<Integer, RTLExpression> backMap;
++				private HashMap<RTLExpression, Integer> expToMap;
++				private HashMap<Integer, IntLikeSet<Long, RTLNumber>> valueMap;
++				private HashMap<Integer, MemoryRegion> regionMap;
++				private int counter;
++				public TranslationState(HashMap<Integer, RTLExpression> bm, HashMap<RTLExpression, Integer> em, HashMap<RTLMemoryLocation, Integer> mm, HashMap<Integer, IntLikeSet<Long, RTLNumber>> values, HashMap<Integer, MemoryRegion> regions, int c) {
++					this.backMap = bm;
++					this.expToMap = em;
++					this.valueMap = values;
++					this.regionMap = regions;
++					this.counter = c;
++				}
++				public TranslationState() {
++					this.backMap = new HashMap<Integer, RTLExpression>();
++					this.expToMap = new HashMap<RTLExpression, Integer>();
++					this.valueMap = new HashMap<Integer, IntLikeSet<Long, RTLNumber>>();
++					this.regionMap = new HashMap<Integer, MemoryRegion>();
++					this.counter = 0;
++				}
++				public int freshId() {
++					int res = counter;
++					counter += 1;
++					return res;
++				}
++				public HashMap<Integer, RTLExpression> getBackMap() { return backMap; }
++				public HashMap<RTLExpression, Integer> getExpToMap() { return expToMap; }
++				public HashMap<Integer, IntLikeSet<Long, RTLNumber>> getValueMap() { return valueMap; }
++				public HashMap<Integer, MemoryRegion> getRegionMap() { return regionMap; }
++				private MemoryRegion reduceRegion(FastSet<MemoryRegion> regions) {
++					//fold1
++					MemoryRegion result = MemoryRegion.TOP;
++					for(MemoryRegion r : regions) {
++						if(result.isTop() || result == r)
++							result = r;
++						else if(!r.isTop())
++							result = MemoryRegion.TOP;
++					}
++					return result;
++				}
++				private BDDSet expToValue(RTLExpression op) {
++					if(op instanceof RTLVariable)
++						return BDDState.this.getValue((RTLVariable) op);
++					else if(op instanceof RTLMemoryLocation) {
++						BDDSet addresses = BDDState.this.abstractEval(((RTLMemoryLocation) op).getAddress());
++						return getMemoryValue(addresses, op.getBitWidth());
++					} else if(op instanceof RTLNumber)
++						return BDDSet.singleton((RTLNumber) op);
++					else
++						return BDDSet.topBW(op.getBitWidth());
++				}
++				private void putValue(int k, BDDSet v, MemoryRegion region) { 
++					//set must be the same if looked up twice - therefore update is ok
++					valueMap.put(k, v.getSet());
++					//region must be set to new "joined" region
++					regionMap.put(k, region);
++				}
++				private int getId(RTLExpression forWhat) {
++					if(forWhat instanceof RTLNumber)
++						return freshId();
++					Integer id = getExpToMap().get(forWhat);
++					if(id == null) {
++						id = freshId();
++						expToMap.put(forWhat, id);
++						backMap.put(id, forWhat);
++					}
++					return id;
++				}
++				public List<Integer> addOperandGroup(List<RTLExpression> ops) {
++					//Pair<RTLExpression, BDDSet>[] values = new Pair<RTLExpression, BDDSet>[ops.length]; does not work for some reason
++					//want map function...
++					ArrayList<Pair<BDDSet, Integer>> values = new ArrayList<Pair<BDDSet, Integer>>(ops.size());
++					FastSet<MemoryRegion> regions = new FastSet<MemoryRegion>();
++					for(RTLExpression op : ops) {
++						BDDSet value = expToValue(op);
++						int id = getId(op);
++						MemoryRegion knownRegion = getRegionMap().get(id);
++						if(knownRegion != null)
++							regions.add(knownRegion);
++						regions.add(value.getRegion());
++						values.add(new Pair<BDDSet, Integer>(value, id));
++					}
++					MemoryRegion region = reduceRegion(regions);
++					ArrayList<Integer> ids = new ArrayList<Integer>(values.size());
++					for(Pair<BDDSet, Integer> pair : values) {
++						putValue(pair.getRight(), pair.getLeft(), region);
++						ids.add(pair.getRight());
++					}
++					return ids;
++				}
++				@Override
++				public String toString() {
++					return "(BackMap: " + backMap + ", RegionMap: " + regionMap + ", ValueMap: " + valueMap + ")";
++				}
++			}
++			
++			private RTLExpression convertBoolean(RTLExpression exp) {
++				if(exp instanceof RTLVariable && ((RTLVariable) exp).getBitWidth() == 1)
++					return ExpressionFactory.createEqual(exp, ExpressionFactory.TRUE);
++				return exp;
++			}
++			
++			private boolean specialCaseBAndSingleton(RTLExpression exp) {
++				if(exp instanceof RTLOperation) {
++					RTLOperation op = (RTLOperation) exp;
++					if(op.getOperator() == Operator.AND
++							&& op.getOperandCount() == 2) {
++						RTLExpression ex1 = op.getOperands()[0];
++						RTLExpression ex2 = op.getOperands()[1];
++						//one singleton, one variable
++						//XXX also allow memory Access?
++						//XXX also allow proper singleton (instead of just RTLNumber)?
++						boolean res = (ex1 instanceof RTLNumber && ex2 instanceof RTLVariable) || (ex2 instanceof RTLNumber && ex1 instanceof RTLVariable);
++						if(res)
++							logger.debug("Constraint System: Hit special case for bitwise and singleton: " + exp);
++						return res;
++					}
++				}
++				return false;
++			}
++			
++			private boolean specialCaseAddSingleton(RTLExpression exp) {
++				if(exp instanceof RTLOperation) {
++					RTLOperation op = (RTLOperation) exp;
++					if(op.getOperator() == Operator.PLUS
++							&& op.getOperandCount() == 2) {
++						RTLExpression ex1 = op.getOperands()[0];
++						RTLExpression ex2 = op.getOperands()[1];
++						//one singleton, one variable
++						//XXX also allow memory Access?
++						//XXX also allow proper singleton (instead of just RTLNumber)?
++						boolean res = (ex1 instanceof RTLNumber && ex2 instanceof RTLVariable) || (ex2 instanceof RTLNumber && ex1 instanceof RTLVariable);
++						if(res)
++							logger.debug("Constrint System: Hit special case for plus and singleton: " + exp);
++						return res;
++					}
++				}
++				return false;
++			}
++			
++			private boolean rtlExpOkForRelOp(RTLExpression exp) {
++				return exp instanceof RTLVariable
++					|| exp instanceof RTLMemoryLocation
++					|| exp instanceof RTLNumber
++					//Special cases:
++					|| specialCaseBAndSingleton(exp)
++					|| specialCaseAddSingleton(exp);
++			}
++			
++			//Todo translationState is mutable so it would not have to be threaded through?
++			private Pair<TranslationState, Constraint> buildConstraint(TranslationState translationState, Operator op, List<RTLExpression> elist) {
++				int elistSize = elist.size();
++				Constraint constraint;
++				List<Integer> idList;
++				int id1;
++				int id2;
++				RTLExpression ex1;
++				RTLExpression ex2;
++				RTLOperation op1;
++				RTLOperation op2;
++				Pair<TranslationState, Constraint> op1Res;
++				Pair<TranslationState, Constraint> op2Res;
++				switch(op) {
++				case EQUAL:
++				case LESS:
++				case LESS_OR_EQUAL:
++				case UNSIGNED_LESS:
++				case UNSIGNED_LESS_OR_EQUAL:
++					assert elistSize == 2 : "Malformed comparison";
++					ex1 = elist.get(0);
++					assert rtlExpOkForRelOp(ex1) : "First operand (" + ex1 + ") not ok for " + op;
++					ex2 = elist.get(1);
++					assert rtlExpOkForRelOp(ex2) : "Second operand (" + ex2 + ") not ok for " + op;
++					idList = translationState.addOperandGroup(elist);
++					id1 = idList.get(0);
++					id2 = idList.get(1);
++					switch(op) {
++					case EQUAL:
++						constraint = Constraint$.MODULE$.createEq(id1, id2);
++						break;
++					case LESS:
++						constraint = Constraint$.MODULE$.createLt(id1, id2);
++						break;
++					case LESS_OR_EQUAL:
++						constraint = Constraint$.MODULE$.createLte(id1,  id2);
++						break;
++					case UNSIGNED_LESS:
++						constraint = Constraint$.MODULE$.createULt(id1, id2);
++						break;
++					default:
++						constraint = Constraint$.MODULE$.createULte(id1, id2);
++						break;
++					}
++					return new Pair<TranslationState, Constraint>(translationState, constraint);
++				case AND:
++				case OR:
++					assert elistSize >= 2 : "Malformed connective";
++					if(elistSize == 2) {
++						ex1 = convertBoolean(elist.get(0));
++						ex2 = convertBoolean(elist.get(1));
++						assert ex1 instanceof RTLOperation : ex1 + " is " + ex1.getClass() + ". required: RTLOperation";
++						assert ex2 instanceof RTLOperation : ex2 + " is " + ex2.getClass() + ". required: RTLOperation";
++						op1 = (RTLOperation) ex1;
++						op2 = (RTLOperation) ex2;
++						op1Res = buildConstraint(translationState, op1.getOperator(), Arrays.asList(op1.getOperands()));
++						op2Res = buildConstraint(op1Res.getLeft(), op2.getOperator(), Arrays.asList(op2.getOperands()));
++						switch(op) {
++						case AND:
++							constraint = Constraint$.MODULE$.createAnd(op1Res.getRight(), op2Res.getRight());
++							break;
++						default:
++							constraint = Constraint$.MODULE$.createOr(op1Res.getRight(), op2Res.getRight());
++							break;
++						}
++						return new Pair<TranslationState, Constraint>(op2Res.getLeft(), constraint);
++					} else {
++						ex1 = convertBoolean(elist.get(0));
++						assert ex1 instanceof RTLOperation : ex1 + " is " + ex1.getClass() + ". required: RTLOperation";
++						op1 = (RTLOperation) ex1;
++						op1Res = buildConstraint(translationState, op1.getOperator(), Arrays.asList(op1.getOperands()));
++						op2Res = buildConstraint(op1Res.getLeft(), op, elist.subList(1, elistSize));
++						constraint = Constraint$.MODULE$.createAnd(op1Res.getRight(), op2Res.getRight());
++						return new Pair<TranslationState, Constraint>(op2Res.getLeft(), constraint);
++					}
++				case NOT:
++					assert elistSize == 1 : "Malformed not";
++					ex1 = convertBoolean(elist.get(0));
++					assert ex1 instanceof RTLOperation : ex1 + " is " + ex1.getClass() + ". required: RTLOperation";
++					op1 = (RTLOperation) ex1;
++					op1Res = buildConstraint(translationState, op1.getOperator(), Arrays.asList(op1.getOperands()));
++					constraint = Constraint$.MODULE$.createNot(op1Res.getRight());
++					return new Pair<TranslationState, Constraint>(op1Res.getLeft(), constraint);
++				case XOR:
++					//TODO lift restriction to two operands
++					assert elistSize == 2 : "Malformed xor";
++					ex1 = convertBoolean(elist.get(0));
++					ex2 = convertBoolean(elist.get(1));
++					assert ex1 instanceof RTLOperation : ex1 + " is " + ex1.getClass() + ". required: RTLOperation";
++					assert ex2 instanceof RTLOperation : ex2 + " is " + ex2.getClass() + ". required: RTLOperation";
++					op1 = (RTLOperation) ex1;
++					op2 = (RTLOperation) ex2;
++					op1Res = buildConstraint(translationState, op1.getOperator(), Arrays.asList(op1.getOperands()));
++					op2Res = buildConstraint(op1Res.getLeft(), op2.getOperator(), Arrays.asList(op2.getOperands()));
++					//not a and b or a and not b
++					constraint = Constraint$.MODULE$.createOr(
++							Constraint$.MODULE$.createAnd(Constraint$.MODULE$.createNot(op1Res.getRight()), op2Res.getRight())
++							,
++							Constraint$.MODULE$.createAnd(op1Res.getRight(), Constraint$.MODULE$.createNot(op2Res.getRight())));
++					return new Pair<TranslationState, Constraint>(op2Res.getLeft(), constraint);
++				default:
++					assert false : "Unhandled assume: " + op;
++					return null;
++				}
++			}
++			
++			/*private RTLOperation switchBinaryExp(RTLOperation oper) {
++				assert oper.getOperandCount() == 2 : "switchBinaryExp(" + oper + "): Wrong arity: " + oper.getOperandCount() + " but con only handle 2";
++				RTLExpression[] reversed = new RTLExpression[oper.getOperandCount()];
++				for(int i = 0; i < oper.getOperandCount(); i++)
++					reversed[i] = oper.getOperands()[oper.getOperandCount() - i - 1];
++				return (RTLOperation) ExpressionFactory.createOperation(oper.getOperator(), reversed);
++			}*/
++
++			@Override
++			public Set<AbstractState> visit(RTLAssume stmt) {
++				logger.verbose("Found RTLAssume: " + stmt);
++				BDDSet truthValue = abstractEval(stmt.getAssumption());
++
++				//if truthValue = False -> infeasible
++				// else if True -> fine...
++				// else work to do!
++				if(truthValue.isSingleton()) {
++					if(truthValue.lessOrEqual(BDDSet.TRUE)) {
++						logger.debug("truthValue TRUE for " + stmt + " (" + truthValue + ")");
++						return thisState();
++					} else {
++						logger.info(stmt.getLabel() + ", state ID " + getIdentifier() + ": Transformer " + stmt + " is infeasible. ("+truthValue+")");
++						return Collections.emptySet();
++					}
++				} else {
++					//truth value either true or false -> reduction!
++					RTLExpression assumption = stmt.getAssumption();
++					assumption = assumption.evaluate(getContext());
++
++					if(assumption instanceof RTLOperation) {
++						RTLOperation operation = (RTLOperation) assumption;
++						Pair<TranslationState, Constraint> converted;
++						Map<Integer, IntLikeSet<Long, RTLNumber>> valid;
++						BDDState post = copyThisState();
++						try{
++							converted = buildConstraint(new TranslationState(), operation.getOperator(), Arrays.asList(operation.getOperands()));
++							logger.debug("==> Built constraint: " + converted + " for RTLAssume: " + assumption + " and State: " + BDDState.this);
++							valid = converted.getRight().solveJLong(converted.getLeft().getValueMap(), new RTLNumberIsDynBounded(), new RTLNumberIsDynBoundedBits(), new RTLNumberIsOrdered(), new RTLNumberToLongBWCaster(), new LongBWToRTLNumberCaster());
++							logger.debug("==>> Valid: " + valid);
++						} catch (Exception e) {
++							logger.error("failed to build constraint for: " + assumption + " with: " + e);
++							if(Options.failFast.getValue()) throw e;
++							return thisState();
++						} catch (AssertionError e) {
++							logger.error("failed to build constraint for: " + assumption + " with: " + e);
++							if(Options.failFast.getValue() && Options.debug.getValue()) throw e;
++							return thisState();
++						}
++						TranslationState tState = converted.getLeft();
++
++						for(Map.Entry<Integer, RTLExpression> entry : tState.getBackMap().entrySet()) {
++							logger.debug("processing entry: " + entry);
++							int id = entry.getKey();
++							IntLikeSet<Long, RTLNumber> intlikeset = valid.get(id);
++							MemoryRegion region = tState.getRegionMap().get(id);
++							RTLExpression exp = entry.getValue();
++							if(region.isTop()){
++								logger.debug("Region top from Constraint System. Skipping: " + id + " = " + exp);
++								continue;
++							}
++							BDDSet value = new BDDSet(intlikeset, region);
++							assert exp != null : "exp == null";
++							assert value != null : "value == null";
++							assert region != null : "region == null";
++							if(exp instanceof RTLVariable) {
++								RTLVariable var = (RTLVariable) exp;
++								BDDSet oldValue = getValue(var);
++								BDDSet newValue = oldValue.meet(value);
++								if(newValue.getSet().isEmpty()) return Collections.emptySet();
++								post.setValue(var, newValue);
++							} else if(exp instanceof RTLMemoryLocation) {
++								RTLMemoryLocation memLoc = (RTLMemoryLocation) exp;
++								BDDSet evaledAddress = post.abstractEval(memLoc.getAddress());
++								BDDSet oldValue = post.getMemoryValue(evaledAddress, memLoc.getBitWidth());
++								BDDSet newValue = oldValue.meet(value);
++								if(newValue.getSet().isEmpty()) return Collections.emptySet();
++								post.setMemoryValue(evaledAddress, memLoc.getBitWidth(), newValue);
++							} else if(exp instanceof RTLOperation) {
++								RTLOperation op = (RTLOperation) exp;
++								if(specialCaseBAndSingleton(op)) {
++									//XXX may be possible to lift this restriction
++									if(value.isSingleton() 
++											|| (new BDDSet(value.getSet().invert(), value.getRegion())).isSingleton()) {
++										RTLNumber n = null;
++										RTLVariable v = null;
++										RTLExpression[] exps = op.getOperands();
++										if(exps[0] instanceof RTLNumber && exps[1] instanceof RTLVariable) {
++											n = (RTLNumber) exps[0];
++											v = (RTLVariable) exps[1];
++										} else {
++											n = (RTLNumber) exps[1];
++											v = (RTLVariable) exps[0];
++										}
++										logger.debug("n: "+n+" v: "+v);
++										assert n != null && v != null : "Special case restriction failure";
++										BDDSet oldValue = getValue(v);
++										BDDSet nSingleton = BDDSet.singleton(n);
++										assert nSingleton.getBitWidth() == value.getBitWidth() : "Constraint System: FAIL - bits (" + nSingleton.getBitWidth() + ", " + value.getBitWidth() + ")";
++										//assert nSingleton.getRegion() == value.getRegion() : "Constraint System: FAIL - regions (" + nSingleton.getRegion() + ", " + value.getRegion() + ")";
++										if(value.isSingleton()) {
++											if(nSingleton.getSet().bNot().bAnd(value.getSet()).randomElement().longValue() == 0L) {
++												logger.debug("Value: " + value + ", nSingleton: " + nSingleton);
++												BDDSet newValue = new BDDSet(oldValue.getSet().bAnd(nSingleton.getSet().bNot()).bOr(value.getSet()), region);
++												logger.debug("1: oldValue: " + oldValue + ", newValue: " + newValue);
++												post.setValue(v, newValue);
++											} else return Collections.emptySet();
++										} else {
++											if(nSingleton.getSet().bNot().bAnd(value.getSet().invert()).randomElement().longValue() == 0L) {
++												BDDSet notAllowed = new BDDSet(oldValue.getSet().bAnd(nSingleton.getSet().bNot()).bOr(value.getSet().invert()), oldValue.getRegion());
++												logger.debug("notAllowed: " + notAllowed);
++												BDDSet newValue = new BDDSet(oldValue.getSet().intersect(notAllowed.getSet().invert()), region);
++												logger.debug("2: oldValue: " + oldValue + ", newValue: " + newValue);
++												post.setValue(v, newValue);
++											} else return Collections.emptySet();
++										}
++									} else logger.error("Constraint System: Skipping restriction for specialCaseBAndSingleton (" + exp + ")");
++								} else if(specialCaseAddSingleton(op)) {
++									RTLNumber constant;
++									RTLVariable var;
++									if(op.getOperands()[0] instanceof RTLNumber) {
++										constant = (RTLNumber) op.getOperands()[0];
++										var = (RTLVariable) op.getOperands()[1];
++									} else {
++										constant = (RTLNumber) op.getOperands()[1];
++										var = (RTLVariable) op.getOperands()[0];
++									}
++									BDDSet newValue = value.plus(BDDSet.singleton(constant).negate());
++									if(newValue.getSet().isEmpty()) return Collections.emptySet();
++									post.setValue(var, newValue);
++								}else logger.error("Constraint System: Unhandled special case (" + exp + ") during restriction");
++							} else logger.error("Constraint System: Unhandled type (" + exp.getClass() + ") during restriction");
++						}
++						logger.verbose("new state from Constraint System:" + post);
++						return Collections.singleton((AbstractState) post);
++						
++//						//XXX
++//						switch(operation.getOperator()) {
++//						case EQUAL:
++//							logger.debug("Handling RTLAssume: " + stmt);
++//							if(operation.getOperands()[1] instanceof RTLVariable
++//							&& operation.getOperands()[0] instanceof RTLNumber) {
++//								return visit(new RTLAssume(switchBinaryExp(operation), stmt.getSource()));
++//							} else if(operation.getOperands()[0] instanceof RTLVariable
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								post.setValue(var, BDDSet.singleton(num));
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[1] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[0] instanceof RTLNumber) {
++//								return visit(new RTLAssume(switchBinaryExp(operation), stmt.getSource()));
++//							} else if(operation.getOperands()[0] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), BDDSet.singleton(num));
++//								return Collections.singleton((AbstractState) post);
++//							}
++//						case LESS_OR_EQUAL:
++//							logger.debug("Handling RTLAssume: " + stmt);
++//							if(operation.getOperands()[1] instanceof RTLVariable
++//							&& operation.getOperands()[0] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[1];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[0];
++//								BDDState post = copyThisState();
++//								BDDSet curr = post.getValue(var);
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictGreaterOrEqual(BDDSet.singleton(num).getSet()));
++//								post.setValue(var, restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[0] instanceof RTLVariable
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet curr = post.getValue(var);
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictLessOrEqual(BDDSet.singleton(num).getSet()));
++//								post.setValue(var, restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[1] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[0] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[1];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[0];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								BDDSet curr = post.getMemoryValue(evaledAddress, mem.getBitWidth());
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictGreaterOrEqual(BDDSet.singleton(num).getSet()));
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[0] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								BDDSet curr = post.getMemoryValue(evaledAddress, mem.getBitWidth());
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictLessOrEqual(BDDSet.singleton(num).getSet()));
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), restricted);
++//								return Collections.singleton((AbstractState) post);
++//							}
++//						case LESS:
++//							logger.debug("Handling RTLAssume: " + stmt);
++//							if(operation.getOperands()[1] instanceof RTLVariable
++//							&& operation.getOperands()[0] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[1];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[0];
++//								BDDState post = copyThisState();
++//								BDDSet curr = post.getValue(var);
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictGreater(BDDSet.singleton(num).getSet()));
++//								post.setValue(var, restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[0] instanceof RTLVariable
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet curr = post.getValue(var);
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictLess(BDDSet.singleton(num).getSet()));
++//								post.setValue(var, restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[1] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[0] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[1];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[0];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								BDDSet curr = post.getMemoryValue(evaledAddress, mem.getBitWidth());
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictGreater(BDDSet.singleton(num).getSet()));
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[0] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								BDDSet curr = post.getMemoryValue(evaledAddress, mem.getBitWidth());
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictLess(BDDSet.singleton(num).getSet()));
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), restricted);
++//								return Collections.singleton((AbstractState) post);
++//							}
++//						default:
++//							logger.debug("XXX RTLAssume(" + operation + ") - we ignored that. An opportunity missed...");
++//							break;
++//						}
++					}
++				}
++				logger.warn("Ignoring RTLAssume: " + stmt);
++				return Collections.singleton((AbstractState) copyThisState());
++			}
++
++			/*XXX SCM: Complete copy - no idea if correct...
++			 * Allocation counter is tree that counts nodes to top if location of node == current...
++			 * Ok, why the hell not
++			 */
++			@Override
++			public Set<AbstractState> visit(RTLAlloc stmt) {
++				BDDState post = copyThisState();
++				Writable lhs = stmt.getPointer();
++				// Note: We never need to create heap regions as summary regions. Either the threshold
++				// is high enough to precisely track all executions of an allocation explicitly,
++				// or the number of different pointers/regions also exceeds the threshold and
++				// will be widened to T.
++				// TODO: How can we create regions to allow exchange of information between analyses?
++				//MemoryRegion newRegion = MemoryRegion.create("alloc" + stmt.getLabel() + "_" + getIdentifier());
++
++				MemoryRegion newRegion;
++
++				// Check for hardcoded allocation names (i.e., stack or FS)
++				if (stmt.getAllocationName() != null) {
++					newRegion = MemoryRegion.create(stmt.getAllocationName());
++				} else {
++					newRegion = MemoryRegion.create("alloc" + stmt.getLabel() + 
++							"#" + post.allocationCounter.countAllocation(stmt.getLabel()));
++				}
++
++				// We also allow pointers of less than the actual address size, to emulate the 16 bit segment registers FS/GS
++				// FS gets a value of (FS, 0) in the prologue. 
++
++				if (lhs instanceof RTLVariable) {
++					post.setValue((RTLVariable)lhs, BDDSet.singleton(newRegion, 
++							ExpressionFactory.createNumber(0, lhs.getBitWidth())));
++				} else {
++					RTLMemoryLocation m = (RTLMemoryLocation)lhs;
++					BDDSet abstractAddress = abstractEvalAddress(m);
++					if (!post.setMemoryValue(abstractAddress, m.getBitWidth(), 
++							BDDSet.singleton(newRegion, 
++									ExpressionFactory.createNumber(0, lhs.getBitWidth()))))
++						logger.verbose(stmt.getLabel() + ": Cannot resolve memory write from alloc to " + m + ".");
++				}
++
++				return Collections.singleton((AbstractState)post);
++			}
++
++			//Complete copy again.
++			@Override
++			public Set<AbstractState> visit(RTLDealloc stmt) {
++				BDDState post = copyThisState();
++				BDDSet abstractAddress = abstractEval(stmt.getPointer());
++				// if the address cannot be determined, set all store memory to TOP
++				if (abstractAddress.isTop()) {
++					logger.info(getIdentifier() + ": Cannot resolve location of deallocated memory pointer " + stmt.getPointer() + ". Might miss use after free bugs!");
++					//logger.info(getIdentifier() + ": Cannot resolve location of deallocated memory pointer " + stmt.getPointer() + ". Defaulting ALL memory to " + Characters.TOP);
++					//logger.info(BasedNumberValuation.this);
++					//post.aStore.setTop();
++				} else {
++					if (abstractAddress.getRegion() == MemoryRegion.GLOBAL || abstractAddress.getRegion() == MemoryRegion.STACK) 
++						throw new UnknownPointerAccessException("Cannot deallocate " + abstractAddress.getRegion() + "!");
++					logger.debug(stmt.getLabel() + ": Dealloc on " + abstractAddress.getRegion()); 
++					post.abstractMemoryTable.setTop(abstractAddress.getRegion());
++				}
++				return Collections.singleton((AbstractState)post);
++			}
++
++			@Override
++			public Set<AbstractState> visit(RTLUnknownProcedureCall stmt) {
++				BDDState post = copyThisState();
++				for(RTLVariable var : stmt.getDefinedVariables())
++					post.setValue(var, BDDSet.topBW(var.getBitWidth()));
++				post.abstractMemoryTable.setTop();
++				return Collections.singleton((AbstractState) post);
++			}
++
++			@Override
++			public Set<AbstractState> visit(RTLHavoc stmt) {
++				//TODO SCM implement, maybe?
++				return Collections.singleton((AbstractState) copyThisState());
++			}
++
++			/*XXX scm : Do not understand BitWidths here, really
++			 * what if "cell" is not big enough?
++			 * Otherwise should be fine - memset sets same value everywhere
++			 * Check!
++			 * 
++			 * Do I need unique count? could also deal with abstractCount.getSet().max() ?
++			 */
++			@Override
++			public Set<AbstractState> visit(RTLMemset stmt) {
++				BDDState post = copyThisState();
++
++				BDDSet abstractDestination = abstractEval(stmt.getDestination());
++				BDDSet abstractValue = abstractEval(stmt.getValue());
++				BDDSet abstractCount = abstractEval(stmt.getCount());
++
++				logger.debug(stmt.getLabel() + ": memset(" + abstractDestination + ", " + abstractValue + ", " + abstractCount + ")");
++
++				if(abstractCount.hasUniqueConcretization()
++						&& !abstractDestination.isTop()
++						&& !abstractDestination.getSet().isFull()) {
++					if(!abstractDestination.isSingleton())
++						logger.debug(stmt.getLabel() + ": More than one destination memset(" + abstractDestination + ", " + abstractValue + ", " + abstractCount + ")");
++					int step = abstractValue.getBitWidth() / 8;
++					long count = abstractCount.getSet().randomElement().longValue();
++					for(RTLNumber rtlnum : abstractDestination.concretize()) {
++						long base = rtlnum.longValue();
++						for(long i = base; i < base + (count * step); i += step) {
++							BDDSet pointer = BDDSet.singleton(abstractDestination.getRegion(), ExpressionFactory.createNumber(i, abstractDestination.getBitWidth()));
++							post.setMemoryValue(pointer, abstractValue.getBitWidth(), abstractValue);
++						}
++					}
++				} else {
++					logger.info(stmt.getLabel() + ": Overapproximating memset(" + abstractDestination + ", " + abstractValue + ", " + abstractCount + ")");
++					post.abstractMemoryTable.setTop(abstractDestination.getRegion());
++				}
++				return Collections.singleton((AbstractState) post);
++			}
++
++			//XXX scm: see function for RTLMemset
++			@Override
++			public Set<AbstractState> visit(RTLMemcpy stmt) {
++				BDDState post = copyThisState();
++
++				BDDSet abstractSource = abstractEval(stmt.getSource());
++				BDDSet abstractDestination = abstractEval(stmt.getDestination());
++				BDDSet abstractSize = abstractEval(stmt.getSize());
++
++				logger.debug(stmt.getLabel() + ": memcpy(" + abstractSource + ", " + abstractDestination + ", " + abstractSize + ")");
++
++				/*force everything to be unique for now - will probably not work but have to be less carefull.
++				 * othwerwise i would have to join all possible values in destination - yak!
++				 */
++				if(abstractSize.hasUniqueConcretization()
++						&& !abstractDestination.isTop()
++						&& abstractDestination.isSingleton()
++						&& !abstractSource.isTop()
++						&& abstractSource.isSingleton()) {
++					post.abstractMemoryTable.memcpy(abstractSource.getRegion()
++							,abstractSource.getSet().randomElement().longValue()
++							,abstractDestination.getRegion()
++							,abstractDestination.getSet().randomElement().longValue()
++							,abstractSize.getSet().randomElement().longValue());
++				} else {
++					logger.info(stmt.getLabel() + ": Overapproximating memcpy(" + abstractDestination + ", " + abstractDestination + ", " + abstractSize + ")");
++					post.abstractMemoryTable.setTop(abstractDestination.getRegion());
++				}
++				return Collections.singleton((AbstractState) post);
++			}
++
++			@Override
++			public Set<AbstractState> visitDefault(RTLStatement stmt) {
++				return thisState();
++			}
++
++		});
++		
++		logger.debug("finished abstractPost(" + statement + ") in state: " + this.toString() + " with result: " + res);
++		return res;
++	}
++
++
++
++}
+diff --git a/src/org/jakstab/analysis/explicit/BDDState.java.orig b/src/org/jakstab/analysis/explicit/BDDState.java.orig
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/analysis/explicit/BDDState.java.orig
+@@ -0,0 +1,1569 @@
++package org.jakstab.analysis.explicit;
++
++import java.util.ArrayList;
++import java.util.Collections;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++
++import org.jakstab.Options;
++import org.jakstab.Program;
++import org.jakstab.analysis.AbstractDomainElement;
++import org.jakstab.analysis.AbstractState;
++import org.jakstab.analysis.LatticeElement;
++import org.jakstab.analysis.MemoryRegion;
++import org.jakstab.analysis.PartitionedMemory;
++import org.jakstab.analysis.Precision;
++import org.jakstab.analysis.UnknownPointerAccessException;
++import org.jakstab.analysis.ValuationState;
++import org.jakstab.analysis.VariableValuation;
++import org.jakstab.cfa.Location;
++import org.jakstab.rtl.expressions.ExpressionFactory;
++import org.jakstab.rtl.expressions.ExpressionVisitor;
++import org.jakstab.rtl.expressions.LongBWToRTLNumberCaster;
++import org.jakstab.rtl.expressions.Operator;
++import org.jakstab.rtl.expressions.RTLBitRange;
++import org.jakstab.rtl.expressions.RTLConditionalExpression;
++import org.jakstab.rtl.expressions.RTLExpression;
++import org.jakstab.rtl.expressions.RTLMemoryLocation;
++import org.jakstab.rtl.expressions.RTLNondet;
++import org.jakstab.rtl.expressions.RTLNumber;
++import org.jakstab.rtl.expressions.RTLNumberIsDynBounded;
++import org.jakstab.rtl.expressions.RTLNumberIsDynBoundedBits;
++import org.jakstab.rtl.expressions.RTLNumberIsOrdered;
++import org.jakstab.rtl.expressions.RTLNumberToLongBWCaster;
++import org.jakstab.rtl.expressions.RTLOperation;
++import org.jakstab.rtl.expressions.RTLSpecialExpression;
++import org.jakstab.rtl.expressions.RTLVariable;
++import org.jakstab.rtl.expressions.Writable;
++import org.jakstab.rtl.statements.DefaultStatementVisitor;
++import org.jakstab.rtl.statements.RTLAlloc;
++import org.jakstab.rtl.statements.RTLAssume;
++import org.jakstab.rtl.statements.RTLDealloc;
++import org.jakstab.rtl.statements.RTLHavoc;
++import org.jakstab.rtl.statements.RTLMemcpy;
++import org.jakstab.rtl.statements.RTLMemoryAssignment;
++import org.jakstab.rtl.statements.RTLMemset;
++import org.jakstab.rtl.statements.RTLStatement;
++import org.jakstab.rtl.statements.RTLUnknownProcedureCall;
++import org.jakstab.rtl.statements.RTLVariableAssignment;
++import org.jakstab.rtl.Context;
++import org.jakstab.util.Characters;
++import org.jakstab.util.FastSet;
++import org.jakstab.util.MapMap.EntryIterator;
++import org.jakstab.util.Sets;
++import org.jakstab.util.Tuple;
++import org.jakstab.util.Logger;
++import org.jakstab.util.Either;
++import org.jakstab.util.Pair;
++
++import java.util.Arrays;
++
++import cc.sven.constraint.*;
++import cc.sven.tlike.*;
++
++public class BDDState implements AbstractState {
++
++	private BDDState(VariableValuation<BDDSet> vartable, PartitionedMemory<BDDSet> memtable, AllocationCounter counter) {
++		this.abstractVarTable = vartable;
++		this.abstractMemoryTable = memtable;
++		this.allocationCounter = counter;
++	}
++
++	protected BDDState(BDDState proto) {
++		this(new VariableValuation<BDDSet>(proto.abstractVarTable),
++				new PartitionedMemory<BDDSet>(proto.abstractMemoryTable),
++				AllocationCounter.create());
++	}
++
++	public BDDState() {
++		this(new VariableValuation<BDDSet>(new BDDSetFactory()), new PartitionedMemory<BDDSet>(new BDDSetFactory()), AllocationCounter.create());
++	}
++
++	private final VariableValuation<BDDSet> abstractVarTable;
++	private final PartitionedMemory<BDDSet> abstractMemoryTable;
++	private final AllocationCounter allocationCounter;
++
++	private static final Logger logger = Logger.getLogger(BDDState.class);
++
++	/**
++	 * Counts allocs at allocation sites 
++	 */
++	private static final class AllocationCounter {
++
++		public static AllocationCounter create() {
++			return new AllocationCounter();
++		}
++
++		public static AllocationCounter create(AllocationCounter proto) {
++			return new AllocationCounter(proto.leaf);
++		}
++
++		private static final class AllocationTreeNode {
++			private final Location location;
++			private final AllocationTreeNode parent;
++			public AllocationTreeNode(Location location, AllocationTreeNode parent) {
++				this.location = location; this.parent = parent;
++			}
++		}
++
++		private AllocationTreeNode leaf;
++
++		private AllocationCounter(AllocationTreeNode leaf) {
++			this.leaf = leaf;
++		}
++
++		private AllocationCounter() {
++			this(null);
++		}
++
++		public int countAllocation(Location loc) {
++			int count = 0;
++			for (AllocationTreeNode iter = leaf; iter != null; iter = iter.parent)
++				if (iter.location.equals(loc))
++					count++;
++			leaf = new AllocationTreeNode(loc, leaf);
++			return count;
++		}
++
++		public AllocationCounter join(AllocationCounter other) {
++			// TODO: Implement some kind of joining
++			//throw new UnsupportedOperationException("Missing join implementation!");
++			// This is invoked only for based constant propagation... don't know if this quick fix is correct?
++			return this;
++		}
++
++	}
++
++	@Override
++	public String toString() {
++		if(isTop()) return Characters.TOP;
++		else if(isBot()) return Characters.BOT;
++		else return "Var = " + abstractVarTable.toString() + ", " + abstractMemoryTable.toString();
++	}
++
++	@Override
++	public boolean lessOrEqual(LatticeElement l) {
++		BDDState that = (BDDState) l;
++		if(this == that) return true;
++		if(that.isTop() || isBot()) return true;
++		if(isTop() || that.isBot()) return false;
++
++		return abstractVarTable.lessOrEqual(that.abstractVarTable)
++				&& abstractMemoryTable.lessOrEqual(that.abstractMemoryTable);
++	}
++
++	@Override
++	public boolean isTop() {
++		return abstractMemoryTable.isTop() && abstractVarTable.isTop();
++	}
++
++	@Override
++	public boolean isBot() {
++		return false;
++	}
++
++	@Override
++	public Set<Tuple<RTLNumber>> projectionFromConcretization(
++			RTLExpression... expressions) {
++		logger.debug("projection from concretization for " + expressions.length + " expressions");
++		Tuple<Set<RTLNumber>> cValues = new Tuple<Set<RTLNumber>>(expressions.length);
++		for (int i=0; i<expressions.length; i++) {
++			BDDSet aValue = abstractEval(expressions[i]);
++			//TODO SCM : fix - what if set is full for boolean?
++			logger.debug("expression: " + expressions[i] + " evalutated to: "+ aValue + " "+ aValue.isTop());
++			if(aValue.getSet().isFull()) {
++				//is Boolean expression?
++				if(expressions[i].getBitWidth() == 1)  {
++					FastSet<RTLNumber> tmp = new FastSet<RTLNumber>(2);
++					Collections.addAll(tmp, ExpressionFactory.TRUE, ExpressionFactory.FALSE);
++					cValues.set(i, tmp);
++				} else
++					cValues.set(i, RTLNumber.ALL_NUMBERS);
++			} else {
++				//XXX limit up to k
++				logger.debug("limit needed for: " + aValue + " with " + aValue.getSet().sizeBigInt() + " elements");
++				cValues.set(i, aValue.concretize());
++			}
++		}
++		//logger.debug(cValues);
++		return Sets.crossProduct(cValues);
++	}
++
++	@Override
++	public BDDState join(LatticeElement l) {
++		BDDState that = (BDDState) l;
++
++		if (isTop() || that.isBot()) return this;
++		if (isBot() || that.isTop()) return that;
++
++		VariableValuation<BDDSet> newVarVal = 
++				abstractVarTable.join(that.abstractVarTable); 
++		PartitionedMemory<BDDSet> newStore = 
++				abstractMemoryTable.join(that.abstractMemoryTable);
++		AllocationCounter newAllocCounters = 
++				allocationCounter.join(that.allocationCounter);
++
++		return new BDDState(newVarVal, newStore, newAllocCounters);
++	}
++
++	@Override
++	public Location getLocation() {
++		throw new UnsupportedOperationException(this.getClass().getSimpleName() + " does not contain location information.");
++	}
++
++	private Context getContext() {
++		Context context = new Context();
++		for(Map.Entry<RTLVariable, BDDSet> entry : abstractVarTable) {
++			RTLVariable var = entry.getKey();
++			BDDSet val = entry.getValue();
++			if(val.hasUniqueConcretization())
++				context.addAssignment(var, val.getSet().randomElement());
++		}
++		return context;
++	}
++
++	@Override
++	public String getIdentifier() {
++		//return Long.toString(stateId);
++		return Long.toString(hashCode());
++	}
++
++	@Override
++	public boolean equals(Object obj) {
++		if(!(obj instanceof BDDState)) return false;
++		BDDState that = (BDDState) obj;
++		if(this == that) return true;
++		return abstractVarTable.equals(that.abstractVarTable) && abstractMemoryTable.equals(that.abstractMemoryTable);
++	}
++	/*None Interface Methods - called in BDDAddressTracking
++	 * See BasedNumberValuation for similar structure.
++	 */
++
++	private void clearTemporaryVariables() {
++		for(RTLVariable var : Program.getProgram().getArchitecture().getTemporaryVariables())
++			abstractVarTable.setTop(var);
++	}
++	
++	private BDDSet getValue(RTLVariable var) {
++		return abstractVarTable.get(var);
++	}
++	
++	private void setValue(RTLVariable var, BDDSet value) {
++		abstractVarTable.set(var, value);
++	}
++	
++	/*private void setValue(RTLVariable var, BDDSet value, ExplicitPrecision eprec) {
++		BDDSet valueToSet;
++		switch(eprec.getTrackingLevel(var)) {
++		case NONE:
++			logger.debug("Precision prevents value " + value + " to be set for " + var);
++			valueToSet = BDDSet.topBW(var.getBitWidth());
++			break;
++		case REGION:
++			logger.debug("Precision created ANYNUM for " + var);
++			valueToSet = new BDDSet(BDDSet.topBW(var.getBitWidth()).getSet(), value.getRegion());
++			break;
++		case FULL:
++		default:
++			valueToSet = value;
++		}
++		abstractVarTable.set(var, valueToSet);
++	}*/
++	
++	/* TODO SCM check!
++	void setValue(RTLVariable var, BasedNumberElement value, ExplicitPrecision precision) {
++		BasedNumberElement valueToSet;
++		switch (precision.getTrackingLevel(var)) {
++		case NONE:
++			logger.debug("Precision prevents value " + value + " to be set for " + var);
++			valueToSet = BasedNumberElement.getTop(var.getBitWidth());
++			break;
++		case REGION:
++			valueToSet = new BasedNumberElement(value.getRegion(), 
++					NumberElement.getTop(var.getBitWidth()));
++			break;
++		default:
++			valueToSet = value;
++		}
++		aVarVal.set(var, valueToSet);
++	}
++	 */
++	
++	//XXX dummy
++	public BDDState widen(BDDState other) {
++		BDDState result = new BDDState(this);
++		for(Map.Entry<RTLVariable, BDDSet> entry : abstractVarTable) {
++			RTLVariable key = entry.getKey();
++			BDDSet value = entry.getValue();
++			BDDSet otherValue = other.abstractVarTable.get(key);
++			if(otherValue == null) continue;
++			if(!value.equals(otherValue)) {
++				logger.debug("widening variable " + key + " that had value " + value + " because of " + otherValue);
++				result.abstractVarTable.setTop(key);
++			}
++		}
++		
++		for(EntryIterator<MemoryRegion, Long, BDDSet> iter = abstractMemoryTable.entryIterator(); iter.hasEntry(); iter.next()) {
++			MemoryRegion region = iter.getLeftKey();
++			Long offset = iter.getRightKey();
++			BDDSet value = iter.getValue();
++			BDDSet otherValue = other.abstractMemoryTable.get(region, offset, value.getBitWidth());
++			if(otherValue == null) continue;
++			if(!value.equals(otherValue)) {
++				logger.debug("widening memory cell (" + region + " | " + value.getBitWidth() + " | " + offset + ") that had value " + value + " because of " + otherValue);
++				result.abstractMemoryTable.set(region, offset, value.getBitWidth(), BDDSet.topBW(value.getBitWidth()));
++			}
++		}
++		
++		return result;
++	}
++	
++	// Returns true if set was successful, false if memory was overapproximated or location was not a singleton
++	private boolean setMemoryValue(BDDSet pointer, int bitWidth, BDDSet value) {
++		if(pointer.isTop()) {
++			abstractMemoryTable.setTop();
++			return false;
++		} else if(pointer.getSet().isFull()) {
++			abstractMemoryTable.setTop(pointer.getRegion());
++			return false;
++		} else {
++			MemoryRegion region = pointer.getRegion();
++			for(RTLNumber rtlnum : pointer.getSet().java()) {
++				// XXX SCM why the bitWidth - is contained in rtlnum and in BDDSet.singleton... - CHECK!
++				abstractMemoryTable.set(region, rtlnum.longValue(), bitWidth, value);
++			}
++			return pointer.isSingleton();
++		}
++	}
++
++	private BDDSet getMemoryValue(BDDSet pointer, int bitWidth) {
++		//XXX like in the original - if pointer.getRegion() == MemoryRegion.TOP -> assert false...
++		logger.debug("memory access for: " + pointer + " bw: " + bitWidth);
++		if(pointer.isTop() || pointer.getSet().isFull())
++			return BDDSet.topBW(bitWidth);
++		if(pointer.getRegion() == MemoryRegion.TOP)
++		{
++			logger.error("Pointer deref with TOP region (pointer: " + pointer +")");
++			return BDDSet.topBW(bitWidth);
++		}
++		//the following is again essentially a fold1...
++		BDDSet result = null;
++		for(RTLNumber rtlnum : pointer.getSet().java()) {
++			//logger.debug("accessing at: " + pointer.getRegion() + ", " + rtlnum.intValue());
++			BDDSet values = abstractMemoryTable.get(pointer.getRegion(), rtlnum.intValue(), bitWidth);
++			if(result == null)
++				result = BDDSet.empty(values.getBitWidth(), values.getRegion());
++			assert values.getBitWidth() == result.getBitWidth() : "Try to union different bitwidths at pointer deref";
++			if(values.getRegion() != result.getRegion())
++				return BDDSet.topBW(result.getBitWidth());
++			result = new BDDSet(result.getSet().union(values.getSet()), result.getRegion());
++		}
++		logger.debug("memory access result: " + result);
++		return result;
++	}
++
++	private BDDSet abstractEvalAddress(RTLMemoryLocation m) {
++		BDDSet abstractAddress = abstractEval(m.getAddress());
++		//Segment register is some special x86 magic
++		RTLExpression segmentReg = m.getSegmentRegister();
++		if(segmentReg != null) {
++			if(abstractAddress.getRegion() != MemoryRegion.GLOBAL)
++				return BDDSet.topBW(m.getBitWidth());
++			BDDSet segmentValue = abstractEval(segmentReg);
++			// segment register handling
++			//  - ok if segment is singleton of value 0
++			if (segmentValue.isSingleton() && segmentValue.randomElement().intValue() == 0) {
++				abstractAddress = new BDDSet(abstractAddress.getSet(), segmentValue.getRegion());
++			} else {
++				logger.warn("Segment " + segmentReg + " has been assigned a value!");
++				abstractAddress = BDDSet.topBW(abstractAddress.getBitWidth());
++			}
++		}
++		return abstractAddress;
++	}
++
++	BDDSet abstractEval(RTLExpression e) {
++		ExpressionVisitor<BDDSet> visitor = new ExpressionVisitor<BDDSet>() {
++
++			@Override
++			public BDDSet visit(RTLBitRange e) {
++				BDDSet abstractFirst = e.getFirstBitIndex().accept(this);
++				BDDSet abstractLast = e.getLastBitIndex().accept(this);
++				BDDSet abstractOperand = e.getOperand().accept(this);
++
++				if(!(abstractFirst.hasUniqueConcretization() && abstractLast.hasUniqueConcretization()))
++					return BDDSet.topBW(e.getBitWidth());
++				RTLNumber loRTL = abstractFirst.randomElement();
++				RTLNumber hiRTL = abstractLast.randomElement();
++				long loLong = loRTL.longValue();
++				long hiLong = hiRTL.longValue();
++				int lo = loRTL.intValue();
++				int hi = hiRTL.intValue();
++				if(!((long) lo == loLong)
++				|| !((long) hi == hiLong)
++				|| !(lo >= 0)
++				|| !(hi >= 0))
++					return BDDSet.topBW(e.getBitWidth());
++				return abstractOperand.bitExtract(lo, hi);
++			}
++
++			@Override
++			public BDDSet visit(RTLConditionalExpression e) {
++				BDDSet abstractCondition = e.getCondition().accept(this);
++				logger.debug("abstr cond: " + abstractCondition);
++				BDDSet result = BDDSet.empty(e.getBitWidth());
++				if(BDDSet.TRUE.lessOrEqual(abstractCondition)) {
++					logger.debug("true branch");
++					BDDSet abstractTrue = e.getTrueExpression().accept(this);
++					result = result.join(abstractTrue);
++				}
++				if(BDDSet.FALSE.lessOrEqual(abstractCondition)) {
++					logger.debug("false branch");
++					BDDSet abstractFalse = e.getFalseExpression().accept(this);
++					result = result.join(abstractFalse);
++				}
++				return result;
++			}
++
++			@Override
++			public BDDSet visit(RTLMemoryLocation m) {
++				//XXX restrict to n values
++				return getMemoryValue(abstractEvalAddress(m), m.getBitWidth());
++			}
++
++			@Override
++			public BDDSet visit(RTLNondet e) {
++				return BDDSet.topBW(e.getBitWidth());
++			}
++
++			@Override
++			public BDDSet visit(RTLNumber e) {
++				return BDDSet.singleton(e);
++			}
++
++			//This should actually be a function returning a triple. But I feel funny today and... JAVA...
++			class CheckResult {
++				private int bits;
++				private MemoryRegion region;
++				private boolean ok = true;
++				public CheckResult(RTLOperation e, BDDSet[] abstractOperands) {
++					assert e.getOperandCount() > 0 : "Check failure for 0 operands";
++					this.region = abstractOperands[0].getRegion();
++					this.bits = abstractOperands[0].getBitWidth();
++					logger.debug("expression "+e+" # operands:" + e.getOperandCount());
++					logger.debug("operand: " + abstractOperands[0]);
++					for(int i = 1; i < e.getOperandCount(); i++) {
++						logger.debug("operand: " + abstractOperands[i]);
++						/*if(this.region == MemoryRegion.TOP
++								|| abstractOperands[i].getRegion() == MemoryRegion.TOP) {
++							this.region = MemoryRegion.TOP;
++							break;
++						}*/
++						if(this.region == MemoryRegion.GLOBAL)
++							this.region = abstractOperands[i].getRegion();
++						if(abstractOperands[i].getRegion() == MemoryRegion.TOP) {
++							this.ok = false;
++							this.region = MemoryRegion.TOP;
++							logger.debug("Check for Region == TOP for " + abstractOperands[i]);
++							break;
++						} else if((abstractOperands[i].getRegion() != MemoryRegion.GLOBAL
++								&& this.region != abstractOperands[i].getRegion())
++								|| this.bits != abstractOperands[i].getBitWidth()) {
++							logger.debug("Check for Region or BitWidth failed: this.region: " + this.region + ", that.region: " + abstractOperands[i].getRegion() + ", this.bits: " + this.bits + ", that.bits: " + abstractOperands[i].getBitWidth());
++							this.ok = false;
++							break;
++						}
++					}
++				}
++				public boolean getOk() { return ok; }
++				public boolean getTop() { return this.region == MemoryRegion.TOP; }
++				public MemoryRegion getRegion() {
++					assert getOk();
++					return region;
++				}
++				public int getBitWidth() {
++					assert getOk();
++					return bits;
++				}
++			}
++
++			@Override
++			public BDDSet visit(RTLOperation e) {
++				BDDSet[] abstractOperands = new BDDSet[e.getOperandCount()];
++
++				for(int i = 0; i < e.getOperandCount(); i++) {
++					abstractOperands[i] = e.getOperands()[i].accept(this);
++					if(abstractOperands[i].getSet().isEmpty()) {
++						logger.error("found EMPTY Set for op #"+i+" in operation: "+e);
++					}
++				}
++
++				BDDSet op0;
++				BDDSet op1;
++				BDDSet op2;
++				CheckResult check;
++				
++				try {
++					logger.debug("processing: " + e);
++				switch(e.getOperator()) {
++				/* decided to go for code duplication for readability (more separate cases).
++				 * also, clone researchers need something meaningful to analyze...
++				 */
++				case EQUAL:
++					assert e.getOperandCount() == 2 : "EQUAL called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op0.getRegion() != MemoryRegion.GLOBAL
++							&& !op0.isTop()
++							&& op1.hasUniqueConcretization()
++							&& op1.getSet().contains(ExpressionFactory.createNumber(0, op1.getBitWidth())))
++						return BDDSet.FALSE;
++					if(op1.getRegion() != MemoryRegion.GLOBAL
++							&& !op1.isTop()
++							&& op0.hasUniqueConcretization()
++							&& op0.getSet().contains(ExpressionFactory.createNumber(0, op0.getBitWidth())))
++						return BDDSet.FALSE;
++					if(op0.isTop() || op1.isTop()) {
++						return BDDSet.topBW(e.getBitWidth());
++					} else {
++						if( op0.getBitWidth() == op1.getBitWidth()) {
++							if(op0.getRegion() == op1.getRegion()) {
++								BDDSet result = BDDSet.empty(1);
++								logger.debug("op0" + op0);
++								logger.debug("op1" + op1);
++								logger.debug(op0.getSet().intersect(op1.getSet()));
++								if(!op0.getSet().intersect(op1.getSet()).isEmpty())
++									result = result.join(BDDSet.TRUE);
++								if(!op0.getSet().invert().intersect(op1.getSet()).isEmpty())
++									result = result.join(BDDSet.FALSE);
++								assert !result.getSet().isEmpty() : "Equal"+e+" produced no result!?";
++								return result;
++							} else {
++								logger.debug("EQUAL with differing regions: (" + op0 + " " + e.getOperator() + " " + op1 + ")");
++								return BDDSet.topBW(e.getBitWidth());
++							}
++						}
++					}
++					assert false : "EQUAL called on something crazy: (" + op0 + " " + e.getOperator() + " " + op1 + ")";
++					break;
++				case UNSIGNED_LESS: // XXX [-SCM-] This SHOULD be a BUG . The order in UNSIGNED and signed operations are different!
++				case LESS:
++					assert e.getOperandCount() == 2 : "LESS or UNSIGNED_LESS called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op0.isTop() || op1.isTop()) {
++						// TODO: handle: non-TOP operand could be max element which would result in constant false
++						return BDDSet.topBW(e.getBitWidth());
++					} else {
++						if(!op0.getSet().isEmpty()
++							&& !op1.getSet().isEmpty()
++							&& op0.getBitWidth() == op1.getBitWidth()) {
++							if(op0.getRegion() == op1.getRegion()) {
++								BDDSet result = BDDSet.empty(1);
++								if(op0.getSet().min().longValue() < op1.getSet().max().longValue())
++									result = result.join(BDDSet.TRUE);
++								if(op0.getSet().max().longValue() >= op1.getSet().min().longValue())
++									result = result.join(BDDSet.FALSE);
++								return result;
++							} else {
++								logger.debug("LESS with differing regions: (" + op0 + " " + e.getOperator() + " " + op1 + ")");
++								return BDDSet.topBW(e.getBitWidth());
++							}
++						}
++					}
++					assert false : "LESS called on something crazy: (" + op0 + " " + e.getOperator() + " " + op1 + ")";
++					break;
++				case UNSIGNED_LESS_OR_EQUAL: // XXX [-SCM-] This SHOULD be a BUG . The order in UNSIGNED and signed operations are different!
++				case LESS_OR_EQUAL:
++					assert e.getOperandCount() == 2 : "UNSIGNED_LESS_OR_EQUAL or LESS_OR_EQUAL called with " + e.getOperandCount() + " operands";
++					//== and <
++					RTLExpression eLess = ExpressionFactory.createLessThan(e.getOperands()[0], e.getOperands()[1]);
++					RTLExpression eEqual = ExpressionFactory.createEqual(e.getOperands()[0], e.getOperands()[1]);
++					BDDSet less = eLess.accept(this);
++					BDDSet equal = eEqual.accept(this);
++					return less.join(equal);
++				case NOT:
++					assert e.getOperandCount() == 1 : "NOT called with " + e.getOperandCount() + " operands";
++			//		logger.debug(abstractOperands[0]);
++					return new BDDSet(abstractOperands[0].getSet().bNot());
++				case NEG:
++					assert e.getOperandCount() == 1 : "NEG called with " + e.getOperandCount() + " operands";
++			//		logger.debug(abstractOperands[0]);
++					return new BDDSet(abstractOperands[0].getSet().negate());
++				case AND:
++					check = new CheckResult(e, abstractOperands);
++					if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++						for(int i = 1; i < e.getOperandCount(); i++)
++							res = res.bAnd(abstractOperands[i].getSet());
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "AND called on something crazy";
++					break;
++				case OR:
++					check = new CheckResult(e, abstractOperands);
++					if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++				//		logger.debug("base operand: "+ res + (abstractOperands[0].getSet().isFull()?" [full]":"[]"));
++						for(int i = 1; i < e.getOperandCount(); i++) {
++						//	logger.debug("next operand: "+ abstractOperands[i] + (abstractOperands[i].getSet().isFull()?" [full]":"[]"));
++							//IntLikeSet<Long, RTLNumber> set = abstractOperands[i].getSet();
++							//res = res.bOr(abstractOperands[i].getSet());
++							res = abstractOperands[i].getSet().bOr(res);
++						}
++					//	logger.debug("evaluated OR");
++
++					//	logger.debug("evaluated to full set: "+ res.isFull());
++					//	logger.debug("evaluated to region: "+ check.getRegion());
++					//	logger.debug("evaluated set of size: "+ res.sizeBigInt());
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "OR called on something crazy";
++					break;
++				case XOR:
++					check = new CheckResult(e, abstractOperands);
++					if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++						for(int i = 1; i < e.getOperandCount(); i++)
++							res = res.bXOr(abstractOperands[i].getSet());
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "XOR called on something crazy";
++					break;
++				case PLUS:
++					check = new CheckResult(e, abstractOperands);
++					if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++						for(int i = 1; i < e.getOperandCount(); i++)
++							res = res.plus(abstractOperands[i].getSet());
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "PLUS called on something crazy";
++					break;
++				case SIGN_EXTEND:
++					assert e.getOperandCount() == 3 : "SIGN_EXTEND called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					op2 = abstractOperands[2];
++					if(op0.hasUniqueConcretization()
++							&& op1.hasUniqueConcretization())
++						return op2.signExtend(op0.randomElement().intValue(), op1.randomElement().intValue());
++					assert false : "SIGN_EXTEND called on something crazy";
++					break;
++				case ZERO_FILL:
++					assert e.getOperandCount() == 3 : "ZERO_FILL called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					op2 = abstractOperands[2];
++					if(op0.hasUniqueConcretization()
++							&& op1.hasUniqueConcretization())
++						return op2.zeroFill(op0.randomElement().intValue(), op1.randomElement().intValue());
++					assert false : "ZERO_FILL called on something crazy";
++					break;
++				case SHR:
++					assert e.getOperandCount() == 2 : "SHR called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op1.hasUniqueConcretization())
++						return new BDDSet(op0.getSet().bShr(op1.randomElement().intValue()), op0.getRegion());
++					assert false : "SHR called on something crazy";
++					break;
++				case SHL:
++					assert e.getOperandCount() == 2 : "SHL called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op1.hasUniqueConcretization())
++						return new BDDSet(op0.getSet().bShl(op1.randomElement().intValue()), op0.getRegion());
++					assert false : "SHL called on something crazy";
++					break;
++				case SAR:
++					assert e.getOperandCount() == 2 : "SAR called with " + e.getOperandCount() + " operands";
++					op0 = abstractOperands[0];
++					op1 = abstractOperands[1];
++					if(op1.hasUniqueConcretization())
++						return new BDDSet(op0.getSet().bSar(op1.randomElement().intValue()), op0.getRegion());
++					assert false : "SAR called on something crazy";
++					break;
++				case MUL:
++					check = new CheckResult(e, abstractOperands);
++					//TODO scm remove
++					final int prec = 5;
++					final int maxk = 10;
++					if(check.getTop()) {
++						logger.debug("abstractEval(" + e + ") == TOP on State: " + BDDState.this);
++						return BDDSet.topBW(e.getBitWidth());
++					} else if(check.getOk()) {
++						IntLikeSet<Long, RTLNumber> res = abstractOperands[0].getSet();
++						for(int i = 1; i < e.getOperandCount(); i++) {
++							//TODO SCM : in here, i must adjust bitwidth of res.
++							IntLikeSet<Long, RTLNumber> op = abstractOperands[i].getSet();
++							//XXX SCM the then branch should not have to exist - mul for up to maxk now does the same.
++							/*if(!res.sizeGreaterThan(maxk) && !op.sizeGreaterThan(maxk)) {
++								IntLikeSet<Long, RTLNumber> tmp = BDDSet.empty(check.getBitWidth() * 2, check.getRegion()).getSet();
++								for(RTLNumber n1 : res.java())
++									for(RTLNumber n2 : op.java()) {
++										RTLExpression n1muln2 = ExpressionFactory.createMultiply(n1, n2).evaluate(new Context());
++										assert n1muln2 instanceof RTLNumber : "No RTLNumber for result to multiplication!";
++										//logger.info("adding a number... brace yourself! bitwidth of set : " + tmp.bits() + ", number: " + n1muln2.getBitWidth());
++										tmp = tmp.add((RTLNumber) n1muln2);
++									}
++								res = tmp;
++							} else {*/
++								res = res.mul(maxk, prec, op);
++							//}
++						}
++						return new BDDSet(res, check.getRegion());
++					}
++					assert false : "MUL called on something crazy";
++					break;
++				}
++     			} catch (AssertionError f) {
++     				logger.error("assertion failed while handling operation: " + e + " message: " + f.getMessage());
++     				if(Options.failFast.getValue()) throw f;
++     				return BDDSet.topBW(e.getBitWidth());
++     			}
++     
++				logger.warn("XXX operator "+ e.getOperator() + " not handled in " + e);
++				if(Options.debug.getValue()) assert false : "XXX operator "+ e.getOperator() + " not handled in " + e;
++				return BDDSet.topBW(e.getBitWidth());
++					/*
++				case ROL:
++				{
++					BDDSet ret = BDDSet.topBW(e.getBitWidth());
++					logger.debug("ROL not handled, returning: " + ret);
++					return ret;
++				}
++				case ROR:
++					assert false : "ROR not handled";
++				break;
++				case FSIZE:
++				{
++					BDDSet ret = BDDSet.topBW(e.getBitWidth());
++					logger.debug("FSIZE not handled, returning: " + ret);
++					return ret;
++				}
++				case FMUL:
++					assert false : "FMUL not handled";
++				break;
++				case FDIV:
++				{
++					BDDSet ret = BDDSet.topBW(e.getBitWidth());
++					logger.debug("FDIV not handled, returning: " + ret);
++					return ret;
++				}
++				case DIV:
++					assert false : "DIV not handled";
++				break;
++				case MOD:
++					assert false : "MOD not handled";
++				break;
++				case POWER_OF:
++					assert false : "POWER_OF not handled";
++				break;
++				case ROLC:
++					assert false : "ROLC not handled";
++				break;
++				case RORC:
++					assert false : "RORC not handled";
++				break;
++				case UNKNOWN:
++					assert false : "UNKNOWN not handled";
++				break;
++				case CAST:
++					assert false : "CAST not handled";
++				break;
++				default:
++					assert false : "Operator not handled";
++				break;
++				}
++				System.exit(1);
++				//To make eclipse happy... Here you are, stupid.
++				return null;*/
++			}
++
++			@Override
++			public BDDSet visit(RTLSpecialExpression e) {
++				//XXX todo [SCM] debug printf and possibly getprocaddress... - have a look at RTL definitions
++				return BDDSet.topBW(e.getBitWidth());
++			}
++
++			@Override
++			public BDDSet visit(RTLVariable e) {
++				System.out.println("have been asked for " + e + " returned " + abstractVarTable.get(e) + " due do state " + BDDState.this);
++				return abstractVarTable.get(e);
++			}
++
++		};
++
++		BDDSet result = e.accept(visitor);
++
++		logger.debug("returned: " + result);
++
++		if(result.getSet().isEmpty()) {
++			logger.error("found EMPTY Set as result for operation: "+e);
++			logger.error(e.getClass());
++			logger.error("state: "+ BDDState.this);
++		}
++		
++		assert result.getBitWidth() == e.getBitWidth() : "Bitwidth changed from "+e.getBitWidth()+" to "+result.getBitWidth()+" during evaluation of " + e + " to " + result;
++		return result;
++	}
++
++
++	public Set<AbstractState> abstractPost(final RTLStatement statement, final Precision precision) {
++		logger.debug("start processing abstractPost(" + statement + ") " + statement.getLabel());
++		//final ExplicitPrecision eprec = (ExplicitPrecision)precision;
++		Set<AbstractState> res = statement.accept(new DefaultStatementVisitor<Set<AbstractState>>() {
++			private final Set<AbstractState> thisState() {
++				if(statement.getLabel() == null) logger.warn("No label: " + statement);
++				if(!statement.getLabel().getAddress().equals(statement.getNextLabel().getAddress())) {
++					BDDState post = new BDDState(BDDState.this);
++					post.clearTemporaryVariables();
++					return Collections.singleton((AbstractState) post);
++				} else {
++					return Collections.singleton((AbstractState) BDDState.this);
++				}
++			}
++
++			private final BDDState copyThisState() {
++				BDDState post = new BDDState(BDDState.this);
++				if(statement.getNextLabel() == null
++						|| !statement.getAddress().equals(statement.getNextLabel().getAddress())) {
++					// New instruction
++					post.clearTemporaryVariables();
++				}
++				return post;
++			}
++
++			@Override
++			public Set<AbstractState> visit(RTLVariableAssignment stmt) {
++				BDDState post = copyThisState();
++
++				RTLVariable lhs = stmt.getLeftHandSide();
++				RTLExpression rhs = stmt.getRightHandSide();
++				BDDSet evaledRhs = abstractEval(rhs);
++
++
++				assert!evaledRhs.getSet().isEmpty();
++				logger.debug("assigning "+ lhs + " to " + rhs);
++				// Check for stackpointer alignment assignments (workaround for gcc compiled files)
++				RTLVariable sp = Program.getProgram().getArchitecture().stackPointer();
++				if (lhs.equals(sp) && rhs instanceof RTLOperation) {
++					RTLOperation op = (RTLOperation)rhs;
++					if (op.getOperator().equals(Operator.AND) && 
++							op.getOperands()[0].equals(sp) &&
++							op.getOperands()[1] instanceof RTLNumber) {
++						evaledRhs = getValue(sp);
++						logger.warn("Ignoring stackpointer alignment at " + stmt.getAddress());
++					}
++				}				
++				logger.debug("assigning TOP: "+ evaledRhs.isTop());
++				logger.debug("assigning full set: "+ evaledRhs.getSet().isFull());
++				logger.debug("assigning EMPTY set: "+ evaledRhs.getSet().isEmpty());
++				assert!evaledRhs.getSet().isEmpty();
++				logger.debug("assigning region: "+ evaledRhs.getRegion());
++				post.setValue(lhs, evaledRhs);
++				logger.debug("completed assigning "+ lhs + " to " + evaledRhs);
++				return Collections.singleton((AbstractState) post);
++			}
++
++			@Override
++			public Set<AbstractState> visit(RTLMemoryAssignment stmt) {
++				BDDState post = copyThisState();
++				BDDSet evaledRhs = abstractEval(stmt.getRightHandSide());
++
++				RTLMemoryLocation m = stmt.getLeftHandSide();
++				BDDSet abstractAddress = abstractEvalAddress(m);
++
++				if(!post.setMemoryValue(abstractAddress, m.getBitWidth(), evaledRhs)) {
++					logger.verbose(stmt.getLabel() + ": Cannot precisely resolve memory write to " + m + ".");
++					logger.debug("State: " + BDDState.this);
++				}
++
++				return Collections.singleton((AbstractState) post);
++			}
++			
++			class TranslationState {
++				private HashMap<Integer, RTLExpression> backMap;
++				private HashMap<RTLExpression, Integer> expToMap;
++				private HashMap<Integer, IntLikeSet<Long, RTLNumber>> valueMap;
++				private HashMap<Integer, MemoryRegion> regionMap;
++				private int counter;
++				public TranslationState(HashMap<Integer, RTLExpression> bm, HashMap<RTLExpression, Integer> em, HashMap<RTLMemoryLocation, Integer> mm, HashMap<Integer, IntLikeSet<Long, RTLNumber>> values, HashMap<Integer, MemoryRegion> regions, int c) {
++					this.backMap = bm;
++					this.expToMap = em;
++					this.valueMap = values;
++					this.regionMap = regions;
++					this.counter = c;
++				}
++				public TranslationState() {
++					this.backMap = new HashMap<Integer, RTLExpression>();
++					this.expToMap = new HashMap<RTLExpression, Integer>();
++					this.valueMap = new HashMap<Integer, IntLikeSet<Long, RTLNumber>>();
++					this.regionMap = new HashMap<Integer, MemoryRegion>();
++					this.counter = 0;
++				}
++				public int freshId() {
++					int res = counter;
++					counter += 1;
++					return res;
++				}
++				public HashMap<Integer, RTLExpression> getBackMap() { return backMap; }
++				public HashMap<RTLExpression, Integer> getExpToMap() { return expToMap; }
++				public HashMap<Integer, IntLikeSet<Long, RTLNumber>> getValueMap() { return valueMap; }
++				public HashMap<Integer, MemoryRegion> getRegionMap() { return regionMap; }
++				private MemoryRegion reduceRegion(FastSet<MemoryRegion> regions) {
++					//fold1
++					MemoryRegion result = MemoryRegion.TOP;
++					for(MemoryRegion r : regions) {
++						if(result.isTop() || result == r)
++							result = r;
++						else if(!r.isTop())
++							result = MemoryRegion.TOP;
++					}
++					return result;
++				}
++				private BDDSet expToValue(RTLExpression op) {
++					if(op instanceof RTLVariable)
++						return BDDState.this.getValue((RTLVariable) op);
++					else if(op instanceof RTLMemoryLocation) {
++						BDDSet addresses = BDDState.this.abstractEval(((RTLMemoryLocation) op).getAddress());
++						return getMemoryValue(addresses, op.getBitWidth());
++					} else if(op instanceof RTLNumber)
++						return BDDSet.singleton((RTLNumber) op);
++					else
++						return BDDSet.topBW(op.getBitWidth());
++				}
++				private void putValue(int k, BDDSet v, MemoryRegion region) { 
++					//set must be the same if looked up twice - therefore update is ok
++					valueMap.put(k, v.getSet());
++					//region must be set to new "joined" region
++					regionMap.put(k, region);
++				}
++				private int getId(RTLExpression forWhat) {
++					if(forWhat instanceof RTLNumber)
++						return freshId();
++					Integer id = getExpToMap().get(forWhat);
++					if(id == null) {
++						id = freshId();
++						expToMap.put(forWhat, id);
++						backMap.put(id, forWhat);
++					}
++					return id;
++				}
++				public List<Integer> addOperandGroup(List<RTLExpression> ops) {
++					//Pair<RTLExpression, BDDSet>[] values = new Pair<RTLExpression, BDDSet>[ops.length]; does not work for some reason
++					//want map function...
++					ArrayList<Pair<BDDSet, Integer>> values = new ArrayList<Pair<BDDSet, Integer>>(ops.size());
++					FastSet<MemoryRegion> regions = new FastSet<MemoryRegion>();
++					for(RTLExpression op : ops) {
++						BDDSet value = expToValue(op);
++						int id = getId(op);
++						MemoryRegion knownRegion = getRegionMap().get(id);
++						if(knownRegion != null)
++							regions.add(knownRegion);
++						regions.add(value.getRegion());
++						values.add(new Pair<BDDSet, Integer>(value, id));
++					}
++					MemoryRegion region = reduceRegion(regions);
++					ArrayList<Integer> ids = new ArrayList<Integer>(values.size());
++					for(Pair<BDDSet, Integer> pair : values) {
++						putValue(pair.getRight(), pair.getLeft(), region);
++						ids.add(pair.getRight());
++					}
++					return ids;
++				}
++				@Override
++				public String toString() {
++					return "(BackMap: " + backMap + ", RegionMap: " + regionMap + ", ValueMap: " + valueMap + ")";
++				}
++			}
++			
++			private RTLExpression convertBoolean(RTLExpression exp) {
++				if(exp instanceof RTLVariable && ((RTLVariable) exp).getBitWidth() == 1)
++					return ExpressionFactory.createEqual(exp, ExpressionFactory.TRUE);
++				return exp;
++			}
++			
++			private boolean specialCaseBAndSingleton(RTLExpression exp) {
++				if(exp instanceof RTLOperation) {
++					RTLOperation op = (RTLOperation) exp;
++					if(op.getOperator() == Operator.AND
++							&& op.getOperandCount() == 2) {
++						RTLExpression ex1 = op.getOperands()[0];
++						RTLExpression ex2 = op.getOperands()[1];
++						//one singleton, one variable
++						//XXX also allow memory Access?
++						//XXX also allow proper singleton (instead of just RTLNumber)?
++						boolean res = (ex1 instanceof RTLNumber && ex2 instanceof RTLVariable) || (ex2 instanceof RTLNumber && ex1 instanceof RTLVariable);
++						if(res)
++							logger.debug("Constraint System: Hit special case for bitwise and singleton: " + exp);
++						return res;
++					}
++				}
++				return false;
++			}
++			
++			private boolean specialCaseAddSingleton(RTLExpression exp) {
++				if(exp instanceof RTLOperation) {
++					RTLOperation op = (RTLOperation) exp;
++					if(op.getOperator() == Operator.PLUS
++							&& op.getOperandCount() == 2) {
++						RTLExpression ex1 = op.getOperands()[0];
++						RTLExpression ex2 = op.getOperands()[1];
++						//one singleton, one variable
++						//XXX also allow memory Access?
++						//XXX also allow proper singleton (instead of just RTLNumber)?
++						boolean res = (ex1 instanceof RTLNumber && ex2 instanceof RTLVariable) || (ex2 instanceof RTLNumber && ex1 instanceof RTLVariable);
++						if(res)
++							logger.debug("Constrint System: Hit special case for plus and singleton: " + exp);
++						return res;
++					}
++				}
++				return false;
++			}
++			
++			private boolean rtlExpOkForRelOp(RTLExpression exp) {
++				return exp instanceof RTLVariable
++					|| exp instanceof RTLMemoryLocation
++					|| exp instanceof RTLNumber
++					//Special cases:
++					|| specialCaseBAndSingleton(exp)
++					|| specialCaseAddSingleton(exp);
++			}
++			
++			//Todo translationState is mutable so it would not have to be threaded through?
++			private Pair<TranslationState, Constraint> buildConstraint(TranslationState translationState, Operator op, List<RTLExpression> elist) {
++				int elistSize = elist.size();
++				Constraint constraint;
++				List<Integer> idList;
++				int id1;
++				int id2;
++				RTLExpression ex1;
++				RTLExpression ex2;
++				RTLOperation op1;
++				RTLOperation op2;
++				Pair<TranslationState, Constraint> op1Res;
++				Pair<TranslationState, Constraint> op2Res;
++				switch(op) {
++				case EQUAL:
++				case LESS:
++				case LESS_OR_EQUAL:
++				case UNSIGNED_LESS:
++				case UNSIGNED_LESS_OR_EQUAL:
++					assert elistSize == 2 : "Malformed comparison";
++					ex1 = elist.get(0);
++					assert rtlExpOkForRelOp(ex1) : "First operand (" + ex1 + ") not ok for " + op;
++					ex2 = elist.get(1);
++					assert rtlExpOkForRelOp(ex2) : "Second operand (" + ex2 + ") not ok for " + op;
++					idList = translationState.addOperandGroup(elist);
++					id1 = idList.get(0);
++					id2 = idList.get(1);
++					switch(op) {
++					case EQUAL:
++						constraint = Constraint$.MODULE$.createEq(id1, id2);
++						break;
++					case LESS:
++						constraint = Constraint$.MODULE$.createLt(id1, id2);
++						break;
++					case LESS_OR_EQUAL:
++						constraint = Constraint$.MODULE$.createLte(id1,  id2);
++						break;
++					case UNSIGNED_LESS:
++						constraint = Constraint$.MODULE$.createULt(id1, id2);
++						break;
++					default:
++						constraint = Constraint$.MODULE$.createULte(id1, id2);
++						break;
++					}
++					return new Pair<TranslationState, Constraint>(translationState, constraint);
++				case AND:
++				case OR:
++					assert elistSize >= 2 : "Malformed connective";
++					if(elistSize == 2) {
++						ex1 = convertBoolean(elist.get(0));
++						ex2 = convertBoolean(elist.get(1));
++						assert ex1 instanceof RTLOperation : ex1 + " is " + ex1.getClass() + ". required: RTLOperation";
++						assert ex2 instanceof RTLOperation : ex2 + " is " + ex2.getClass() + ". required: RTLOperation";
++						op1 = (RTLOperation) ex1;
++						op2 = (RTLOperation) ex2;
++						op1Res = buildConstraint(translationState, op1.getOperator(), Arrays.asList(op1.getOperands()));
++						op2Res = buildConstraint(op1Res.getLeft(), op2.getOperator(), Arrays.asList(op2.getOperands()));
++						switch(op) {
++						case AND:
++							constraint = Constraint$.MODULE$.createAnd(op1Res.getRight(), op2Res.getRight());
++							break;
++						default:
++							constraint = Constraint$.MODULE$.createOr(op1Res.getRight(), op2Res.getRight());
++							break;
++						}
++						return new Pair<TranslationState, Constraint>(op2Res.getLeft(), constraint);
++					} else {
++						ex1 = convertBoolean(elist.get(0));
++						assert ex1 instanceof RTLOperation : ex1 + " is " + ex1.getClass() + ". required: RTLOperation";
++						op1 = (RTLOperation) ex1;
++						op1Res = buildConstraint(translationState, op1.getOperator(), Arrays.asList(op1.getOperands()));
++						op2Res = buildConstraint(op1Res.getLeft(), op, elist.subList(1, elistSize));
++						constraint = Constraint$.MODULE$.createAnd(op1Res.getRight(), op2Res.getRight());
++						return new Pair<TranslationState, Constraint>(op2Res.getLeft(), constraint);
++					}
++				case NOT:
++					assert elistSize == 1 : "Malformed not";
++					ex1 = convertBoolean(elist.get(0));
++					assert ex1 instanceof RTLOperation : ex1 + " is " + ex1.getClass() + ". required: RTLOperation";
++					op1 = (RTLOperation) ex1;
++					op1Res = buildConstraint(translationState, op1.getOperator(), Arrays.asList(op1.getOperands()));
++					constraint = Constraint$.MODULE$.createNot(op1Res.getRight());
++					return new Pair<TranslationState, Constraint>(op1Res.getLeft(), constraint);
++				case XOR:
++					//TODO lift restriction to two operands
++					assert elistSize == 2 : "Malformed xor";
++					ex1 = convertBoolean(elist.get(0));
++					ex2 = convertBoolean(elist.get(1));
++					assert ex1 instanceof RTLOperation : ex1 + " is " + ex1.getClass() + ". required: RTLOperation";
++					assert ex2 instanceof RTLOperation : ex2 + " is " + ex2.getClass() + ". required: RTLOperation";
++					op1 = (RTLOperation) ex1;
++					op2 = (RTLOperation) ex2;
++					op1Res = buildConstraint(translationState, op1.getOperator(), Arrays.asList(op1.getOperands()));
++					op2Res = buildConstraint(op1Res.getLeft(), op2.getOperator(), Arrays.asList(op2.getOperands()));
++					//not a and b or a and not b
++					constraint = Constraint$.MODULE$.createOr(
++							Constraint$.MODULE$.createAnd(Constraint$.MODULE$.createNot(op1Res.getRight()), op2Res.getRight())
++							,
++							Constraint$.MODULE$.createAnd(op1Res.getRight(), Constraint$.MODULE$.createNot(op2Res.getRight())));
++					return new Pair<TranslationState, Constraint>(op2Res.getLeft(), constraint);
++				default:
++					assert false : "Unhandled assume: " + op;
++					return null;
++				}
++			}
++			
++			/*private RTLOperation switchBinaryExp(RTLOperation oper) {
++				assert oper.getOperandCount() == 2 : "switchBinaryExp(" + oper + "): Wrong arity: " + oper.getOperandCount() + " but con only handle 2";
++				RTLExpression[] reversed = new RTLExpression[oper.getOperandCount()];
++				for(int i = 0; i < oper.getOperandCount(); i++)
++					reversed[i] = oper.getOperands()[oper.getOperandCount() - i - 1];
++				return (RTLOperation) ExpressionFactory.createOperation(oper.getOperator(), reversed);
++			}*/
++
++			@Override
++			public Set<AbstractState> visit(RTLAssume stmt) {
++				logger.debug("Found RTLAssume: " + stmt);
++				BDDSet truthValue = abstractEval(stmt.getAssumption());
++
++				//if truthValue = False -> infeasible
++				// else if True -> fine...
++				// else work to do!
++				if(truthValue.isSingleton()) {
++					if(truthValue.lessOrEqual(BDDSet.TRUE)) {
++						logger.debug("truthValue TRUE for " + stmt + " (" + truthValue + ")");
++						return thisState();
++					} else {
++						logger.info(stmt.getLabel() + ", state ID " + getIdentifier() + ": Transformer " + stmt + " is infeasible. ("+truthValue+")");
++						return Collections.emptySet();
++					}
++				} else {
++					//truth value either true or false -> reduction!
++					RTLExpression assumption = stmt.getAssumption();
++					assumption = assumption.evaluate(getContext());
++
++					if(assumption instanceof RTLOperation) {
++						RTLOperation operation = (RTLOperation) assumption;
++						Pair<TranslationState, Constraint> converted;
++						Map<Integer, IntLikeSet<Long, RTLNumber>> valid;
++						BDDState post = copyThisState();
++						try{
++							converted = buildConstraint(new TranslationState(), operation.getOperator(), Arrays.asList(operation.getOperands()));
++							logger.debug("==> Built constraint: " + converted + " for RTLAssume: " + assumption + " and State: " + BDDState.this);
++							valid = converted.getRight().solveJLong(converted.getLeft().getValueMap(), new RTLNumberIsDynBounded(), new RTLNumberIsDynBoundedBits(), new RTLNumberIsOrdered(), new RTLNumberToLongBWCaster(), new LongBWToRTLNumberCaster());
++							logger.debug("==>> Valid: " + valid);
++						} catch (Exception e) {
++							logger.error("failed to build constraint for: " + assumption + " with: " + e);
++							if(Options.failFast.getValue()) throw e;
++							return thisState();
++						} catch (AssertionError e) {
++							logger.error("failed to build constraint for: " + assumption + " with: " + e);
++<<<<<<< Updated upstream
++							if(Options.failFast.getValue() && Options.debug.getValue()) throw e;
++=======
++							//if(Options.failFast.getValue()) throw e;
++>>>>>>> Stashed changes
++							return thisState();
++						}
++						
++						TranslationState tState = converted.getLeft();
++						for(Map.Entry<Integer, RTLExpression> entry : tState.getBackMap().entrySet()) {
++							int id = entry.getKey();
++							IntLikeSet<Long, RTLNumber> intlikeset = valid.get(id);
++							MemoryRegion region = tState.getRegionMap().get(id);
++							RTLExpression exp = entry.getValue();
++							if(region.isTop()){
++								logger.debug("Region top from Constraint System. Skipping: " + id + " = " + exp);
++								continue;
++							}
++							BDDSet value = new BDDSet(intlikeset, region);
++							assert exp != null : "exp == null";
++							assert value != null : "value == null";
++							assert region != null : "region == null";
++							if(exp instanceof RTLVariable) {
++								RTLVariable var = (RTLVariable) exp;
++								BDDSet oldValue = getValue(var);
++								BDDSet newValue = oldValue.meet(value);
++								if(newValue.getSet().isEmpty()) return Collections.emptySet();
++								post.setValue(var, newValue);
++							} else if(exp instanceof RTLMemoryLocation) {
++								RTLMemoryLocation memLoc = (RTLMemoryLocation) exp;
++								BDDSet evaledAddress = post.abstractEval(memLoc.getAddress());
++								BDDSet oldValue = post.getMemoryValue(evaledAddress, memLoc.getBitWidth());
++								BDDSet newValue = oldValue.meet(value);
++								if(newValue.getSet().isEmpty()) return Collections.emptySet();
++								post.setMemoryValue(evaledAddress, memLoc.getBitWidth(), newValue);
++							} else if(exp instanceof RTLOperation) {
++								RTLOperation op = (RTLOperation) exp;
++								if(specialCaseBAndSingleton(op)) {
++									//XXX may be possible to lift this restriction
++									if(value.isSingleton() || (new BDDSet(value.getSet().invert(), value.getRegion())).isSingleton()) {
++										RTLNumber n = null;
++										RTLVariable v = null;
++										RTLExpression[] exps = op.getOperands();
++										if(exps[0] instanceof RTLNumber && exps[1] instanceof RTLVariable) {
++											n = (RTLNumber) exps[0];
++											v = (RTLVariable) exps[1];
++										} else {
++											n = (RTLNumber) exps[1];
++											v = (RTLVariable) exps[0];
++										}
++										assert n != null && v != null : "Special case restriction failure";
++										BDDSet oldValue = getValue(v);
++										BDDSet nSingleton = BDDSet.singleton(n);
++										assert nSingleton.getBitWidth() == value.getBitWidth() : "Constraint System: FAIL - bits (" + nSingleton.getBitWidth() + ", " + value.getBitWidth() + ")";
++										//assert nSingleton.getRegion() == value.getRegion() : "Constraint System: FAIL - regions (" + nSingleton.getRegion() + ", " + value.getRegion() + ")";
++										if(value.isSingleton()) {
++											if(nSingleton.getSet().bNot().bAnd(value.getSet()).randomElement().longValue() == 0L) {
++												//logger.debug("Value: " + value + ", nSingleton: " + nSingleton);
++												BDDSet newValue = new BDDSet(oldValue.getSet().bAnd(nSingleton.getSet().bNot()).bOr(value.getSet()), oldValue.getRegion());
++												//logger.debug("oldValue: " + oldValue + ", newValue: " + newValue);
++												post.setValue(v, newValue);
++											} else return Collections.emptySet();
++										} else {
++											if(nSingleton.getSet().bNot().bAnd(value.getSet().invert()).randomElement().longValue() == 0L) {
++												BDDSet notAllowed = new BDDSet(oldValue.getSet().bAnd(nSingleton.getSet().bNot()).bOr(value.getSet().invert()), oldValue.getRegion());
++												//logger.info("notAllowed: " + notAllowed);
++												BDDSet newValue = new BDDSet(oldValue.getSet().intersect(notAllowed.getSet().invert()), oldValue.getRegion());
++												//logger.debug("oldValue: " + oldValue + ", newValue: " + newValue);
++												post.setValue(v, newValue);
++											} else return Collections.emptySet();
++										}
++									} else logger.debug("Constraint System: Skipping restriction for specialCaseBAndSingleton (" + exp + ")");
++								} else if(specialCaseAddSingleton(op)) {
++									RTLNumber constant;
++									RTLVariable var;
++									if(op.getOperands()[0] instanceof RTLNumber) {
++										constant = (RTLNumber) op.getOperands()[0];
++										var = (RTLVariable) op.getOperands()[1];
++									} else {
++										constant = (RTLNumber) op.getOperands()[1];
++										var = (RTLVariable) op.getOperands()[0];
++									}
++									BDDSet newValue = value.plus(BDDSet.singleton(constant).negate());
++									if(newValue.getSet().isEmpty()) return Collections.emptySet();
++									post.setValue(var, newValue);
++								}else logger.debug("Constraint System: Unhandled special case (" + exp + ") during restriction");
++							} else logger.debug("Constraint System: Unhandled type (" + exp.getClass() + ") during restriction");
++						}
++						logger.debug("new state from Constraint System:" + post);
++						return Collections.singleton((AbstractState) post);
++						
++//						//XXX
++//						switch(operation.getOperator()) {
++//						case EQUAL:
++//							logger.debug("Handling RTLAssume: " + stmt);
++//							if(operation.getOperands()[1] instanceof RTLVariable
++//							&& operation.getOperands()[0] instanceof RTLNumber) {
++//								return visit(new RTLAssume(switchBinaryExp(operation), stmt.getSource()));
++//							} else if(operation.getOperands()[0] instanceof RTLVariable
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								post.setValue(var, BDDSet.singleton(num));
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[1] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[0] instanceof RTLNumber) {
++//								return visit(new RTLAssume(switchBinaryExp(operation), stmt.getSource()));
++//							} else if(operation.getOperands()[0] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), BDDSet.singleton(num));
++//								return Collections.singleton((AbstractState) post);
++//							}
++//						case LESS_OR_EQUAL:
++//							logger.debug("Handling RTLAssume: " + stmt);
++//							if(operation.getOperands()[1] instanceof RTLVariable
++//							&& operation.getOperands()[0] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[1];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[0];
++//								BDDState post = copyThisState();
++//								BDDSet curr = post.getValue(var);
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictGreaterOrEqual(BDDSet.singleton(num).getSet()));
++//								post.setValue(var, restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[0] instanceof RTLVariable
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet curr = post.getValue(var);
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictLessOrEqual(BDDSet.singleton(num).getSet()));
++//								post.setValue(var, restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[1] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[0] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[1];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[0];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								BDDSet curr = post.getMemoryValue(evaledAddress, mem.getBitWidth());
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictGreaterOrEqual(BDDSet.singleton(num).getSet()));
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[0] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								BDDSet curr = post.getMemoryValue(evaledAddress, mem.getBitWidth());
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictLessOrEqual(BDDSet.singleton(num).getSet()));
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), restricted);
++//								return Collections.singleton((AbstractState) post);
++//							}
++//						case LESS:
++//							logger.debug("Handling RTLAssume: " + stmt);
++//							if(operation.getOperands()[1] instanceof RTLVariable
++//							&& operation.getOperands()[0] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[1];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[0];
++//								BDDState post = copyThisState();
++//								BDDSet curr = post.getValue(var);
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictGreater(BDDSet.singleton(num).getSet()));
++//								post.setValue(var, restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[0] instanceof RTLVariable
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLVariable var = (RTLVariable) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet curr = post.getValue(var);
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictLess(BDDSet.singleton(num).getSet()));
++//								post.setValue(var, restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[1] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[0] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[1];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[0];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								BDDSet curr = post.getMemoryValue(evaledAddress, mem.getBitWidth());
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictGreater(BDDSet.singleton(num).getSet()));
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), restricted);
++//								return Collections.singleton((AbstractState) post);
++//							} else if(operation.getOperands()[0] instanceof RTLMemoryLocation
++//								   && operation.getOperands()[1] instanceof RTLNumber) {
++//								RTLMemoryLocation mem = (RTLMemoryLocation) operation.getOperands()[0];
++//								RTLNumber num = (RTLNumber) operation.getOperands()[1];
++//								BDDState post = copyThisState();
++//								BDDSet evaledAddress = post.abstractEval(mem.getAddress());
++//								BDDSet curr = post.getMemoryValue(evaledAddress, mem.getBitWidth());
++//								BDDSet restricted = new BDDSet(curr.getSet().restrictLess(BDDSet.singleton(num).getSet()));
++//								post.setMemoryValue(evaledAddress, mem.getBitWidth(), restricted);
++//								return Collections.singleton((AbstractState) post);
++//							}
++//						default:
++//							logger.debug("XXX RTLAssume(" + operation + ") - we ignored that. An opportunity missed...");
++//							break;
++//						}
++					}
++				}
++				logger.debug("Ignoring RTLAssume: " + stmt);
++				return Collections.singleton((AbstractState) copyThisState());
++			}
++
++			/*XXX SCM: Complete copy - no idea if correct...
++			 * Allocation counter is tree that counts nodes to top if location of node == current...
++			 * Ok, why the hell not
++			 */
++			@Override
++			public Set<AbstractState> visit(RTLAlloc stmt) {
++				BDDState post = copyThisState();
++				Writable lhs = stmt.getPointer();
++				// Note: We never need to create heap regions as summary regions. Either the threshold
++				// is high enough to precisely track all executions of an allocation explicitly,
++				// or the number of different pointers/regions also exceeds the threshold and
++				// will be widened to T.
++				// TODO: How can we create regions to allow exchange of information between analyses?
++				//MemoryRegion newRegion = MemoryRegion.create("alloc" + stmt.getLabel() + "_" + getIdentifier());
++
++				MemoryRegion newRegion;
++
++				// Check for hardcoded allocation names (i.e., stack or FS)
++				if (stmt.getAllocationName() != null) {
++					newRegion = MemoryRegion.create(stmt.getAllocationName());
++				} else {
++					newRegion = MemoryRegion.create("alloc" + stmt.getLabel() + 
++							"#" + post.allocationCounter.countAllocation(stmt.getLabel()));
++				}
++
++				// We also allow pointers of less than the actual address size, to emulate the 16 bit segment registers FS/GS
++				// FS gets a value of (FS, 0) in the prologue. 
++
++				if (lhs instanceof RTLVariable) {
++					post.setValue((RTLVariable)lhs, BDDSet.singleton(newRegion, 
++							ExpressionFactory.createNumber(0, lhs.getBitWidth())));
++				} else {
++					RTLMemoryLocation m = (RTLMemoryLocation)lhs;
++					BDDSet abstractAddress = abstractEvalAddress(m);
++					if (!post.setMemoryValue(abstractAddress, m.getBitWidth(), 
++							BDDSet.singleton(newRegion, 
++									ExpressionFactory.createNumber(0, lhs.getBitWidth()))))
++						logger.verbose(stmt.getLabel() + ": Cannot resolve memory write from alloc to " + m + ".");
++				}
++
++				return Collections.singleton((AbstractState)post);
++			}
++
++			//Complete copy again.
++			@Override
++			public Set<AbstractState> visit(RTLDealloc stmt) {
++				BDDState post = copyThisState();
++				BDDSet abstractAddress = abstractEval(stmt.getPointer());
++				// if the address cannot be determined, set all store memory to TOP
++				if (abstractAddress.isTop()) {
++					logger.info(getIdentifier() + ": Cannot resolve location of deallocated memory pointer " + stmt.getPointer() + ". Might miss use after free bugs!");
++					//logger.info(getIdentifier() + ": Cannot resolve location of deallocated memory pointer " + stmt.getPointer() + ". Defaulting ALL memory to " + Characters.TOP);
++					//logger.info(BasedNumberValuation.this);
++					//post.aStore.setTop();
++				} else {
++					if (abstractAddress.getRegion() == MemoryRegion.GLOBAL || abstractAddress.getRegion() == MemoryRegion.STACK) 
++						throw new UnknownPointerAccessException("Cannot deallocate " + abstractAddress.getRegion() + "!");
++					logger.debug(stmt.getLabel() + ": Dealloc on " + abstractAddress.getRegion()); 
++					post.abstractMemoryTable.setTop(abstractAddress.getRegion());
++				}
++				return Collections.singleton((AbstractState)post);
++			}
++
++			@Override
++			public Set<AbstractState> visit(RTLUnknownProcedureCall stmt) {
++				BDDState post = copyThisState();
++				for(RTLVariable var : stmt.getDefinedVariables())
++					post.setValue(var, BDDSet.topBW(var.getBitWidth()));
++				post.abstractMemoryTable.setTop();
++				return Collections.singleton((AbstractState) post);
++			}
++
++			@Override
++			public Set<AbstractState> visit(RTLHavoc stmt) {
++				//TODO SCM implement, maybe?
++				return Collections.singleton((AbstractState) copyThisState());
++			}
++
++			/*XXX scm : Do not understand BitWidths here, really
++			 * what if "cell" is not big enough?
++			 * Otherwise should be fine - memset sets same value everywhere
++			 * Check!
++			 * 
++			 * Do I need unique count? could also deal with abstractCount.getSet().max() ?
++			 */
++			@Override
++			public Set<AbstractState> visit(RTLMemset stmt) {
++				BDDState post = copyThisState();
++
++				BDDSet abstractDestination = abstractEval(stmt.getDestination());
++				BDDSet abstractValue = abstractEval(stmt.getValue());
++				BDDSet abstractCount = abstractEval(stmt.getCount());
++
++				logger.debug(stmt.getLabel() + ": memset(" + abstractDestination + ", " + abstractValue + ", " + abstractCount + ")");
++
++				if(abstractCount.hasUniqueConcretization()
++						&& !abstractDestination.isTop()
++						&& !abstractDestination.getSet().isFull()) {
++					if(!abstractDestination.isSingleton())
++						logger.debug(stmt.getLabel() + ": More than one destination memset(" + abstractDestination + ", " + abstractValue + ", " + abstractCount + ")");
++					int step = abstractValue.getBitWidth() / 8;
++					long count = abstractCount.getSet().randomElement().longValue();
++					for(RTLNumber rtlnum : abstractDestination.getSet().java()) {
++						long base = rtlnum.longValue();
++						for(long i = base; i < base + (count * step); i += step) {
++							BDDSet pointer = BDDSet.singleton(abstractDestination.getRegion(), ExpressionFactory.createNumber(i, abstractDestination.getBitWidth()));
++							post.setMemoryValue(pointer, abstractValue.getBitWidth(), abstractValue);
++						}
++					}
++				} else {
++					logger.debug(stmt.getLabel() + ": Overapproximating memset(" + abstractDestination + ", " + abstractValue + ", " + abstractCount + ")");
++					post.abstractMemoryTable.setTop(abstractDestination.getRegion());
++				}
++				return Collections.singleton((AbstractState) post);
++			}
++
++			//XXX scm: see function for RTLMemset
++			@Override
++			public Set<AbstractState> visit(RTLMemcpy stmt) {
++				BDDState post = copyThisState();
++
++				BDDSet abstractSource = abstractEval(stmt.getSource());
++				BDDSet abstractDestination = abstractEval(stmt.getDestination());
++				BDDSet abstractSize = abstractEval(stmt.getSize());
++
++				logger.debug(stmt.getLabel() + ": memcpy(" + abstractSource + ", " + abstractDestination + ", " + abstractSize + ")");
++
++				/*force everything to be unique for now - will probably not work but have to be less carefull.
++				 * othwerwise i would have to join all possible values in destination - yak!
++				 */
++				if(abstractSize.hasUniqueConcretization()
++						&& !abstractDestination.isTop()
++						&& abstractDestination.isSingleton()
++						&& !abstractSource.isTop()
++						&& abstractSource.isSingleton()) {
++					post.abstractMemoryTable.memcpy(abstractSource.getRegion()
++							,abstractSource.getSet().randomElement().longValue()
++							,abstractDestination.getRegion()
++							,abstractDestination.getSet().randomElement().longValue()
++							,abstractSize.getSet().randomElement().longValue());
++				} else {
++					logger.debug(stmt.getLabel() + ": Overapproximating memcpy(" + abstractDestination + ", " + abstractDestination + ", " + abstractSize + ")");
++					post.abstractMemoryTable.setTop(abstractDestination.getRegion());
++				}
++				return Collections.singleton((AbstractState) post);
++			}
++
++			@Override
++			public Set<AbstractState> visitDefault(RTLStatement stmt) {
++				return thisState();
++			}
++
++		});
++		
++		logger.debug("finished abstractPost(" + statement + ") in state: " + this.toString() + " with result: " + res);
++		return res;
++	}
++
++
++
++}
+diff --git a/src/org/jakstab/analysis/explicit/BDDTracking.java b/src/org/jakstab/analysis/explicit/BDDTracking.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/analysis/explicit/BDDTracking.java
+@@ -0,0 +1,122 @@
++package org.jakstab.analysis.explicit;
++
++import java.util.Set;
++
++import org.jakstab.AnalysisProperties;
++import org.jakstab.JOption;
++import org.jakstab.analysis.AbstractState;
++import org.jakstab.analysis.CPAOperators;
++import org.jakstab.analysis.ConfigurableProgramAnalysis;
++import org.jakstab.analysis.Precision;
++import org.jakstab.analysis.ReachedSet;
++import org.jakstab.cfa.CFAEdge;
++import org.jakstab.cfa.Location;
++import org.jakstab.cfa.PessimisticBasicBlockFactory;
++import org.jakstab.cfa.StateTransformer;
++import org.jakstab.rtl.statements.RTLStatement;
++import org.jakstab.util.Logger;
++import org.jakstab.util.Pair;
++
++public class BDDTracking implements ConfigurableProgramAnalysis {
++	
++	@SuppressWarnings("unused")
++	private static final Logger logger = Logger.getLogger(BDDTracking.class);
++	
++	public static void register(AnalysisProperties p) {
++		p.setShortHand('z');
++		p.setName("Set Address Tracking");
++		p.setDescription("Track adresses with a bdd per entry. bdd acts as a combination of set and interval.");
++		p.setExplicit(true);
++	}
++	
++	public static JOption<Integer> threshold = JOption.create("bdd-threshold", "k", 3, "Sets the threshold used in merge and prec.");
++
++	public BDDTracking() {}
++	
++	//public static JOption<Integer> varThreshold = JOption.create("explicit-threshold", "k", 5, "Set the maximum number separate states.");
++	//public static JOption<Integer> heapThreshold = JOption.create("heap-threshold", "k", 5, "Explicit threshold for data stored on the heap.");
++	
++	@Override
++	public Set<AbstractState> post(AbstractState state, CFAEdge cfaEdge,
++			Precision precision) {
++		return ((BDDState) state).abstractPost((RTLStatement) cfaEdge.getTransformer(), precision);
++	}
++
++	//XXX scm to we want strenghten? how could anybody be more precise than us.
++	@Override
++	public AbstractState strengthen(AbstractState s,
++			Iterable<AbstractState> otherStates, CFAEdge cfaEdge,
++			Precision precision) {
++		return s;
++	}
++
++	@Override
++	public AbstractState merge(AbstractState s1, AbstractState s2,
++			Precision precision) {
++		logger.debug("merge with precision " + precision + " on states " + s1.getIdentifier() + " and " + s2.getIdentifier());
++		//states equal? s2 is old state (comes from reachedSet)
++		if(s2.lessOrEqual(s1)) return s1;
++		BDDPrecision prec = (BDDPrecision) precision;
++		if(prec.getCount() >= threshold.getValue()) {
++			//widen
++			logger.debug("Will widen now");
++			BDDState result = ((BDDState) s2).widen((BDDState) s1).join(s1).join(s2);
++			logger.debug("s1: " + s1);logger.debug("s2: " + s2);
++			logger.debug("result: " + result);
++			logger.debug("check: " + CPAOperators.mergeJoin(s1, s2, precision));
++			assert(CPAOperators.mergeJoin(s1, s2, precision).lessOrEqual(result));
++			return result;
++		} else {
++			return CPAOperators.mergeJoin(s1, s2, precision);
++		}
++	}
++
++	@Override
++	public boolean stop(AbstractState s, ReachedSet reached, Precision precision) {
++		return CPAOperators.stopJoin(s, reached, precision);
++	}
++
++	@Override
++	public Pair<AbstractState, Precision> prec(AbstractState s,
++			Precision precision, ReachedSet reached) {
++		logger.debug("prec called on state " + s.getIdentifier());
++		logger.debug("prec((" + s + "), (" + precision + "), (" + reached + ")) called");
++		//logger.debug("PREC reached size: " + reached.size());
++		BDDPrecision prec = (BDDPrecision) precision;
++		BDDState newState = (BDDState) s;
++		boolean changed = false;
++		for(AbstractState state : reached) {
++			BDDState bddState = (BDDState) state;
++			changed = changed || bddState.lessOrEqual(newState);
++		}
++		if(!changed)
++			return Pair.create(s, (Precision) new BDDPrecision());
++		else if(prec.getCount() >= threshold.getValue()){
++			//XXX: Widen
++			/*
++			 * go thourgh varmap and memmap, widen every element that needs it...
++			 */
++			logger.debug("Will Widen Now");
++			BDDState out = new BDDState(newState);
++			for(AbstractState state : reached) {
++				out.widen((BDDState) state);
++			}
++			logger.debug("Widen result: " + out);
++			return Pair.create((AbstractState) out, (Precision) new BDDPrecision());
++		} else
++			return Pair.create(s, (Precision) prec.inc());
++	}
++
++	@Override
++	public AbstractState initStartState(Location label) {
++		return new BDDState();
++	}
++
++	@Override
++	public Precision initPrecision(Location location,
++			StateTransformer transformer) {
++		// TODO Auto-generated method stub
++		return new BDDPrecision();
++	}
++
++}
+diff --git a/src/org/jakstab/analysis/explicit/BDDVariableValuation.java b/src/org/jakstab/analysis/explicit/BDDVariableValuation.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/analysis/explicit/BDDVariableValuation.java
+@@ -0,0 +1,134 @@
++package org.jakstab.analysis.explicit;
++
++import java.util.Collection;
++import java.util.LinkedList;
++import java.util.Map;
++
++import org.jakstab.analysis.AbstractValueFactory;
++import org.jakstab.analysis.LatticeElement;
++import org.jakstab.analysis.MemoryRegion;
++import org.jakstab.analysis.VariableValuation;
++import org.jakstab.rtl.Context;
++import org.jakstab.rtl.expressions.ExpressionFactory;
++import org.jakstab.rtl.expressions.RTLBitRange;
++import org.jakstab.rtl.expressions.RTLExpression;
++import org.jakstab.rtl.expressions.RTLNumber;
++import org.jakstab.rtl.expressions.RTLVariable;
++import org.jakstab.util.Logger;
++
++import cc.sven.tlike.IntLikeSet;
++
++public class BDDVariableValuation extends VariableValuation<BDDSet> {
++
++	@SuppressWarnings("unused")
++	private static final Logger logger = Logger.getLogger(BDDVariableValuation.class);
++
++	public BDDVariableValuation(AbstractValueFactory<BDDSet> valueFactory) {
++		super(valueFactory);
++	}
++
++	public BDDVariableValuation(BDDSetFactory bddSetFactory) {
++		super(bddSetFactory);
++	}
++
++	public BDDVariableValuation(BDDVariableValuation abstractVarTable) {
++		super(abstractVarTable);
++	}
++
++	@SuppressWarnings("unchecked")
++	@Override
++	public BDDVariableValuation join(LatticeElement l) {
++		BDDVariableValuation other = (BDDVariableValuation)l;
++			if (isTop() || other.isBot()) return this;
++			if (isBot() || other.isTop()) return other;
++
++			BDDVariableValuation joinedValuation = new BDDVariableValuation(valueFactory);
++			// Join variable valuations
++			for (Map.Entry<RTLVariable,BDDSet> entry : aVarVal.entrySet()) {
++				RTLVariable var = entry.getKey();
++				BDDSet value = entry.getValue();
++				joinedValuation.set(var, (BDDSet)value.join(other.get(var)));
++			}
++					
++			return joinedValuation;
++
++	}
++
++	@Override
++	public BDDSet get(RTLVariable var) {
++		logger.debug("getting var: " + var );
++		BDDSet e = aVarVal.get(var);
++		if (e != null) {
++			return e;
++		} else {
++			// See if we can get the value from a covering register
++			RTLBitRange asParent = ExpressionFactory.getRegisterAsParent(var);
++
++			if (asParent != null && asParent.getOperand() instanceof RTLVariable) {
++				RTLVariable parent = (RTLVariable)asParent.getOperand();
++				// Recursive call for al -> ax -> eax 
++				BDDSet parentVal = get(parent);
++				assert parentVal != null;
++				
++				if(parentVal.isTop()) 
++					return valueFactory.createTop(var.getBitWidth());
++				
++
++				logger.debug("asParent: " + asParent + " parent: " + parent + " parentVal: " + parentVal);
++
++				
++				int first = ((RTLNumber)asParent.getFirstBitIndex()).intValue();
++				int last = ((RTLNumber)asParent.getLastBitIndex()).intValue();
++				IntLikeSet<Long, RTLNumber> ret = parentVal.getSet().bitExtract(last,first);
++				logger.debug("first: "+first +" last: "+last+" extractedValue: " + ret);
++				return new BDDSet(ret,parentVal.getRegion());
++			}
++
++			return valueFactory.createTop(var.getBitWidth());
++		}
++	}
++	
++	@SuppressWarnings("unchecked")
++	@Override
++	public void set(RTLVariable var, BDDSet value) {
++		logger.debug("setting var: " + var + " to value: " + value);
++		RTLBitRange asParent = ExpressionFactory.getRegisterAsParent(var);
++
++		// Set parent register - we only do this if the value to set represents 
++		// a single concrete value. If we want to generalize this, we have to
++		// build the cartesian product of concretizations
++		if (asParent != null && asParent.getOperand() instanceof RTLVariable) {
++			
++			RTLVariable parent = (RTLVariable)asParent.getOperand();
++			BDDSet parentVal = get(parent);
++			
++			logger.debug("asParent: " + asParent + " parent: " + parent + " parentVal: " + parentVal);
++			
++			int firstBit = ((RTLNumber)asParent.getFirstBitIndex()).intValue();
++			int lastBit = ((RTLNumber)asParent.getLastBitIndex()).intValue();
++			long bitMask = RTLBitRange.bitMask(0, firstBit - 1) | 
++					RTLBitRange.bitMask(lastBit + 1, asParent.getOperand().getBitWidth());
++
++			IntLikeSet<Long, RTLNumber> maskedParent = parentVal.getSet().bAnd(valueFactory.createAbstractValue(ExpressionFactory.createNumber(bitMask,parentVal.getBitWidth())).getSet());
++			IntLikeSet<Long, RTLNumber> shiftedValue = value.getSet().zeroFill(parentVal.getBitWidth()-1, value.getBitWidth()-1).bShl(firstBit);
++
++			MemoryRegion region = value.getRegion().join(parentVal.getRegion());
++			if(region.isTop()) {
++				set(parent, new BDDSet(maskedParent.bOr(shiftedValue),value.getRegion()));
++			} else {
++				set(parent, new BDDSet(maskedParent.bOr(shiftedValue),region));
++			}
++			return;
++		}
++
++		clearCovering(var);
++		clearCovered(var);
++		
++		if (value.isTop()) {
++			aVarVal.remove(var);
++		} else {
++			logger.debug("putting var: " + var + " to value: " + value);
++			aVarVal.put(var, value);
++		}
++	}
++}
+diff --git a/src/org/jakstab/rtl/expressions/LongBWToRTLNumberCaster.java b/src/org/jakstab/rtl/expressions/LongBWToRTLNumberCaster.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/rtl/expressions/LongBWToRTLNumberCaster.java
+@@ -0,0 +1,10 @@
++package org.jakstab.rtl.expressions;
++
++import cc.sven.tlike.Castable;
++import cc.sven.misc.Pair;
++
++public class LongBWToRTLNumberCaster implements Castable<Pair<Integer, Long>, RTLNumber> {
++	public RTLNumber apply(Pair<Integer, Long> p) {
++		return ExpressionFactory.createNumber(p._2(), p._1());
++	}
++}
+diff --git a/src/org/jakstab/rtl/expressions/RTLNumberIsDynBounded.java b/src/org/jakstab/rtl/expressions/RTLNumberIsDynBounded.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/rtl/expressions/RTLNumberIsDynBounded.java
+@@ -0,0 +1,40 @@
++package org.jakstab.rtl.expressions;
++
++import cc.sven.bounded.DynBounded;
++
++public class RTLNumberIsDynBounded implements DynBounded<RTLNumber> {
++	public RTLNumber dMinBound(RTLNumber n) {
++		int bits = n.getBitWidth();
++		//XXX SCM this reverses order for booleans - seems fishy
++		if(bits == 1)
++			return ExpressionFactory.FALSE;
++		if(bits == 64)
++			return ExpressionFactory.createNumber(Long.MIN_VALUE, 64);
++		return ExpressionFactory.createNumber(-(1L << (bits - 1)), bits);
++	}
++	public RTLNumber dMaxBound(RTLNumber n) {
++		int bits = n.getBitWidth();
++		//XXX SCM this reverses order for booleans - seems fishy
++		if(bits == 1)
++			return ExpressionFactory.TRUE;
++		if(bits == 64)
++			return ExpressionFactory.createNumber(Long.MAX_VALUE, 64);
++		return ExpressionFactory.createNumber((1L << (bits - 1)) - 1, bits);
++	}
++	public RTLNumber dMaxNeg(RTLNumber n) {
++		int bits = n.getBitWidth();
++		//XXX SCM this reverses order for booleans - seems fishy
++		if(bits == 1)
++			return ExpressionFactory.FALSE;
++		if(bits == 64)
++			return ExpressionFactory.createNumber(-1L, 64);
++		return ExpressionFactory.createNumber((1L << bits) - 1, bits);
++	}
++	public RTLNumber dMinNotNeg(RTLNumber n) {
++		int bits = n.getBitWidth();
++		//XXX SCM this reverses order for booleans - seems fishy
++		if(bits == 1)
++			return ExpressionFactory.TRUE;
++		return ExpressionFactory.createNumber(0L, bits);
++	}
++}
+diff --git a/src/org/jakstab/rtl/expressions/RTLNumberIsDynBoundedBits.java b/src/org/jakstab/rtl/expressions/RTLNumberIsDynBoundedBits.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/rtl/expressions/RTLNumberIsDynBoundedBits.java
+@@ -0,0 +1,9 @@
++package org.jakstab.rtl.expressions;
++
++import cc.sven.bounded.DynBoundedBits;
++
++public class RTLNumberIsDynBoundedBits implements DynBoundedBits<RTLNumber> {
++  public int dBits(RTLNumber rtlnum) {
++	  return rtlnum.getBitWidth();
++  }
++}
+diff --git a/src/org/jakstab/rtl/expressions/RTLNumberIsOrdered.java b/src/org/jakstab/rtl/expressions/RTLNumberIsOrdered.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/rtl/expressions/RTLNumberIsOrdered.java
+@@ -0,0 +1,17 @@
++package org.jakstab.rtl.expressions;
++
++import cc.sven.misc.JavaOrdering;
++
++public class RTLNumberIsOrdered extends JavaOrdering<RTLNumber> {
++	private static final long serialVersionUID = 1L;
++	public int compare(RTLNumber x, RTLNumber y) {
++	  long xLong = x.longValue();
++	  long yLong = y.longValue();
++	  //avoid overflow, otherwise could xLong - yLong
++	  if(xLong < yLong)
++		  return -1;
++	  else if(xLong > yLong)
++		  return 1;
++	  else return 0;
++	}
++}
+diff --git a/src/org/jakstab/rtl/expressions/RTLNumberToLongBWCaster.java b/src/org/jakstab/rtl/expressions/RTLNumberToLongBWCaster.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/rtl/expressions/RTLNumberToLongBWCaster.java
+@@ -0,0 +1,13 @@
++package org.jakstab.rtl.expressions;
++
++import cc.sven.tlike.Castable;
++import cc.sven.tlike.NBitLong;
++import cc.sven.misc.Pair;
++import cc.sven.misc.Pair$;
++
++public class RTLNumberToLongBWCaster implements Castable<RTLNumber, Pair<Integer, Long>> {
++  public Pair<Integer, Long> apply(RTLNumber rtlnum) {
++	  long value = NBitLong.signContract(rtlnum.getBitWidth(), rtlnum.longValue());
++	  return Pair$.MODULE$.apply(rtlnum.getBitWidth(), value);
++  }
++}
+\ No newline at end of file
+diff --git a/src/org/jakstab/util/Either.java b/src/org/jakstab/util/Either.java
+new file mode 100644
+--- /dev/null
++++ b/src/org/jakstab/util/Either.java
+@@ -0,0 +1,46 @@
++package org.jakstab.util;
++
++public class Either<L, R> {
++	L l;
++	R r;
++	public Either(L left, R right) {
++		assert (left == null || right == null) && (left != null || right != null) : "Supply either left or right";
++		this.l = left;
++		this.r = right;
++	}
++	public boolean isLeft() {
++		return getLeft() != null;
++	}
++	public boolean isRight() {
++		return getRight() != null;
++	}
++	public L getLeft() {
++		return l;
++	}
++	public R getRight() {
++		return r;
++	}
++	@Override
++	public String toString() {
++		if(isLeft())
++			return "Left(" + getLeft().toString() + ")";
++		else
++			return "Right(" + getRight().toString() + ")";
++	}
++	@Override
++	public boolean equals(Object other) {
++		if(other instanceof Either<?, ?>) {
++			Either<?, ?> either = (Either<?, ?>) other;
++			return ((getLeft() == null && either.getLeft() == null) || getLeft().equals(either.getLeft()))
++				&& ((getRight() == null && either.getRight() == null) || getRight().equals(either.getLeft()));
++		} else
++			return false;
++	}
++	@Override
++	public int hashCode() {
++		if(isLeft())
++			return getLeft().hashCode();
++		else
++			return getRight().hashCode();
++	}
++}
+diff --git a/src/org/jakstab/analysis/PartitionedMemory.java b/src/org/jakstab/analysis/PartitionedMemory.java
+--- a/src/org/jakstab/analysis/PartitionedMemory.java
++++ b/src/org/jakstab/analysis/PartitionedMemory.java
+@@ -186,8 +186,9 @@
+ 			}
+ 		}
+ 		
+-		// If we only wanted to set TOP, we are already done.
+-		if (!value.isTop()) {
++		// If we only wanted to set TOP and we're not in the global region, 
++		// we are already done.
++		if (!value.isTop() || region == MemoryRegion.GLOBAL) {
+ 
+ 			// Separate update from deletion, so while overwriting an old cell, 
+ 			// we don't have to be careful not to overwrite our new cell
+@@ -352,6 +353,9 @@
+ 	public PartitionedMemory<A> join(LatticeElement l) {
+ 		PartitionedMemory<A> other = (PartitionedMemory<A>)l;
+ 		PartitionedMemory<A> result = new PartitionedMemory<A>(valueFactory);
++		
++		//global data region was set to top if one of the operands had it set to top already
++		result.dataIsTop = dataIsTop || other.dataIsTop;
+ 
+ 		// Join memory valuations. For the global region, we need to do both directions, 
+ 		// because constant image data is not present in store, but only visible
+@@ -382,6 +382,15 @@
+ 			
+ 		}
+ 
++		FastSet<Pair<MemoryRegion, Long>> keys = new FastSet<Pair<MemoryRegion, Long>>();
++		for(EntryIterator<MemoryRegion, Long, MemoryCell> entryIt = store.entryIterator(); entryIt.hasEntry(); entryIt.next()) {
++			long offset = entryIt.getRightKey();
++			logger.debug("offset: " + Long.toHexString(offset) + " cellOffset: " + Long.toHexString(entryIt.getValue().offset));
++			if (offset != entryIt.getValue().offset) continue;
++			MemoryRegion region = entryIt.getLeftKey();
++			keys.add(new Pair<MemoryRegion, Long>(region, offset));
++		}
++		
+ 		return result;
+ 	}
+ 	
+@@ -413,14 +422,28 @@
+ 				return false;
+ 		}
+ 		
+-		// Other direction for global region only
++		// Once static data is modified, the new value is present in the store maps. Thus
++		// we can assume that all static values not present in both states are equal.
++		// At this point, the only way "this" could not be less or equal than "other" is if 
++		// "this"'s store map contains a value in the static data address range that is not
++		// yet present in "other"'s store map (and thus would have been missed by the 
++		// iteration above.
++		
++		// Now, check for every element in "this"'s global region (includes the static data 
++		// range) whether its value is less or equal than the value of that element in 
++		// "other". If one isn't less or equal, this means that element is still not in 
++		// other's store map and has a non-initial value in this's store map (TOP or just 
++		// another value).
++		
++
++		
+ 		if (store.containsLeftKey(MemoryRegion.GLOBAL)) {
+ 			for (Map.Entry<Long, MemoryCell> entry : store.getSubMap(MemoryRegion.GLOBAL).entrySet()) {
+ 				long offset = entry.getKey();
+ 				if (offset != entry.getValue().offset) continue;
+ 				int bitWidth = entry.getValue().size * 8;
+ 				A value = entry.getValue().contents;
+-				if (!other.get(MemoryRegion.GLOBAL, offset, bitWidth).lessOrEqual(value))
++				if (!value.lessOrEqual(other.get(MemoryRegion.GLOBAL, offset, bitWidth)))
+ 					return false;
+ 			}
+ 		}
+\ No newline at end of file
+diff -r a46d3f37180b jakstab.bat
+--- a/jakstab.bat	Thu Mar 13 15:07:23 2014 +0100
++++ b/jakstab.bat	Thu Mar 13 15:40:30 2014 +0100
+@@ -1,3 +1,3 @@
+ @echo off
+ set JS_HOME=%~dp0
+-java -Xms512m -Xmx1000m -ea -cp "%JS_HOME%lib\antlr.jar;%JS_HOME%lib\google-collect-1.0.jar;lib\javabdd-1.0b2.jar;%JS_HOME%bin" org.jakstab.Main %*
+\ No newline at end of file
++java -Xms512m -Xmx1000m -ea -cp "%JS_HOME%lib\antlr.jar;%JS_HOME%lib\google-collect-1.0.jar;lib\javabdd-1.0b2.jar;$JS_HOME}lib\bdd.jar;$JS_HOMElib\scala-library.jar;%JS_HOME%bin" org.jakstab.Main %*
+diff -r a46d3f37180b compile.bat
+--- a/compile.bat	Thu Mar 13 15:07:23 2014 +0100
++++ b/compile.bat	Thu Mar 13 15:40:19 2014 +0100
+@@ -1,3 +1,3 @@
+ @echo off
+ IF NOT EXIST bin mkdir bin
+-javac -sourcepath src\ -cp lib\antlr.jar;lib\google-collect-1.0.jar;lib\javabdd-1.0b2.jar -d bin\ src\org\jakstab\*.java %*
+\ No newline at end of file
++javac -sourcepath src\ -cp lib\antlr.jar;lib\google-collect-1.0.jar;lib\javabdd-1.0b2.jar;lib/scala-library.jar;lib/bdd.jar -d bin\ src\org\jakstab\*.java %*

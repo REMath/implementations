@@ -1,0 +1,34 @@
+[0m[[0mdebug[0m] [0m[0m
+[0m[[0mdebug[0m] [0mInitial source changes: [0m
+[0m[[0mdebug[0m] [0m	removed:Set()[0m
+[0m[[0mdebug[0m] [0m	added: Set(/home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/bench/Bench.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/misc/Misc.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/intset/scalacheck/IntSetSpecification.scala)[0m
+[0m[[0mdebug[0m] [0m	modified: Set()[0m
+[0m[[0mdebug[0m] [0mRemoved products: Set()[0m
+[0m[[0mdebug[0m] [0mModified external sources: Set()[0m
+[0m[[0mdebug[0m] [0mModified binary dependencies: Set()[0m
+[0m[[0mdebug[0m] [0mInitial directly invalidated sources: Set(/home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/bench/Bench.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/misc/Misc.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/intset/scalacheck/IntSetSpecification.scala)[0m
+[0m[[0mdebug[0m] [0m[0m
+[0m[[0mdebug[0m] [0mSources indirectly invalidated by:[0m
+[0m[[0mdebug[0m] [0m	product: Set()[0m
+[0m[[0mdebug[0m] [0m	binary dep: Set()[0m
+[0m[[0mdebug[0m] [0m	external source: Set()[0m
+[0m[[0mdebug[0m] [0mAll initially invalidated sources: Set(/home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/bench/Bench.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/misc/Misc.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/intset/scalacheck/IntSetSpecification.scala)[0m
+[0m[[0mdebug[0m] [0mRecompiling all 3 sources: invalidated sources (3) exceeded 50.0% of all sources[0m
+[0m[[0minfo[0m] [0mCompiling 3 Scala sources to /home/scm/sts/bddstab/bdd/target/scala-2.10/test-classes...[0m
+[0m[[0mdebug[0m] [0mGetting compiler-interface from component compiler for Scala 2.10.2[0m
+[0m[[0mdebug[0m] [0mGetting compiler-interface from component compiler for Scala 2.10.2[0m
+[0m[[0mdebug[0m] [0mRunning cached compiler 1a72f155, interfacing (CompilerInterface) with Scala compiler version 2.10.2[0m
+[0m[[0mdebug[0m] [0mCalling Scala compiler with arguments  (CompilerInterface):[0m
+[0m[[0mdebug[0m] [0m	-bootclasspath[0m
+[0m[[0mdebug[0m] [0m	/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/resources.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/rt.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/sunrsasign.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/jsse.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/jce.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/charsets.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/netx.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/plugin.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/rhino.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/jfr.jar:/usr/lib/jvm/java-7-openjdk-amd64/jre/classes:/home/scm/.sbt/boot/scala-2.10.2/lib/scala-library.jar[0m
+[0m[[0mdebug[0m] [0m	-classpath[0m
+[0m[[0mdebug[0m] [0m	/home/scm/sts/bddstab/bdd/target/scala-2.10/test-classes:/home/scm/sts/bddstab/bdd/target/scala-2.10/classes:/home/scm/.ivy2/cache/com.google.guava/guava/bundles/guava-14.0.1.jar:/home/scm/.ivy2/cache/com.google.code.findbugs/jsr305/jars/jsr305-2.0.1.jar:/home/scm/.ivy2/cache/org.scalacheck/scalacheck_2.10/jars/scalacheck_2.10-1.10.1.jar:/home/scm/.ivy2/cache/org.scala-tools.testing/test-interface/jars/test-interface-0.5.jar:/home/scm/.ivy2/cache/org.scala-lang/scala-actors/jars/scala-actors-2.10.1.jar[0m
+[0m[[33mwarn[0m] [0mthere were 1 deprecation warning(s); re-run with -deprecation for details[0m
+[0m[[33mwarn[0m] [0mone warning found[0m
+[0m[[0mdebug[0m] [0mScala compilation took 7.262231905 s[0m
+[0m[[0mdebug[0m] [0mInvalidated by transitive public inheritance: Set(/home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/bench/Bench.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/misc/Misc.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/intset/scalacheck/IntSetSpecification.scala)[0m
+[0m[[0mdebug[0m] [0mInvalidated by direct dependency: Set(/home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/intset/scalacheck/IntSetSpecification.scala, /home/scm/sts/bddstab/bdd/src/test/scala/cc/sven/bench/Bench.scala)[0m
+[0m[[0mdebug[0m] [0mNew invalidations:[0m
+[0m[[0mdebug[0m] [0m	Set()[0m
+[0m[[0mdebug[0m] [0mPreviously invalidated, but (transitively) depend on new invalidations:[0m
+[0m[[0mdebug[0m] [0m	Set()[0m

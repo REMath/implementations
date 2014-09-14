@@ -1,0 +1,78 @@
+\documentclass[a4paper,11pt,notitlepage]{scrreprt}
+%\documentclass[a4paper,11pt,notitlepage,parskip=half-]{scrreprt}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage[outputdir=dot2texi/]{dot2texi}
+\usepackage{tikz}
+\usepackage{textcomp}
+\usetikzlibrary{snakes,arrows,shapes}
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+\usepackage{float}
+%\usepackage[english,algochapter,ruled,linesnumbered,resetcount,longend,nofillcomment]{algorithm2e}
+\usepackage{amssymb}
+%\floatname{algorithm}{Procedure}
+%\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+%\renewcommand{\algorithmicensure}{\textbf{Output:}}
+\usepackage{mathtools}
+
+\usepackage{cite}
+\usepackage{url}
+
+%\usepackage{todonotes}
+
+\usepackage{amsmath}
+\usepackage{pgfplots}
+\usepackage[nounderscore]{syntax}
+
+\begin{document}
+\[\begin{array}{ccc}
+		|X| &\vcentcolon =& \{x \mid X(x)\}\\
+		\lceil X \rceil &\vcentcolon =& |X| \cup k_X\\
+		\lfloor X \rfloor &\vcentcolon =& |X| \setminus k_X\\
+		\overline x &\vcentcolon =& \{e \mid e \notin x\}\\
+\end{array}\]
+
+\[\begin{array}{ccc}
+		|\neg X| &=& \{x \mid \neg X(x)\}\\
+		&=& \overline{\{x \mid X(x)\}}\\
+		&=& \overline{|X|}
+\end{array}\]
+\[\begin{array}{ccc}
+		\lceil \neg X \rceil &=& |\neg X| \cup k_X\\
+		&=& \{e \mid \neg X(e) \vee e \in k_X\}\\
+		&=& \overline{\overline{\{e \mid \neg X(e) \vee e \in k_X\}}}\\
+		&=& \overline{\{e \mid \neg (\neg X(e) \vee e \in k_X)\}}\\
+		&=& \overline{\{e \mid X(e) \wedge e \notin k_X\}}\\
+		&=& \overline{|X| \setminus k_X}\\
+		&=& \overline{\lfloor X \rfloor}
+\end{array}\]
+\[\begin{array}{ccc}
+		\lfloor \neg X \rfloor &=& \overline{\lceil X \rceil}
+\end{array}\]
+
+\[\begin{array}{ccc}
+		\lceil A \wedge B \rceil &\vcentcolon =& \lceil A \rceil \cap \lceil B \rceil\\
+		|A \wedge B| &\subseteq& \lceil A \wedge B \rceil\\
+		&=& \lceil A \rceil \cap \lceil B \rceil\\
+		&=& (|A| \cup k_A) \cap (|B| \cup k_B)\\
+		&=& (|A| \cap |B|) \cup ((|A| \cap k_B) \cup (k_A \cap |B|) \cup (k_A \cap k_B))\\
+		&=& \{e \mid e \in |A| \wedge e \in |B|\} \cup ((|A| \cap k_B) \cup (k_A \cap |B|) \cup (k_A \cap k_B))\\
+		&=& \{e \mid A(e) \wedge B(e)\} \cup ((|A| \cap k_B) \cup (k_A \cap |B|) \cup (k_A \cap k_B))\\
+		&=& |A \wedge B| \cup ((|A| \cap k_B) \cup (k_A \cap |B|) \cup (k_A \cap k_B))
+\end{array}\]
+
+\[\begin{array}{ccc}
+		\lfloor A \wedge B \rfloor &\vcentcolon =& \lfloor A \rfloor \cap \lfloor B \rfloor\\
+		|A \wedge B| &\supseteq& \lfloor A \wedge B \rfloor\\
+		&=& \lfloor A \rfloor \cap \lfloor B \rfloor\\
+		&=& (|A| \setminus k_A) \cap (|B| \setminus k_B)\\
+		&=& (|A| \cap \overline{k_A}) \cap (|B| \cap \overline{k_B})\\
+		&=& (|A| \cap |B|) \cap (\overline{k_A} \cap \overline{k_B})\\
+		&=& \{e \mid e \in |A| \wedge e \in |B|\} \cap (\overline{k_A} \cap \overline{k_B})\\
+		&=& \{e \mid A(e) \wedge B(e)\} \cap (\overline{k_A} \cap \overline{k_B})\\
+		&=& |A \wedge B| \cap (\overline{k_A} \cap \overline{k_B})
+\end{array}\]
+\end{document}

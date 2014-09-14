@@ -1,0 +1,5 @@
+[0m[[0mdebug[0m] [0mRunning TaskDef(cc.sven.intset.scalacheck.IntSetSpecification, sbt.SubclassFingerprintWrapper@2dd92714, false, [SuiteSelector])[0m
+[0m[[0mdebug[0m] [0mSummary for ScalaCheck not available.[0m
+[0m[[0minfo[0m] [0mPassed: Total 23, Failed 0, Errors 0, Passed 23[0m
+[0m[[0mdebug[0m] [0mPassed tests:[0m
+[0m[[0mdebug[0m] [0m	cc.sven.intset.scalacheck.IntSetSpecification[0m

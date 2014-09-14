@@ -1,0 +1,23 @@
+[0m[[0minfo[0m] [0m+ IntSet.bitVector identity[Int]: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.set eq IntSet[Int]: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.set cardinality: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.set added is included: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.set subtracted not included: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.set equal: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.set cbdd.bdd ref equal: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.set size equal: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.invert twice: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.all ints: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.min: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.max: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.ival set: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.intersect: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.union: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.subsetOf: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.subsetOf intersection: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.isEmpty: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.toList: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.inverse is Full: OK, proved property.[0m
+[0m[[0minfo[0m] [0m+ IntSet.plus singleton sets: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.plus sets: OK, passed 100 tests.[0m
+[0m[[0minfo[0m] [0m+ IntSet.random element is included: OK, passed 100 tests.[0m

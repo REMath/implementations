@@ -1,0 +1,34 @@
+SETUP
+
+BDDStab is an abstract domain for the binary analysis framework Jakstab [1].
+Therefore, the source code of Jakstab is required to run it.
+The provided patch has been tested with changeset dde24eb1ac03 (v0.8.3) from [2].
+Furthermore, parts of BDDStab are written in Scala [3], which necessitates
+the corresponding scala-library.jar.
+We tested BDDStab with the scala-library.jar as bundled with the 2.10.3 release.
+Note that the bdd.jar contains the source code, sbt configuration, and eclipse
+project files necessary to build it. To access the source code, simply rename
+bdd.jar to bdd.zip and unzip the archive.
+
+AUTOMATED INSTALLATION FOR LINUX
+0. Install Java, Mercurial, wget, and Tar
+1. Run "./linuxinstall.sh"
+2. Jakstab with BDDStab should be install in the jakstab directory
+
+MANUAL INSTALLATION
+0. Install Java, Mercurial, and Tar
+1. Clone Jakstab using "hg clone https://bitbucket.org/jkinder/jakstab"
+2. Update working directory to stable version v0.8.3 using
+   "hg update dde24eb1ac03"
+3. Change the working directory to the cloned repository
+4. Download a Scala at [3]
+5. Extract the downloaded archive containing Scala, and copy
+   <lib/scala-library.jar> to Jakstab's lib directory.
+6. Run "hg import <path to bddstab.diff>"
+7. Copy bdd.jar to Jakstab's lib directory
+8. Compile using "./compile.sh" or "compile.bat"
+9. Done.
+
+[1]: http://www.jakstab.org
+[2]: https://bitbucket.org/jkinder/jakstab
+[3]: http://www.scala-lang.org

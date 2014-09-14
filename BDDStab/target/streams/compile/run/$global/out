@@ -1,0 +1,13 @@
+[0m[[0minfo[0m] [0mRunning cc.sven.Main [0m
+[0m[[0mdebug[0m] [0mStarting sandboxed run...[0m
+[0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
+[0m[[0mdebug[0m] [0mWaiting for thread run-main to exit[0m
+[0m[[0mdebug[0m] [0m  Classpath:[0m
+[0m[[0mdebug[0m] [0m	/home/scm/sts/bddstab/bdd/target/scala-2.10/classes[0m
+[0m[[0mdebug[0m] [0m	/home/scm/.sbt/boot/scala-2.10.2/lib/scala-library.jar[0m
+[0m[[0mdebug[0m] [0m	/home/scm/.ivy2/cache/com.google.guava/guava/bundles/guava-14.0.1.jar[0m
+[0m[[0mdebug[0m] [0m	/home/scm/.ivy2/cache/com.google.code.findbugs/jsr305/jars/jsr305-2.0.1.jar[0m
+[0m[[0mdebug[0m] [0m	Thread run-main exited.[0m
+[0m[[0mdebug[0m] [0mInterrupting remaining threads (should be all daemons).[0m
+[0m[[0mdebug[0m] [0mSandboxed run complete..[0m
+[0m[[0mdebug[0m] [0mExited with code 0[0m
