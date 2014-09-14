@@ -156,3 +156,10 @@ http://www.cs.rhul.ac.uk/home/kinder/papers/phdthesis.pdf
 * Example
 * Publications
 * Version
+
+## RXXR: Regular expression denial of service (REDoS) static analysis
+* Description
+* Installation
+* Example
+* Publications - http://arxiv.org/pdf/1301.0849v1.pdf 
+* Version
