@@ -1,3 +1,5 @@
+# "First, we want to establish the idea that a computer language is not just a way of getting a computer to perform operations but rather that it is a novel formal medium for expressing ideas about methodology. Thus, programs must be written for people to read, and only incidentally for machines to execute." ~ Abelson and Sussman
+
 ## Literature Review
 * https://github.com/REMath/literature_review
 
