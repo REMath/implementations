@@ -1,0 +1,14 @@
+Building requires: ocamllex, ocamlyacc, ocamlc. Execute the build script: ./build.sh
+
+This should produce an executable named scan.bin inside the source directory.
+
+Testing
+File mode:
+
+./scan.bin -i <input_file>
+Each line on the file is interpreted as a pattern of the form /REGEX/MODS. Empty lines and lines beginning with a # symbol are ignored. Most common pattern syntaxes are supported (Java, PCRE etc.).
+
+Interractive mode:
+
+./scan.bin
+Then enter patterns into the terminal (NOTE:- in this mode, the analyser performs an exhaustive search).
